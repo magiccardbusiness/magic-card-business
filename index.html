@@ -263,7 +263,7 @@
             const messageType = urlParams.get('type');
             const messageContent = urlParams.get('message');
             
-            let video;
+            let video = null; // Start with NO video
             let currentMessageType = 'video'; // Default
             let currentMessageContent = '';
             
@@ -283,25 +283,9 @@
                 magicBtn.textContent = `▶ PLAY ${cardId} MESSAGE`;
             }
             
-            // Initialize based on message type
-            if (currentMessageType === 'text') {
-                // Setup for text message
-                video = document.createElement('video');
-                video.id = 'message-video';
-                // Use a silent video for text display timing
-                video.src = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4';
-                video.loop = true;
-                video.playsInline = true;
-                video.crossOrigin = 'anonymous';
-                video.preload = 'auto';
-                video.muted = true;
-                video.style.display = 'none';
-                document.body.appendChild(video);
-                
-                // Set text content
-                textDisplay.setAttribute('value', currentMessageContent);
-                
-            } else if (currentMessageType === 'video' || currentMessageType === 'audio') {
+            // 👇 THIS IS THE FIX! 👇
+            // Only create video for VIDEO or AUDIO messages
+            if (currentMessageType === 'video' || currentMessageType === 'audio') {
                 // Setup for video/audio
                 video = document.createElement('video');
                 video.id = 'message-video';
@@ -312,7 +296,8 @@
                 } else if (currentMessageType === 'video') {
                     video.src = 'https://res.cloudinary.com/diqa9qyvh/video/upload/v1767377987/20251219_010742000_iOS_xuandm.mp4';
                 } else {
-                    video.src = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4';
+                    // Default audio
+                    video.src = 'https://assets.mixkit.co/music/preview/mixkit-driving-ambition-32.mp3';
                 }
                 
                 video.loop = true;
@@ -321,8 +306,15 @@
                 video.preload = 'auto';
                 video.muted = true;
                 document.body.appendChild(video);
+                
+                console.log('Video/Audio ready for playback');
+            } else if (currentMessageType === 'text') {
+                // Setup for text message - NO VIDEO AT ALL!
+                // Just set the text content
+                textDisplay.setAttribute('value', currentMessageContent);
+                console.log('Text message ready:', currentMessageContent.substring(0, 50) + '...');
             } else {
-                // Default video
+                // Default video (fallback)
                 video = document.createElement('video');
                 video.id = 'message-video';
                 video.src = 'https://res.cloudinary.com/diqa9qyvh/video/upload/v1767377987/20251219_010742000_iOS_xuandm.mp4';
@@ -344,8 +336,7 @@
                 if (currentMessageType === 'text') {
                     // Setup for text display
                     textDisplay.setAttribute('visible', 'false');
-                    console.log('Text message ready:', currentMessageContent.substring(0, 50) + '...');
-                } else {
+                } else if (video) {
                     // Setup for video
                     const arVideo = document.getElementById('ar-video');
                     if (arVideo) {
@@ -365,7 +356,7 @@
             
             // Update timeline
             function updateVideoProgress() {
-                if (video.duration) {
+                if (video && video.duration) {
                     const percent = (video.currentTime / video.duration) * 100;
                     progressBar.style.width = percent + '%';
                     currentTimeEl.textContent = formatTime(video.currentTime);
@@ -373,18 +364,20 @@
             }
             
             // Update video time display
-            video.addEventListener('timeupdate', updateVideoProgress);
-            
-            // Update total duration when loaded
-            video.addEventListener('loadedmetadata', function() {
-                if (video.duration) {
-                    totalTimeEl.textContent = formatTime(video.duration);
-                }
-            });
+            if (video) {
+                video.addEventListener('timeupdate', updateVideoProgress);
+                
+                // Update total duration when loaded
+                video.addEventListener('loadedmetadata', function() {
+                    if (video.duration) {
+                        totalTimeEl.textContent = formatTime(video.duration);
+                    }
+                });
+            }
             
             // Click timeline to seek
             timelineContainer.addEventListener('click', function(e) {
-                if (video.duration) {
+                if (video && video.duration) {
                     const rect = this.getBoundingClientRect();
                     const percent = (e.clientX - rect.left) / rect.width;
                     video.currentTime = percent * video.duration;
@@ -394,6 +387,8 @@
             
             // Play/Pause button
             playPauseBtn.addEventListener('click', function() {
+                if (!video) return;
+                
                 if (video.paused) {
                     video.play().then(() => {
                         console.log('Video playing');
@@ -411,6 +406,8 @@
             
             // Stop button
             stopBtn.addEventListener('click', function() {
+                if (!video) return;
+                
                 video.pause();
                 video.currentTime = 0;
                 playPauseBtn.innerHTML = '<span>▶</span> <span>PLAY</span>';
@@ -420,6 +417,8 @@
             
             // Save button
             saveBtn.addEventListener('click', function() {
+                if (!video || !video.src) return;
+                
                 const a = document.createElement('a');
                 a.href = video.src;
                 a.download = `Magic-Card-${cardId || 'Message'}.mp4`;
@@ -448,7 +447,7 @@
                 }, 1500);
             });
             
-            // MAGIC BUTTON - Main trigger
+            // MAGIC BUTTON - Main trigger (FIXED!)
             magicBtn.addEventListener('click', function() {
                 magicBtn.textContent = 'LOADING...';
                 magicBtn.style.background = '#27AE60';
@@ -458,61 +457,72 @@
                     // Show text frame
                     if (woodFrame) woodFrame.setAttribute('visible', 'true');
                     textDisplay.setAttribute('visible', 'true');
-                    videoScreen.setAttribute('visible', 'false');
+                    if (videoScreen) videoScreen.setAttribute('visible', 'false');
+                    
+                    // HIDE video controls (no video to control!)
+                    videoControls.style.display = 'none';
+                    
+                    // Show magic message without any sound
+                    magicBtn.style.display = 'none';
+                    
+                    // UPDATE INSTRUCTIONS
+                    if (cardId) {
+                        instructions.textContent = `Reading message from card: ${cardId}`;
+                    } else {
+                        instructions.textContent = "Enjoy your special message!";
+                    }
+                    
                 } else {
-                    // Show video frame
+                    // Show video frame for video/audio messages
                     if (woodFrame) woodFrame.setAttribute('visible', 'true');
                     if (videoScreen) videoScreen.setAttribute('visible', 'true');
                     textDisplay.setAttribute('visible', 'false');
-                }
-                
-                // Wait a moment then play
-                setTimeout(function() {
-                    video.muted = false;
                     
-                    video.play().then(function() {
-                        console.log('Magic message playing!');
-                        
-                        // Show controls (for video/audio only)
-                        if (currentMessageType !== 'text') {
-                            magicBtn.style.display = 'none';
-                            videoControls.style.display = 'block';
-                        } else {
-                            // For text, just show the message
-                            magicBtn.style.display = 'none';
-                        }
-                        
-                        // UPDATE INSTRUCTIONS TEXT
-                        if (cardId) {
-                            instructions.textContent = `Viewing message from card: ${cardId}`;
-                        } else {
-                            instructions.textContent = "Use controls below to manage your message";
-                        }
-                        
-                        // Update duration if needed
-                        if (video.duration && totalTimeEl.textContent === '0:00') {
-                            totalTimeEl.textContent = formatTime(video.duration);
-                        }
-                        
-                    }).catch(function(error) {
-                        console.log('Failed to play:', error);
-                        magicBtn.textContent = cardId ? `▶ PLAY ${cardId}` : '▶ PLAY MAGIC MESSAGE';
-                        magicBtn.style.background = '#E74C3C';
-                        
-                        // Try playing with user interaction
-                        document.body.addEventListener('click', function tryPlay() {
-                            video.play().then(() => {
-                                console.log('Played after user interaction');
-                                document.body.removeEventListener('click', tryPlay);
+                    // For video/audio: wait then play
+                    if (video) {
+                        setTimeout(function() {
+                            video.muted = false;
+                            
+                            video.play().then(function() {
+                                console.log('Magic message playing!');
+                                
+                                // Show controls
+                                magicBtn.style.display = 'none';
+                                videoControls.style.display = 'block';
+                                
+                                // UPDATE INSTRUCTIONS
+                                if (cardId) {
+                                    instructions.textContent = `Viewing message from card: ${cardId}`;
+                                } else {
+                                    instructions.textContent = "Use controls below to manage your message";
+                                }
+                                
+                                // Update duration if needed
+                                if (video.duration && totalTimeEl.textContent === '0:00') {
+                                    totalTimeEl.textContent = formatTime(video.duration);
+                                }
+                                
+                            }).catch(function(error) {
+                                console.log('Failed to play:', error);
+                                magicBtn.textContent = cardId ? `▶ PLAY ${cardId}` : '▶ PLAY MAGIC MESSAGE';
+                                magicBtn.style.background = '#E74C3C';
+                                
+                                // Try playing with user interaction
+                                document.body.addEventListener('click', function tryPlay() {
+                                    video.play().then(() => {
+                                        console.log('Played after user interaction');
+                                        document.body.removeEventListener('click', tryPlay);
+                                    });
+                                }, { once: true });
                             });
-                        }, { once: true });
-                    });
-                }, 800);
+                        }, 800);
+                    }
+                }
             });
             
             // Help with iOS audio
             document.addEventListener('click', function initAudio() {
-                if (video.paused) {
+                if (video && video.paused) {
                     video.muted = false;
                 }
                 document.removeEventListener('click', initAudio);
