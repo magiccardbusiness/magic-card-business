@@ -169,7 +169,7 @@
                 <li>Click "Download QR Code" button</li>
                 <li>Print and glue to your Magic Card</li>
             </ol>
-            <p><strong>Card URL format:</strong> https://magic-card-business.vercel.app/card/BDAY001</p>
+            <p><strong>Card URL format:</strong> https://magic-card-business.vercel.app/card.html?card=BDAY001</p>
         </div>
     </div>
 
@@ -200,7 +200,9 @@
             }
             
             currentCardId = `${prefix}${cardNumber}`;
-            const cardUrl = `https://magic-card-business.vercel.app/card/${currentCardId}`;
+            
+            // CORRECTED URL: Uses card.html?card=BDAY001 format
+            const cardUrl = `https://magic-card-business.vercel.app/card.html?card=${currentCardId}`;
             
             // Generate QR code using reliable API
             currentQRCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(cardUrl)}&format=png`;
