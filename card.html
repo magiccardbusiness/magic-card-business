@@ -149,12 +149,23 @@
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
+        
+        .error {
+            background: #FFEBEE;
+            color: #C62828;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            display: none;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="logo">✨ MAGIC CARD</div>
         <div class="card-id" id="card-id">Loading...</div>
+        
+        <div class="error" id="error-message"></div>
         
         <div class="mode-selector">
             <button class="mode-btn active" onclick="setMode('sender')">🎁 I'm Sending</button>
@@ -235,9 +246,28 @@
     </div>
 
     <script>
-        // Get card ID from URL
-        const pathParts = window.location.pathname.split('/');
-        const cardId = pathParts[pathParts.length - 1] || 'BDAY001';
+        // Get card ID from URL parameter
+        function getCardIdFromURL() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const cardId = urlParams.get('card');
+            
+            if (!cardId) {
+                // Try to get from path /card/BDAY001 format
+                const pathParts = window.location.pathname.split('/');
+                const possibleCardId = pathParts[pathParts.length - 1];
+                
+                // Check if it looks like a card ID (BDAY001, THX001, LOVE001)
+                if (possibleCardId && /^(BDAY|THX|LOVE)\d{3}$/.test(possibleCardId)) {
+                    return possibleCardId;
+                }
+                
+                return 'BDAY001'; // Default
+            }
+            
+            return cardId;
+        }
+        
+        const cardId = getCardIdFromURL();
         document.getElementById('card-id').textContent = `Card: ${cardId}`;
         
         let currentMode = 'sender';
@@ -320,23 +350,38 @@
             switch(type) {
                 case 'text':
                     content = document.getElementById('text-message').value;
+                    if (!content.trim()) {
+                        showError('Please enter a text message!');
+                        return;
+                    }
                     break;
                 case 'video':
-                    content = document.getElementById('video-url').value || 
-                              document.getElementById('video-upload').files[0]?.name;
+                    content = document.getElementById('video-url').value;
+                    if (!content) {
+                        const file = document.getElementById('video-upload').files[0];
+                        if (file) {
+                            content = URL.createObjectURL(file);
+                        } else {
+                            showError('Please upload a video or enter a video URL!');
+                            return;
+                        }
+                    }
                     break;
                 case 'audio':
-                    content = document.getElementById('audio-url').value || 
-                              document.getElementById('audio-upload').files[0]?.name;
+                    content = document.getElementById('audio-url').value;
+                    if (!content) {
+                        const file = document.getElementById('audio-upload').files[0];
+                        if (file) {
+                            content = URL.createObjectURL(file);
+                        } else {
+                            showError('Please upload audio or enter an audio URL!');
+                            return;
+                        }
+                    }
                     break;
             }
             
-            if (!content) {
-                alert('Please enter a message!');
-                return;
-            }
-            
-            // Save to localStorage (simulated database)
+            // Save to localStorage
             messageData = {
                 cardId: cardId,
                 type: type,
@@ -347,20 +392,27 @@
             
             localStorage.setItem(`magic_card_${cardId}`, JSON.stringify(messageData));
             
+            // Show success
+            document.getElementById('error-message').style.display = 'none';
             alert('✅ Message saved!\n\nGive the physical card to the recipient.\nThey can scan the QR code to view your message!');
             
-            // Switch to receiver view to see result
+            // Switch to receiver view
             setMode('receiver');
         }
         
         function checkForMessage() {
             const saved = localStorage.getItem(`magic_card_${cardId}`);
             if (saved) {
-                messageData = JSON.parse(saved);
-                
-                // If message exists, show receiver view by default
-                const receiverBtn = document.querySelector('.mode-btn:nth-child(2)');
-                receiverBtn.click();
+                try {
+                    messageData = JSON.parse(saved);
+                    // Auto-switch to receiver view if message exists
+                    setTimeout(() => {
+                        const receiverBtn = document.querySelector('.mode-btn:nth-child(2)');
+                        if (receiverBtn) receiverBtn.click();
+                    }, 100);
+                } catch (e) {
+                    console.error('Error loading saved message:', e);
+                }
             }
         }
         
@@ -422,7 +474,7 @@
         
         function viewInAR() {
             if (!messageData) {
-                alert('No message to view in AR yet!');
+                showError('No message to view in AR yet!');
                 return;
             }
             
@@ -431,8 +483,21 @@
             window.open(arUrl, '_blank');
         }
         
+        function showError(message) {
+            const errorDiv = document.getElementById('error-message');
+            errorDiv.textContent = `⚠️ ${message}`;
+            errorDiv.style.display = 'block';
+        }
+        
         // Initialize
         changeMessageType();
+        
+        // Add enter key support
+        document.getElementById('text-message').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                saveMessage();
+            }
+        });
     </script>
 </body>
 </html>
