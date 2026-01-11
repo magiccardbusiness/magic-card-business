@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Magic Card - Augmented Reality Greeting Cards</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f5f5f5; }
+        
+        .header {
+            background: #2C3E50;
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        
+        .logo {
+            font-size: 48px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .tagline {
+            font-size: 20px;
+            color: #FFD700;
+            margin-bottom: 30px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin: 40px 0;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        
+        .card:hover {
+            transform: translateY(-10px);
+        }
+        
+        .card-image {
+            height: 200px;
+            background: #8B7355;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+        }
+        
+        .card-content {
+            padding: 20px;
+        }
+        
+        .price {
+            color: #27AE60;
+            font-size: 24px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .button {
+            background: #9B59B6;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 15px;
+            display: inline-block;
+            text-decoration: none;
+        }
+        
+        .how-it-works {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            margin: 40px 0;
+        }
+        
+        .step {
+            display: flex;
+            align-items: center;
+            margin: 20px 0;
+            gap: 20px;
+        }
+        
+        .step-number {
+            background: #FFD700;
+            color: black;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 20px;
+        }
+        
+        .contact {
+            text-align: center;
+            background: #2C3E50;
+            color: white;
+            padding: 40px;
+            margin-top: 40px;
+            border-radius: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">MAGIC CARD</div>
+        <div class="tagline">Augmented Reality Greeting Cards</div>
+        <p>Scan QR code → Record message → Send magic!</p>
+    </div>
+    
+    <div class="container">
+        <h2 style="text-align: center; margin-bottom: 20px;">Our Cards</h2>
+        
+        <div class="card-grid">
+            <div class="card">
+                <div class="card-image" style="background: #3498DB;">
+                    🎂 BIRTHDAY
+                </div>
+                <div class="card-content">
+                    <h3>Birthday Wishes</h3>
+                    <p>Make birthdays magical with personalized video messages.</p>
+                    <div class="price">$7.99</div>
+                    <a href="mailto:order@magiccard.com?subject=Birthday Card Order" class="button">
+                        Order Now
+                    </a>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-image" style="background: #27AE60;">
+                    💝 THANK YOU
+                </div>
+                <div class="card-content">
+                    <h3>Thank You Cards</h3>
+                    <p>Send heartfelt thanks with personal video messages.</p>
+                    <div class="price">$7.99</div>
+                    <a href="mailto:order@magiccard.com?subject=Thank You Card Order" class="button">
+                        Order Now
+                    </a>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-image" style="background: #E74C3C;">
+                   ❤️ LOVE
+                </div>
+                <div class="card-content">
+                    <h3>Love Notes</h3>
+                    <p>Share your feelings with magical AR love messages.</p>
+                    <div class="price">$7.99</div>
+                    <a href="mailto:order@magiccard.com?subject=Love Card Order" class="button">
+                        Order Now
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="how-it-works">
+            <h2 style="text-align: center; margin-bottom: 30px;">How It Works</h2>
+            
+            <div class="step">
+                <div class="step-number">1</div>
+                <div>
+                    <h3>Buy Magic Card</h3>
+                    <p>Choose from our beautiful card designs, each with unique QR code.</p>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">2</div>
+                <div>
+                    <h3>Scan & Record</h3>
+                    <p>Scan QR code with phone, record your video message.</p>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">3</div>
+                <div>
+                    <h3>Send Card</h3>
+                    <p>Give physical card to recipient. They scan to see your magic message!</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="contact">
+            <h2>Ready to Order?</h2>
+            <p style="margin: 20px 0;">Email us: <strong>order@magiccard.com</strong></p>
+            <p>Or call: <strong>(555) 123-4567</strong></p>
+            <p style="margin-top: 20px; font-size: 14px; color: #AAA;">
+                Free shipping on orders over $25
+            </p>
+        </div>
+    </div>
+</body>
+</html>

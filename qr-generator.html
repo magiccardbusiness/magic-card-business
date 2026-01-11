@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Magic Card QR Generator</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.0/build/qrcode.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #2C3E50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .input-group {
+            margin: 20px 0;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #34495E;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        
+        .card-type {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .card-option {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .card-option.selected {
+            border-color: #9B59B6;
+            background: #f9f0ff;
+        }
+        
+        .card-option.birthday { border-color: #FF6B6B; }
+        .card-option.thankyou { border-color: #27AE60; }
+        .card-option.love { border-color: #E74C3C; }
+        
+        .generate-btn {
+            background: #9B59B6;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        
+        .qrcode-container {
+            text-align: center;
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8f8f8;
+            border-radius: 10px;
+            min-height: 300px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #qrcode {
+            margin: 20px 0;
+        }
+        
+        .card-preview {
+            width: 200px;
+            height: 280px;
+            border-radius: 15px;
+            margin: 20px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 20px;
+        }
+        
+        .download-btn {
+            background: #27AE60;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+            display: inline-block;
+            text-decoration: none;
+        }
+        
+        .instructions {
+            background: #e8f4fc;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✨ Magic Card QR Generator</h1>
+        
+        <div class="input-group">
+            <label>Card Type:</label>
+            <div class="card-type">
+                <div class="card-option birthday" onclick="selectCardType('birthday')">
+                    🎂 Birthday
+                </div>
+                <div class="card-option thankyou" onclick="selectCardType('thankyou')">
+                    💝 Thank You
+                </div>
+                <div class="card-option love" onclick="selectCardType('love')">
+                    ❤️ Love
+                </div>
+            </div>
+        </div>
+        
+        <div class="input-group">
+            <label>Card Number (001-999):</label>
+            <input type="number" id="cardNumber" min="1" max="999" value="001" placeholder="001">
+        </div>
+        
+        <div class="input-group">
+            <label>Custom Message (optional):</label>
+            <input type="text" id="customMessage" placeholder="Happy Birthday, Mom!">
+        </div>
+        
+        <button class="generate-btn" onclick="generateQR()">
+            🪄 GENERATE QR CODE
+        </button>
+        
+        <div class="qrcode-container">
+            <div id="qrcode"></div>
+            <div id="download-section" style="display:none;">
+                <a id="download-btn" class="download-btn" download="magic-card-qr.png">
+                    📥 DOWNLOAD QR CODE
+                </a>
+                <button class="download-btn" onclick="printCard()">
+                    🖨️ PRINT CARD TEMPLATE
+                </button>
+            </div>
+        </div>
+        
+        <div class="instructions">
+            <h3>📋 How to Use:</h3>
+            <ol>
+                <li>Select card type and enter number (e.g., BDAY001)</li>
+                <li>Click "Generate QR Code"</li>
+                <li>Download QR code and print</li>
+                <li>Glue QR code to your Magic Card</li>
+                <li>Card URL: <span id="card-url">https://magic-card-business.vercel.app/card/</span></li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        let selectedType = 'birthday';
+        
+        function selectCardType(type) {
+            selectedType = type;
+            
+            // Update UI
+            document.querySelectorAll('.card-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            document.querySelector(`.card-option.${type}`).classList.add('selected');
+            
+            // Update preview
+            updatePreview();
+        }
+        
+        function updatePreview() {
+            const preview = document.querySelector('.card-preview');
+            const colors = {
+                birthday: '#FF6B6B',
+                thankyou: '#27AE60',
+                love: '#E74C3C'
+            };
+            const emojis = {
+                birthday: '🎂',
+                thankyou: '💝',
+                love: '❤️'
+            };
+            const titles = {
+                birthday: 'BIRTHDAY',
+                thankyou: 'THANK YOU',
+                love: 'LOVE'
+            };
+            
+            if (preview) {
+                preview.style.background = `linear-gradient(135deg, ${colors[selectedType]}, ${colors[selectedType]}80)`;
+                preview.innerHTML = `
+                    <div style="text-align: center; padding: 20px;">
+                        <div style="font-size: 40px; margin-bottom: 10px;">${emojis[selectedType]}</div>
+                        <div>${titles[selectedType]}</div>
+                        <div style="font-size: 12px; margin-top: 10px;">Magic Card</div>
+                    </div>
+                `;
+            }
+        }
+        
+        function generateQR() {
+            const cardNumber = document.getElementById('cardNumber').value.padStart(3, '0');
+            const customMessage = document.getElementById('customMessage').value;
+            
+            // Generate card ID
+            let prefix = '';
+            switch(selectedType) {
+                case 'birthday': prefix = 'BDAY'; break;
+                case 'thankyou': prefix = 'THX'; break;
+                case 'love': prefix = 'LOVE'; break;
+            }
+            
+            const cardId = `${prefix}${cardNumber}`;
+            const cardUrl = `https://magic-card-business.vercel.app/card/${cardId}`;
+            
+            // Display URL
+            document.getElementById('card-url').textContent = cardUrl;
+            
+            // Clear previous QR
+            document.getElementById('qrcode').innerHTML = '';
+            
+            // Generate new QR
+            QRCode.toCanvas(document.getElementById('qrcode'), cardUrl, {
+                width: 200,
+                margin: 2,
+                color: {
+                    dark: '#000000',
+                    light: '#FFFFFF'
+                }
+            }, function(error) {
+                if (error) {
+                    console.error(error);
+                    alert('Error generating QR code. Please try again.');
+                    return;
+                }
+                
+                // Show download section
+                document.getElementById('download-section').style.display = 'block';
+                
+                // Set up download button
+                const canvas = document.querySelector('#qrcode canvas');
+                const downloadBtn = document.getElementById('download-btn');
+                downloadBtn.href = canvas.toDataURL('image/png');
+                downloadBtn.download = `magic-card-${cardId}.png`;
+                
+                // Save card info for later use
+                localStorage.setItem('lastCard', JSON.stringify({
+                    id: cardId,
+                    type: selectedType,
+                    number: cardNumber,
+                    message: customMessage,
+                    url: cardUrl
+                }));
+                
+                alert(`✅ QR Code Generated!\n\nCard ID: ${cardId}\nURL: ${cardUrl}\n\nDownload and print the QR code, then glue it to your card.`);
+            });
+        }
+        
+        function printCard() {
+            const lastCard = JSON.parse(localStorage.getItem('lastCard'));
+            if (!lastCard) {
+                alert('Please generate a QR code first!');
+                return;
+            }
+            
+            // Open print template
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Print Magic Card</title>
+                    <style>
+                        @media print {
+                            @page { size: 5in 7in; margin: 0.25in; }
+                            body { -webkit-print-color-adjust: exact; }
+                        }
+                        body {
+                            margin: 0;
+                            padding: 20px;
+                            font-family: Arial, sans-serif;
+                            text-align: center;
+                        }
+                        .card {
+                            width: 4.5in;
+                            height: 6.5in;
+                            border: 2px dashed #ccc;
+                            border-radius: 15px;
+                            margin: 0 auto;
+                            padding: 20px;
+                            box-sizing: border-box;
+                        }
+                        .qr-placeholder {
+                            width: 2in;
+                            height: 2in;
+                            border: 2px dashed #999;
+                            border-radius: 10px;
+                            margin: 40px auto;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            color: #666;
+                            font-size: 12px;
+                        }
+                        h2 {
+                            color: #2C3E50;
+                            margin-top: 60px;
+                        }
+                        .instructions {
+                            font-size: 11px;
+                            color: #666;
+                            margin-top: 20px;
+                            line-height: 1.4;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="card">
+                        <h2>MAGIC CARD</h2>
+                        <p><strong>${lastCard.id}</strong></p>
+                        <div class="qr-placeholder">
+                            [GLUE QR CODE HERE]<br>
+                            Size: 2x2 inches
+                        </div>
+                        <div class="instructions">
+                            <strong>INSTRUCTIONS:</strong><br>
+                            1. Print this template on 5x7 cardstock<br>
+                            2. Cut out QR code and glue in marked area<br>
+                            3. Sender scans QR to record message<br>
+                            4. Receiver scans to view in AR<br>
+                            <br>
+                            Card URL: ${lastCard.url}
+                        </div>
+                    </div>
+                    <script>
+                        setTimeout(() => {
+                            window.print();
+                            setTimeout(() => window.close(), 1000);
+                        }, 500);
+                    <\/script>
+                </body>
+                </html>
+            `);
+        }
+        
+        // Initialize
+        selectCardType('birthday');
+        updatePreview();
+    </script>
+</body>
+</html>
