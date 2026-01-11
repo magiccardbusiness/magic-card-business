@@ -93,6 +93,9 @@
             text-decoration: none;
             display: inline-block;
             margin: 10px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
         }
         
         .instructions {
@@ -102,11 +105,22 @@
             margin: 20px 0;
             font-size: 14px;
         }
+        
+        .success {
+            background: #E8F5E9;
+            color: #2E7D32;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            display: none;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>✨ Magic Card QR Generator</h1>
+        
+        <div id="success-message" class="success"></div>
         
         <div class="card-type">
             <div class="card-option birthday selected" onclick="selectCardType('birthday')">
@@ -137,11 +151,12 @@
             </div>
             
             <div id="download-section" style="display:none;">
-                <a id="download-btn" class="download-btn" download="magic-card-qr.png">
+                <button onclick="downloadQR()" class="download-btn">
                     📥 DOWNLOAD QR CODE
-                </a>
-                <br>
-                <small style="color: #666;">Right-click the QR code and "Save Image As"</small>
+                </button>
+                <div style="margin-top: 10px; font-size: 12px; color: #666;">
+                    Or right-click image → Save Image As
+                </div>
             </div>
         </div>
         
@@ -151,7 +166,7 @@
                 <li>Select card type (Birthday/Thank You/Love)</li>
                 <li>Enter card number (001, 002, etc.)</li>
                 <li>Click "Generate QR Code"</li>
-                <li>Right-click QR code → "Save Image As"</li>
+                <li>Click "Download QR Code" button</li>
                 <li>Print and glue to your Magic Card</li>
             </ol>
             <p><strong>Card URL format:</strong> https://magic-card-business.vercel.app/card/BDAY001</p>
@@ -160,6 +175,8 @@
 
     <script>
         let selectedType = 'birthday';
+        let currentQRCodeUrl = '';
+        let currentCardId = '';
         
         function selectCardType(type) {
             selectedType = type;
@@ -182,19 +199,21 @@
                 case 'love': prefix = 'LOVE'; break;
             }
             
-            const cardId = `${prefix}${cardNumber}`;
-            const cardUrl = `https://magic-card-business.vercel.app/card/${cardId}`;
+            currentCardId = `${prefix}${cardNumber}`;
+            const cardUrl = `https://magic-card-business.vercel.app/card/${currentCardId}`;
             
-            // Generate QR code using Google Charts API (ALWAYS WORKS)
-            const qrCodeUrl = `https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=${encodeURIComponent(cardUrl)}&choe=UTF-8`;
+            // Generate QR code using reliable API
+            currentQRCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(cardUrl)}&format=png`;
             
             // Display QR code
             const qrcodeDiv = document.getElementById('qrcode');
             qrcodeDiv.innerHTML = `
                 <div style="margin: 20px 0;">
-                    <img src="${qrCodeUrl}" alt="QR Code" style="width: 250px; height: 250px; border: 1px solid #ddd; border-radius: 10px;">
+                    <img id="qrcode-image" src="${currentQRCodeUrl}" alt="QR Code" 
+                         style="width: 250px; height: 250px; border: 1px solid #ddd; border-radius: 10px; cursor: pointer;"
+                         onclick="downloadQR()">
                     <div style="margin-top: 10px; font-size: 12px; color: #666;">
-                        Card: <strong>${cardId}</strong><br>
+                        Card: <strong>${currentCardId}</strong><br>
                         URL: ${cardUrl}
                     </div>
                 </div>
@@ -203,17 +222,46 @@
             // Show download section
             document.getElementById('download-section').style.display = 'block';
             
-            // Set up download button
-            const downloadBtn = document.getElementById('download-btn');
-            downloadBtn.href = qrCodeUrl;
-            downloadBtn.download = `magic-card-${cardId}.png`;
-            
             // Show success message
-            alert(`✅ QR Code Generated!\n\nCard ID: ${cardId}\n\nRight-click the QR code and select "Save Image As" to download.`);
+            showSuccess(`QR Code generated for card: ${currentCardId}`);
+        }
+        
+        function downloadQR() {
+            if (!currentQRCodeUrl) return;
+            
+            // Create download link
+            const link = document.createElement('a');
+            link.href = currentQRCodeUrl;
+            link.download = `magic-card-${currentCardId}.png`;
+            
+            // Append to body, click, and remove
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showSuccess(`Download started for: ${currentCardId}.png`);
+        }
+        
+        function showSuccess(message) {
+            const successDiv = document.getElementById('success-message');
+            successDiv.textContent = `✅ ${message}`;
+            successDiv.style.display = 'block';
+            
+            // Hide after 5 seconds
+            setTimeout(() => {
+                successDiv.style.display = 'none';
+            }, 5000);
         }
         
         // Initialize
         selectCardType('birthday');
+        
+        // Add enter key support
+        document.getElementById('cardNumber').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                generateQR();
+            }
+        });
     </script>
 </body>
 </html>
