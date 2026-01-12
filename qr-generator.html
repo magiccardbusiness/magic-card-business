@@ -3,7 +3,6 @@
 <head>
     <title>Magic Card - QR Generator</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -152,11 +151,6 @@
             display: block;
         }
         
-        .file-label i {
-            font-size: 24px;
-            margin-right: 10px;
-        }
-        
         .preview {
             margin-top: 15px;
             max-width: 100%;
@@ -210,6 +204,14 @@
             align-items: center;
             justify-content: center;
             text-align: center;
+        }
+        
+        #qrcode img {
+            max-width: 100%;
+            height: auto;
+            border: 10px solid white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
         
         .result-url {
@@ -314,6 +316,12 @@
             color: #666;
             margin-top: 5px;
             text-align: center;
+        }
+        
+        .loading {
+            color: #667eea;
+            font-size: 16px;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -428,7 +436,7 @@
         const resultUrlDiv = document.getElementById('resultUrl');
         
         let uploadedFileUrl = '';
-        let currentQRCode = null;
+        let currentUrl = '';
         let uploadTimestamp = Date.now();
         
         // Show/hide inputs based on message type
@@ -509,7 +517,7 @@
             return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
         }
         
-        // 🚀 MAIN FUNCTION: Generate QR Code
+        // 🚀 MAIN FUNCTION: Generate QR Code using Google API
         function generateQRCode() {
             console.log('Generate button clicked!');
             
@@ -551,10 +559,10 @@
             
             // Create data with cache-busting timestamp
             const messageData = {
-                card: cardId + '_' + uploadTimestamp, // UNIQUE every time
+                card: cardId + '_' + Date.now(), // UNIQUE every time
                 type: messageType,
                 message: messageContent,
-                timestamp: uploadTimestamp
+                timestamp: Date.now()
             };
             
             // Convert to Base64
@@ -562,9 +570,9 @@
             const base64Data = btoa(jsonString);
             
             // Create final URL
-            const finalUrl = arPageUrl.split('#')[0] + '#' + base64Data;
+            currentUrl = arPageUrl.split('#')[0] + '#' + base64Data;
             
-            console.log('Generated URL:', finalUrl);
+            console.log('Generated URL:', currentUrl);
             console.log('Data length:', jsonString.length);
             
             // Clear previous QR code
@@ -572,59 +580,54 @@
             qrcodeDiv.classList.remove('empty-state');
             
             // Show loading
-            qrcodeDiv.innerHTML = '<div style="color: #666;">Generating QR code...</div>';
+            qrcodeDiv.innerHTML = '<div class="loading">Generating QR code...</div>';
+            showStatus('⏳ Generating QR code...', 'success');
             
-            // Generate QR code
-            try {
-                // Clear any existing QR code
-                if (currentQRCode) {
-                    currentQRCode.clear();
-                }
+            // 🎯 USE GOOGLE CHARTS API FOR QR CODE (ALWAYS WORKS)
+            const qrSize = 300;
+            const googleQRUrl = `https://chart.googleapis.com/chart?cht=qr&chs=${qrSize}x${qrSize}&chl=${encodeURIComponent(currentUrl)}&choe=UTF-8&chld=H|0`;
+            
+            // Create image
+            const qrImage = new Image();
+            qrImage.onload = function() {
+                // Clear container and add QR code
+                qrcodeDiv.innerHTML = '';
+                qrcodeDiv.appendChild(qrImage);
                 
-                // Create new QR code
-                currentQRCode = new QRCode(qrcodeDiv, {
-                    text: finalUrl,
-                    width: 250,
-                    height: 250,
-                    colorDark: "#000000",
-                    colorLight: "#ffffff",
-                    correctLevel: QRCode.CorrectLevel.H
-                });
+                // Show URL
+                resultUrlDiv.textContent = currentUrl;
+                resultUrlDiv.style.color = '#333';
                 
-                // Wait for QR code to render
+                // Enable buttons
+                document.getElementById('copyBtn').disabled = false;
+                document.getElementById('testBtn').disabled = false;
+                document.getElementById('downloadBtn').disabled = false;
+                
+                showStatus('✅ QR Code Generated Successfully!', 'success');
+                
+                // Auto-test the URL after 2 seconds
                 setTimeout(function() {
-                    // Show URL
-                    resultUrlDiv.textContent = finalUrl;
-                    resultUrlDiv.style.color = '#333';
-                    
-                    // Enable buttons
-                    document.getElementById('copyBtn').disabled = false;
-                    document.getElementById('testBtn').disabled = false;
-                    document.getElementById('downloadBtn').disabled = false;
-                    
-                    // Auto-test the URL
-                    setTimeout(function() {
-                        testURL();
-                    }, 2000);
-                    
-                }, 500);
-                
-            } catch (error) {
-                console.error('QR Code generation error:', error);
-                qrcodeDiv.innerHTML = '<div style="color: red;">Error generating QR code.</div>';
-                showStatus('❌ Error: ' + error.message, 'error');
-            }
+                    testURL();
+                }, 2000);
+            };
+            
+            qrImage.onerror = function() {
+                qrcodeDiv.innerHTML = '<div style="color: red;">❌ Failed to generate QR code</div>';
+                showStatus('❌ Failed to generate QR. Check internet connection.', 'error');
+            };
+            
+            qrImage.src = googleQRUrl;
+            qrImage.alt = 'Magic Card QR Code';
         }
         
         // Copy URL to clipboard
         function copyURL() {
-            const url = resultUrlDiv.textContent;
-            if (!url || url === 'URL will appear here') {
+            if (!currentUrl) {
                 showStatus('❌ No URL to copy', 'error');
                 return;
             }
             
-            navigator.clipboard.writeText(url).then(function() {
+            navigator.clipboard.writeText(currentUrl).then(function() {
                 showStatus('✅ URL copied to clipboard!', 'success');
             }).catch(function(err) {
                 showStatus('❌ Failed to copy: ' + err, 'error');
@@ -633,22 +636,21 @@
         
         // Test URL in new tab
         function testURL() {
-            const url = resultUrlDiv.textContent;
-            if (!url || url === 'URL will appear here') {
+            if (!currentUrl) {
                 showStatus('❌ No URL to test', 'error');
                 return;
             }
             
             // Add cache busting
-            const testUrl = url + '&_=' + Date.now();
+            const testUrl = currentUrl + '&_=' + Date.now();
             window.open(testUrl, '_blank');
             showStatus('🔗 Opening in new tab...', 'success');
         }
         
         // Download QR code as PNG
         function downloadQRCode() {
-            const canvas = qrcodeDiv.querySelector('canvas');
-            if (!canvas) {
+            const qrImage = qrcodeDiv.querySelector('img');
+            if (!qrImage || !qrImage.src) {
                 showStatus('❌ Please generate a QR code first', 'error');
                 return;
             }
@@ -656,7 +658,7 @@
             const cardId = document.getElementById('cardId').value || 'MagicCard';
             const link = document.createElement('a');
             link.download = 'Magic-Card-' + cardId + '-QR.png';
-            link.href = canvas.toDataURL('image/png');
+            link.href = qrImage.src;
             link.click();
             
             showStatus('⬇ QR code downloaded!', 'success');
@@ -678,13 +680,6 @@
             document.getElementById('cardId').value = 'BIRTHDAY' + Math.floor(Math.random() * 1000);
             
             showStatus('✅ Ready to create magic! Fill in the details above.', 'success');
-            
-            // Test if QRCode library is loaded
-            if (typeof QRCode === 'undefined') {
-                showStatus('❌ QRCode library failed to load. Please refresh the page.', 'error');
-            } else {
-                console.log('QRCode library loaded successfully');
-            }
         };
     </script>
 </body>
