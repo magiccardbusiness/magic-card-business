@@ -4,7 +4,6 @@
     <title>Magic Card - QR Generator</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -340,8 +339,8 @@
                 
                 <div class="form-group">
                     <label for="arPageUrl">Your AR Page URL:</label>
-                    <input type="text" id="arPageUrl" value="https://your-magic-card-site.com/ar.html" placeholder="URL of your AR page">
-                    <small style="color: #666; font-size: 12px;">Change this to your actual AR page URL</small>
+                    <input type="text" id="arPageUrl" value="https://magic-card-business.vercel.app/" placeholder="URL of your AR page" readonly>
+                    <small style="color: #666; font-size: 12px;">This is your Magic Card business AR page</small>
                 </div>
                 
                 <button class="generate-btn" onclick="generateQRCode()">
@@ -392,7 +391,6 @@
         const mediaInput = document.getElementById('mediaInput');
         const fileInput = document.getElementById('fileInput');
         const mediaPreview = document.getElementById('mediaPreview');
-        const arPageUrlInput = document.getElementById('arPageUrl');
         const statusDiv = document.getElementById('status');
         
         let uploadedFileUrl = '';
@@ -456,7 +454,7 @@
             showStatus('File uploaded successfully!', 'success');
         });
         
-        // 🔥🔥🔥 **MAIN FUNCTION: Generate QR Code** 🔥🔥🔥
+        // 🔥 **MAIN FUNCTION: Generate QR Code** 🔥
         function generateQRCode() {
             const cardId = document.getElementById('cardId').value.trim();
             const messageType = messageTypeSelect.value;
@@ -483,13 +481,9 @@
                 messageContent = uploadedFileUrl;
             }
             
-            // Get AR page URL
-            let arPageUrl = arPageUrlInput.value.trim();
-            if (!arPageUrl) {
-                arPageUrl = window.location.origin + '/ar.html';
-            }
+            // 🔥 **FIXED: Use YOUR Vercel URL** 🔥
+            const arPageUrl = "https://magic-card-business.vercel.app/";
             
-            // 🔥 **THIS IS THE FIXED PART!** 🔥
             // Create data object
             const messageData = {
                 card: cardId,
@@ -530,6 +524,9 @@
                     document.getElementById('downloadBtn').disabled = false;
                     
                     showStatus('Magic QR code generated successfully!', 'success');
+                    
+                    // Auto-test the URL
+                    setTimeout(testURL, 1000);
                 }
             });
         }
@@ -547,7 +544,10 @@
         // Test URL in new tab
         function testURL() {
             const url = document.getElementById('resultUrl').textContent;
-            window.open(url, '_blank');
+            if (url && url !== 'QR code will appear here after generation') {
+                window.open(url, '_blank');
+                showStatus('Opening magic card in new tab...', 'success');
+            }
         }
         
         // Download QR code as PNG
@@ -559,7 +559,7 @@
             }
             
             const link = document.createElement('a');
-            link.download = 'Magic-Card-QR.png';
+            link.download = 'Magic-Card-' + document.getElementById('cardId').value + '-QR.png';
             link.href = canvas.toDataURL('image/png');
             link.click();
             
