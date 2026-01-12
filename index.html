@@ -158,6 +158,20 @@
             padding: 0 20px;
             display: none;
         }
+        
+        /* Error message */
+        #error-message {
+            position: fixed;
+            top: 150px;
+            left: 0;
+            width: 100%;
+            color: #FF6B6B;
+            text-align: center;
+            font-size: 14px;
+            z-index: 1004;
+            padding: 0 20px;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -172,6 +186,9 @@
     
     <!-- Card Message Display -->
     <div id="card-message"></div>
+    
+    <!-- Error Message Display -->
+    <div id="error-message"></div>
     
     <button id="magic-btn">▶ PLAY MAGIC MESSAGE</button>
     
@@ -237,6 +254,14 @@
                     rotation="-10 0 0"
                     visible="false">
             </a-text>
+            
+            <!-- Image Display -->
+            <a-image id="image-display"
+                    width="1.85" height="1.25"
+                    position="0 0.8 0.05"
+                    rotation="-10 0 0"
+                    visible="false">
+            </a-image>
         </a-entity>
     </a-scene>
 
@@ -246,6 +271,7 @@
             const woodFrame = document.getElementById('wood-frame');
             const videoScreen = document.getElementById('video-screen');
             const textDisplay = document.getElementById('text-display');
+            const imageDisplay = document.getElementById('image-display');
             const videoControls = document.getElementById('video-controls');
             const progressBar = document.getElementById('progress-bar');
             const currentTimeEl = document.getElementById('current-time');
@@ -256,12 +282,13 @@
             const timelineContainer = document.getElementById('timeline-container');
             const instructions = document.getElementById('instructions');
             const cardMessageDiv = document.getElementById('card-message');
+            const errorMessageDiv = document.getElementById('error-message');
             
             // Get URL parameters
             const urlParams = new URLSearchParams(window.location.search);
             const cardId = urlParams.get('card');
             const messageType = urlParams.get('type');
-            const messageContent = urlParams.get('message');
+            let messageContent = urlParams.get('message');
             
             let video = null; // Start with NO video
             let currentMessageType = 'video'; // Default
@@ -283,7 +310,24 @@
                 magicBtn.textContent = `▶ PLAY ${cardId} MESSAGE`;
             }
             
-            // 👇 THIS IS THE FIX! 👇
+            // 👇 CLOUDINARY FIX - Make video links permanent 👇
+            function fixCloudinaryUrl(url) {
+                // If it's a Cloudinary URL, make sure it's accessible
+                if (url.includes('cloudinary.com') && url.includes('upload/')) {
+                    // Remove any expiration tokens
+                    let cleanUrl = url.split('?')[0]; // Remove query parameters
+                    
+                    // Make sure it has the right format for public access
+                    if (!cleanUrl.includes('.mp4') && !cleanUrl.includes('.mov') && !cleanUrl.includes('.webm')) {
+                        // Add .mp4 extension if missing
+                        cleanUrl += '.mp4';
+                    }
+                    
+                    return cleanUrl;
+                }
+                return url;
+            }
+            
             // Only create video for VIDEO or AUDIO messages
             if (currentMessageType === 'video' || currentMessageType === 'audio') {
                 // Setup for video/audio
@@ -292,27 +336,47 @@
                 
                 // Use provided URL or default
                 if (currentMessageContent && currentMessageContent.startsWith('http')) {
-                    video.src = currentMessageContent;
+                    // FIX THE CLOUDINARY URL
+                    const fixedUrl = fixCloudinaryUrl(currentMessageContent);
+                    console.log('Original URL:', currentMessageContent);
+                    console.log('Fixed URL:', fixedUrl);
+                    
+                    video.src = fixedUrl;
+                    
+                    // Set crossOrigin to allow loading from Cloudinary
+                    video.crossOrigin = 'anonymous';
+                    
                 } else if (currentMessageType === 'video') {
                     video.src = 'https://res.cloudinary.com/diqa9qyvh/video/upload/v1767377987/20251219_010742000_iOS_xuandm.mp4';
+                    video.crossOrigin = 'anonymous';
                 } else {
                     // Default audio
-                    video.src = 'https://assets.mixkit.co/music/preview/mixkit-driving-ambition-32.mp3';
+                    video.src = 'https://assets.mixkit.co/music/preview/mixkit-driving-ambition-32.mp4';
+                    video.crossOrigin = 'anonymous';
                 }
                 
                 video.loop = true;
                 video.playsInline = true;
-                video.crossOrigin = 'anonymous';
                 video.preload = 'auto';
                 video.muted = true;
                 document.body.appendChild(video);
                 
                 console.log('Video/Audio ready for playback');
+                
             } else if (currentMessageType === 'text') {
                 // Setup for text message - NO VIDEO AT ALL!
-                // Just set the text content
                 textDisplay.setAttribute('value', currentMessageContent);
                 console.log('Text message ready:', currentMessageContent.substring(0, 50) + '...');
+                
+            } else if (currentMessageType === 'image') {
+                // Setup for image message
+                if (currentMessageContent && currentMessageContent.startsWith('http')) {
+                    // FIX CLOUDINARY IMAGE URL
+                    let imageUrl = currentMessageContent.split('?')[0]; // Remove query params
+                    imageDisplay.setAttribute('src', imageUrl);
+                    console.log('Image URL set:', imageUrl);
+                }
+                
             } else {
                 // Default video (fallback)
                 video = document.createElement('video');
@@ -336,6 +400,9 @@
                 if (currentMessageType === 'text') {
                     // Setup for text display
                     textDisplay.setAttribute('visible', 'false');
+                } else if (currentMessageType === 'image') {
+                    // Setup for image display
+                    imageDisplay.setAttribute('visible', 'false');
                 } else if (video) {
                     // Setup for video
                     const arVideo = document.getElementById('ar-video');
@@ -363,11 +430,26 @@
                 }
             }
             
-            // Update video time display
+            // Show error message
+            function showError(message) {
+                errorMessageDiv.textContent = message;
+                errorMessageDiv.style.display = 'block';
+                magicBtn.textContent = '⚠ ERROR - TRY AGAIN';
+                magicBtn.style.background = '#E74C3C';
+                console.error('Video Error:', message);
+            }
+            
+            // Video error handling
             if (video) {
+                video.addEventListener('error', function(e) {
+                    showError('Video cannot load. Check your connection.');
+                    
+                    // Try fallback video
+                    video.src = 'https://res.cloudinary.com/diqa9qyvh/video/upload/v1767377987/20251219_010742000_iOS_xuandm.mp4';
+                });
+                
                 video.addEventListener('timeupdate', updateVideoProgress);
                 
-                // Update total duration when loaded
                 video.addEventListener('loadedmetadata', function() {
                     if (video.duration) {
                         totalTimeEl.textContent = formatTime(video.duration);
@@ -394,8 +476,10 @@
                         console.log('Video playing');
                         playPauseBtn.innerHTML = '<span>⏸</span> <span>PAUSE</span>';
                         playPauseBtn.style.background = '#27AE60';
+                        errorMessageDiv.style.display = 'none'; // Hide error if playing
                     }).catch(error => {
                         console.log('Play error:', error);
+                        showError('Cannot play video. Try again.');
                     });
                 } else {
                     video.pause();
@@ -447,10 +531,11 @@
                 }, 1500);
             });
             
-            // MAGIC BUTTON - Main trigger (FIXED!)
+            // MAGIC BUTTON - Main trigger
             magicBtn.addEventListener('click', function() {
                 magicBtn.textContent = 'LOADING...';
                 magicBtn.style.background = '#27AE60';
+                errorMessageDiv.style.display = 'none'; // Clear any previous errors
                 
                 // Show the appropriate display
                 if (currentMessageType === 'text') {
@@ -458,25 +543,39 @@
                     if (woodFrame) woodFrame.setAttribute('visible', 'true');
                     textDisplay.setAttribute('visible', 'true');
                     if (videoScreen) videoScreen.setAttribute('visible', 'false');
+                    if (imageDisplay) imageDisplay.setAttribute('visible', 'false');
                     
-                    // HIDE video controls (no video to control!)
                     videoControls.style.display = 'none';
-                    
-                    // Show magic message without any sound
                     magicBtn.style.display = 'none';
                     
-                    // UPDATE INSTRUCTIONS
                     if (cardId) {
                         instructions.textContent = `Reading message from card: ${cardId}`;
                     } else {
                         instructions.textContent = "Enjoy your special message!";
                     }
                     
+                } else if (currentMessageType === 'image') {
+                    // Show image frame
+                    if (woodFrame) woodFrame.setAttribute('visible', 'true');
+                    if (imageDisplay) imageDisplay.setAttribute('visible', 'true');
+                    if (videoScreen) videoScreen.setAttribute('visible', 'false');
+                    if (textDisplay) textDisplay.setAttribute('visible', 'false');
+                    
+                    videoControls.style.display = 'none';
+                    magicBtn.style.display = 'none';
+                    
+                    if (cardId) {
+                        instructions.textContent = `Viewing image from card: ${cardId}`;
+                    } else {
+                        instructions.textContent = "Enjoy your image message!";
+                    }
+                    
                 } else {
                     // Show video frame for video/audio messages
                     if (woodFrame) woodFrame.setAttribute('visible', 'true');
                     if (videoScreen) videoScreen.setAttribute('visible', 'true');
-                    textDisplay.setAttribute('visible', 'false');
+                    if (textDisplay) textDisplay.setAttribute('visible', 'false');
+                    if (imageDisplay) imageDisplay.setAttribute('visible', 'false');
                     
                     // For video/audio: wait then play
                     if (video) {
@@ -486,32 +585,33 @@
                             video.play().then(function() {
                                 console.log('Magic message playing!');
                                 
-                                // Show controls
                                 magicBtn.style.display = 'none';
                                 videoControls.style.display = 'block';
                                 
-                                // UPDATE INSTRUCTIONS
                                 if (cardId) {
                                     instructions.textContent = `Viewing message from card: ${cardId}`;
                                 } else {
                                     instructions.textContent = "Use controls below to manage your message";
                                 }
                                 
-                                // Update duration if needed
                                 if (video.duration && totalTimeEl.textContent === '0:00') {
                                     totalTimeEl.textContent = formatTime(video.duration);
                                 }
                                 
                             }).catch(function(error) {
                                 console.log('Failed to play:', error);
+                                showError('Cannot play video. Check your connection.');
                                 magicBtn.textContent = cardId ? `▶ PLAY ${cardId}` : '▶ PLAY MAGIC MESSAGE';
                                 magicBtn.style.background = '#E74C3C';
+                                magicBtn.style.display = 'block';
                                 
                                 // Try playing with user interaction
                                 document.body.addEventListener('click', function tryPlay() {
                                     video.play().then(() => {
                                         console.log('Played after user interaction');
                                         document.body.removeEventListener('click', tryPlay);
+                                    }).catch(err => {
+                                        console.log('Still failed:', err);
                                     });
                                 }, { once: true });
                             });
