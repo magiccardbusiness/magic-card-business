@@ -3,7 +3,7 @@
 <head>
     <title>Magic Card - QR Generator</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -159,14 +159,22 @@
         
         .preview {
             margin-top: 15px;
-            max-width: 200px;
+            max-width: 100%;
             display: none;
+            text-align: center;
         }
         
-        .preview img, .preview video {
+        .preview img, .preview video, .preview audio {
             max-width: 100%;
+            max-height: 200px;
             border-radius: 8px;
             border: 2px solid #667eea;
+        }
+        
+        .url-input-group {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px dashed #ddd;
         }
         
         .generate-btn {
@@ -202,7 +210,6 @@
             align-items: center;
             justify-content: center;
             text-align: center;
-            color: #666;
         }
         
         .result-url {
@@ -301,6 +308,13 @@
             color: #999;
             font-style: italic;
         }
+        
+        .media-info {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -325,8 +339,8 @@
                     <label for="messageType">Message Type:</label>
                     <select id="messageType">
                         <option value="text">Text Message</option>
-                        <option value="image">Image</option>
-                        <option value="video">Video</option>
+                        <option value="video" selected>Video Message</option>
+                        <option value="image">Image Message</option>
                         <option value="audio">Audio Message</option>
                     </select>
                 </div>
@@ -334,7 +348,7 @@
                 <!-- Text Input -->
                 <div class="form-group" id="textInput">
                     <label for="messageText">Your Message:</label>
-                    <textarea id="messageText" placeholder="Type your magic message here..."></textarea>
+                    <textarea id="messageText" placeholder="Type your magic message here...">🎉 Happy Birthday! Wishing you a magical day filled with joy and surprises! 🎂</textarea>
                 </div>
                 
                 <!-- Media Upload -->
@@ -342,18 +356,19 @@
                     <label>Upload Media:</label>
                     <div class="file-upload" onclick="document.getElementById('fileInput').click()">
                         <div class="file-label">
-                            📁 Click to upload
+                            📁 Click to upload Video/Image/Audio
                         </div>
                         <input type="file" id="fileInput" accept="image/*,video/*,audio/*">
-                        <small style="color: #666; display: block; margin-top: 10px;">Supported: Images, Videos, Audio files</small>
+                        <small style="color: #666; display: block; margin-top: 10px;">Supported: Images, Videos, Audio files (Max 5MB for testing)</small>
                     </div>
+                    
                     <div class="preview" id="mediaPreview"></div>
-                </div>
-                
-                <div class="form-group">
-                    <label>AR Page URL:</label>
-                    <input type="text" value="https://magic-card-business.vercel.app/" readonly style="background: #f0f0f0;">
-                    <small style="color: #666; font-size: 12px;">This is your Magic Card business AR page</small>
+                    
+                    <div class="url-input-group">
+                        <label for="mediaUrl">Or enter Cloudinary URL:</label>
+                        <input type="text" id="mediaUrl" placeholder="https://res.cloudinary.com/.../video.mp4">
+                        <small style="color: #666; font-size: 12px;">For cross-device sharing, upload to Cloudinary and paste URL here</small>
+                    </div>
                 </div>
                 
                 <button class="generate-btn" onclick="generateQRCode()">
@@ -407,12 +422,14 @@
         const mediaInput = document.getElementById('mediaInput');
         const fileInput = document.getElementById('fileInput');
         const mediaPreview = document.getElementById('mediaPreview');
+        const mediaUrlInput = document.getElementById('mediaUrl');
         const statusDiv = document.getElementById('status');
         const qrcodeDiv = document.getElementById('qrcode');
         const resultUrlDiv = document.getElementById('resultUrl');
         
         let uploadedFileUrl = '';
         let currentQRCode = null;
+        let uploadTimestamp = Date.now();
         
         // Show/hide inputs based on message type
         messageTypeSelect.addEventListener('change', function() {
@@ -429,6 +446,7 @@
             // Clear preview
             mediaPreview.style.display = 'none';
             uploadedFileUrl = '';
+            mediaUrlInput.value = '';
         });
         
         // Handle file upload
@@ -436,46 +454,64 @@
             const file = e.target.files[0];
             if (!file) return;
             
+            console.log('File selected:', file.name, file.size, 'bytes');
+            
+            // Check file size (5MB max for testing)
+            const maxSize = 5 * 1024 * 1024;
+            if (file.size > maxSize) {
+                showStatus('❌ File too large! Max 5MB for testing.', 'error');
+                return;
+            }
+            
+            // Clear old preview
+            mediaPreview.innerHTML = '';
             mediaPreview.style.display = 'block';
             
-            // Create preview
-            if (file.type.startsWith('image/')) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    mediaPreview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
-                    uploadedFileUrl = e.target.result;
-                };
-                reader.readAsDataURL(file);
-            } else if (file.type.startsWith('video/')) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                if (file.type.startsWith('image/')) {
                     mediaPreview.innerHTML = `
-                        <video controls style="max-width: 100%;">
-                            <source src="${e.target.result}" type="${file.type}">
-                        </video>
+                        <img src="${e.target.result}" style="max-width: 100%; max-height: 200px;">
+                        <div class="media-info">${file.name} (${formatFileSize(file.size)})</div>
                     `;
                     uploadedFileUrl = e.target.result;
-                };
-                reader.readAsDataURL(file);
-            } else if (file.type.startsWith('audio/')) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
+                } else if (file.type.startsWith('video/')) {
+                    mediaPreview.innerHTML = `
+                        <video controls style="max-width: 100%; max-height: 200px;">
+                            <source src="${e.target.result}" type="${file.type}">
+                        </video>
+                        <div class="media-info">${file.name} (${formatFileSize(file.size)})</div>
+                    `;
+                    uploadedFileUrl = e.target.result;
+                } else if (file.type.startsWith('audio/')) {
                     mediaPreview.innerHTML = `
                         <audio controls style="width: 100%;">
                             <source src="${e.target.result}" type="${file.type}">
                         </audio>
+                        <div class="media-info">${file.name} (${formatFileSize(file.size)})</div>
                     `;
                     uploadedFileUrl = e.target.result;
-                };
-                reader.readAsDataURL(file);
-            }
+                }
+                
+                // Update timestamp for cache busting
+                uploadTimestamp = Date.now();
+                
+                showStatus(`✅ ${file.type.split('/')[0]} uploaded! (${formatFileSize(file.size)})`, 'success');
+            };
             
-            showStatus('File uploaded successfully!', 'success');
+            reader.readAsDataURL(file);
         });
         
-        // 🔥 **MAIN FUNCTION: Generate QR Code** 🔥
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+        
+        // 🚀 MAIN FUNCTION: Generate QR Code
         function generateQRCode() {
-            console.log("Generate button clicked!");
+            console.log('Generate button clicked!');
             
             const cardId = document.getElementById('cardId').value.trim();
             const messageType = messageTypeSelect.value;
@@ -487,7 +523,7 @@
                 return;
             }
             
-            // Get message content based on type
+            // Get message content
             if (messageType === 'text') {
                 messageContent = document.getElementById('messageText').value.trim();
                 if (!messageContent) {
@@ -495,32 +531,41 @@
                     return;
                 }
             } else {
-                if (!uploadedFileUrl) {
-                    showStatus('❌ Please upload a file', 'error');
+                // Check Cloudinary URL first
+                const cloudinaryUrl = mediaUrlInput.value.trim();
+                if (cloudinaryUrl && cloudinaryUrl.startsWith('http')) {
+                    messageContent = cloudinaryUrl;
+                    showStatus('✅ Using Cloudinary URL', 'success');
+                } else if (uploadedFileUrl) {
+                    // Use local file (for testing only)
+                    messageContent = uploadedFileUrl;
+                    showStatus('⚠ Using local file (same device only)', 'success');
+                } else {
+                    showStatus('❌ Please upload a file or enter Cloudinary URL', 'error');
                     return;
                 }
-                messageContent = uploadedFileUrl;
             }
             
-            // 🔥 **FIXED: Use YOUR Vercel URL** 🔥
+            // Use your Vercel URL
             const arPageUrl = "https://magic-card-business.vercel.app/";
             
-            // Create data object
+            // Create data with cache-busting timestamp
             const messageData = {
-                card: cardId,
+                card: cardId + '_' + uploadTimestamp, // UNIQUE every time
                 type: messageType,
-                message: messageContent
+                message: messageContent,
+                timestamp: uploadTimestamp
             };
             
-            // Convert to JSON and then to Base64
+            // Convert to Base64
             const jsonString = JSON.stringify(messageData);
             const base64Data = btoa(jsonString);
             
-            // Create final URL with hash (#) instead of query parameters
+            // Create final URL
             const finalUrl = arPageUrl.split('#')[0] + '#' + base64Data;
             
             console.log('Generated URL:', finalUrl);
-            console.log('Data encoded:', messageData);
+            console.log('Data length:', jsonString.length);
             
             // Clear previous QR code
             qrcodeDiv.innerHTML = '';
@@ -546,7 +591,7 @@
                     correctLevel: QRCode.CorrectLevel.H
                 });
                 
-                // Wait a moment for QR code to render
+                // Wait for QR code to render
                 setTimeout(function() {
                     // Show URL
                     resultUrlDiv.textContent = finalUrl;
@@ -557,9 +602,7 @@
                     document.getElementById('testBtn').disabled = false;
                     document.getElementById('downloadBtn').disabled = false;
                     
-                    showStatus('✅ Magic QR code generated successfully!', 'success');
-                    
-                    // Auto-test the URL after 2 seconds
+                    // Auto-test the URL
                     setTimeout(function() {
                         testURL();
                     }, 2000);
@@ -568,8 +611,8 @@
                 
             } catch (error) {
                 console.error('QR Code generation error:', error);
-                qrcodeDiv.innerHTML = '<div style="color: red;">Error generating QR code. Please try again.</div>';
-                showStatus('❌ Error generating QR code: ' + error, 'error');
+                qrcodeDiv.innerHTML = '<div style="color: red;">Error generating QR code.</div>';
+                showStatus('❌ Error: ' + error.message, 'error');
             }
         }
         
@@ -596,8 +639,10 @@
                 return;
             }
             
-            window.open(url, '_blank');
-            showStatus('🔗 Opening magic card in new tab...', 'success');
+            // Add cache busting
+            const testUrl = url + '&_=' + Date.now();
+            window.open(testUrl, '_blank');
+            showStatus('🔗 Opening in new tab...', 'success');
         }
         
         // Download QR code as PNG
@@ -631,13 +676,15 @@
         // Initialize with example data
         window.onload = function() {
             document.getElementById('cardId').value = 'BIRTHDAY' + Math.floor(Math.random() * 1000);
-            document.getElementById('messageText').value = '🎉 Happy Birthday! Wishing you a magical day filled with joy and surprises! 🎂';
             
             showStatus('✅ Ready to create magic! Fill in the details above.', 'success');
             
-            // Add debug info
-            console.log("QR Generator loaded successfully!");
-            console.log("QRCode library available:", typeof QRCode !== 'undefined');
+            // Test if QRCode library is loaded
+            if (typeof QRCode === 'undefined') {
+                showStatus('❌ QRCode library failed to load. Please refresh the page.', 'error');
+            } else {
+                console.log('QRCode library loaded successfully');
+            }
         };
     </script>
 </body>
