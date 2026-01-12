@@ -1,269 +1,587 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Magic Card QR Generator</title>
+    <title>Magic Card - QR Generator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background: #f5f5f5;
-        }
-        
-        .container {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
-        
-        h1 {
-            color: #2C3E50;
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        
-        .card-type {
-            display: flex;
-            gap: 10px;
-            margin: 20px 0;
-        }
-        
-        .card-option {
-            flex: 1;
-            padding: 15px;
-            text-align: center;
-            border: 2px solid #ddd;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        
-        .card-option.selected {
-            border-color: #9B59B6;
-            background: #f9f0ff;
-        }
-        
-        .card-option.birthday { border-color: #FF6B6B; }
-        .card-option.thankyou { border-color: #27AE60; }
-        .card-option.love { border-color: #E74C3C; }
-        
-        input {
-            width: 100%;
-            padding: 12px;
-            margin: 10px 0;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 16px;
+        * {
+            margin: 0;
+            padding: 0;
             box-sizing: border-box;
         }
         
-        .generate-btn {
-            background: #9B59B6;
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            font-size: 18px;
-            border-radius: 8px;
-            cursor: pointer;
-            width: 100%;
-            margin: 20px 0;
-            font-weight: bold;
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
         }
         
-        .qrcode-container {
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        .header {
             text-align: center;
-            margin: 30px 0;
-            padding: 20px;
-            background: #f8f8f8;
+            margin-bottom: 40px;
+        }
+        
+        .logo {
+            font-size: 42px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .logo .magic-i {
+            color: #FFD700;
+            position: relative;
+            display: inline-block;
+        }
+        
+        .logo .magic-i::before {
+            content: "★";
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 16px;
+        }
+        
+        .tagline {
+            color: #666;
+            font-size: 18px;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .form-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+            border: 2px solid #e9ecef;
+        }
+        
+        .result-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+            border: 2px solid #e9ecef;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 24px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #444;
+        }
+        
+        input, textarea, select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
             border-radius: 10px;
-            min-height: 300px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+        
+        .file-upload {
+            border: 2px dashed #667eea;
+            border-radius: 10px;
+            padding: 25px;
+            text-align: center;
+            background: #f0f4ff;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .file-upload:hover {
+            background: #e6ebff;
+        }
+        
+        .file-upload input {
+            display: none;
+        }
+        
+        .file-label {
+            color: #667eea;
+            font-size: 18px;
+            display: block;
+        }
+        
+        .file-label i {
+            font-size: 24px;
+            margin-right: 10px;
+        }
+        
+        .preview {
+            margin-top: 15px;
+            max-width: 200px;
+            display: none;
+        }
+        
+        .preview img, .preview video {
+            max-width: 100%;
+            border-radius: 8px;
+            border: 2px solid #667eea;
+        }
+        
+        .generate-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 16px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .generate-btn:active {
+            transform: translateY(0);
         }
         
         #qrcode {
             margin: 20px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+        }
+        
+        .result-url {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            word-break: break-all;
+            font-size: 14px;
+            width: 100%;
+            margin-top: 20px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            width: 100%;
+        }
+        
+        .action-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+        
+        .action-btn:hover {
+            opacity: 0.9;
+        }
+        
+        .copy-btn {
+            background: #28a745;
+            color: white;
+        }
+        
+        .test-btn {
+            background: #007bff;
+            color: white;
         }
         
         .download-btn {
-            background: #27AE60;
+            background: #6f42c1;
             color: white;
-            padding: 12px 25px;
-            border-radius: 8px;
-            text-decoration: none;
-            display: inline-block;
-            margin: 10px;
-            border: none;
-            cursor: pointer;
-            font-size: 16px;
         }
         
-        .instructions {
-            background: #e8f4fc;
-            padding: 15px;
-            border-radius: 10px;
-            margin: 20px 0;
-            font-size: 14px;
+        .status {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 8px;
+            display: none;
+            text-align: center;
+            font-weight: bold;
         }
         
         .success {
-            background: #E8F5E9;
-            color: #2E7D32;
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .instructions {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
             padding: 15px;
-            border-radius: 8px;
+            border-radius: 10px;
+            margin-top: 30px;
+            font-size: 14px;
+        }
+        
+        .step {
             margin: 10px 0;
-            display: none;
+            padding-left: 20px;
+            position: relative;
+        }
+        
+        .step:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #28a745;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>✨ Magic Card QR Generator</h1>
-        
-        <div id="success-message" class="success"></div>
-        
-        <div class="card-type">
-            <div class="card-option birthday selected" onclick="selectCardType('birthday')">
-                🎂 Birthday
-            </div>
-            <div class="card-option thankyou" onclick="selectCardType('thankyou')">
-                💝 Thank You
-            </div>
-            <div class="card-option love" onclick="selectCardType('love')">
-                ❤️ Love
-            </div>
+        <div class="header">
+            <div class="logo">MAG<span class="magic-i">I</span>C CARD</div>
+            <div class="tagline">Create magical AR messages for your cards</div>
         </div>
         
-        <div>
-            <label><strong>Card Number (001-999):</strong></label>
-            <input type="number" id="cardNumber" min="1" max="999" value="001">
-        </div>
-        
-        <button class="generate-btn" onclick="generateQR()">
-            🪄 GENERATE QR CODE
-        </button>
-        
-        <div class="qrcode-container">
-            <div id="qrcode">
-                <div style="color: #999; padding: 40px;">
-                    QR code will appear here
+        <div class="main-content">
+            <!-- LEFT: Form Section -->
+            <div class="form-section">
+                <h2>Create Your Magic Message</h2>
+                
+                <div class="form-group">
+                    <label for="cardId">Card ID (Required):</label>
+                    <input type="text" id="cardId" placeholder="e.g., BIRTHDAY001, THANKYOU123" maxlength="50">
+                    <small style="color: #666; font-size: 12px;">Unique ID for this card. Receiver will see this.</small>
                 </div>
+                
+                <div class="form-group">
+                    <label for="messageType">Message Type:</label>
+                    <select id="messageType">
+                        <option value="text">Text Message</option>
+                        <option value="image">Image</option>
+                        <option value="video">Video</option>
+                        <option value="audio">Audio Message</option>
+                    </select>
+                </div>
+                
+                <!-- Text Input -->
+                <div class="form-group" id="textInput">
+                    <label for="messageText">Your Message:</label>
+                    <textarea id="messageText" placeholder="Type your magic message here..."></textarea>
+                </div>
+                
+                <!-- Media Upload -->
+                <div class="form-group" id="mediaInput" style="display: none;">
+                    <label>Upload Media:</label>
+                    <div class="file-upload" onclick="document.getElementById('fileInput').click()">
+                        <div class="file-label">
+                            📁 Click to upload
+                        </div>
+                        <input type="file" id="fileInput" accept="image/*,video/*,audio/*">
+                        <small style="color: #666; display: block; margin-top: 10px;">Supported: Images, Videos, Audio files</small>
+                    </div>
+                    <div class="preview" id="mediaPreview"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="arPageUrl">Your AR Page URL:</label>
+                    <input type="text" id="arPageUrl" value="https://your-magic-card-site.com/ar.html" placeholder="URL of your AR page">
+                    <small style="color: #666; font-size: 12px;">Change this to your actual AR page URL</small>
+                </div>
+                
+                <button class="generate-btn" onclick="generateQRCode()">
+                    🪄 GENERATE MAGIC QR CODE
+                </button>
+                
+                <div id="status" class="status"></div>
             </div>
             
-            <div id="download-section" style="display:none;">
-                <button onclick="downloadQR()" class="download-btn">
-                    📥 DOWNLOAD QR CODE
-                </button>
-                <div style="margin-top: 10px; font-size: 12px; color: #666;">
-                    Or right-click image → Save Image As
+            <!-- RIGHT: Result Section -->
+            <div class="result-section">
+                <h2>Your Magic QR Code</h2>
+                
+                <div id="qrcode"></div>
+                
+                <div class="result-url" id="resultUrl">
+                    QR code will appear here after generation
+                </div>
+                
+                <div class="action-buttons">
+                    <button class="action-btn copy-btn" onclick="copyURL()" id="copyBtn" disabled>
+                        📋 Copy URL
+                    </button>
+                    <button class="action-btn test-btn" onclick="testURL()" id="testBtn" disabled>
+                        🔗 Test in New Tab
+                    </button>
+                    <button class="action-btn download-btn" onclick="downloadQRCode()" id="downloadBtn" disabled>
+                        ⬇ Download QR
+                    </button>
+                </div>
+                
+                <div class="instructions">
+                    <h3>How it works:</h3>
+                    <div class="step">1. Fill in card details and message</div>
+                    <div class="step">2. Generate QR code</div>
+                    <div class="step">3. Print QR code on your card</div>
+                    <div class="step">4. Receiver scans with phone</div>
+                    <div class="step">5. Magic message appears in AR!</div>
                 </div>
             </div>
-        </div>
-        
-        <div class="instructions">
-            <h3>📋 How to Use:</h3>
-            <ol>
-                <li>Select card type (Birthday/Thank You/Love)</li>
-                <li>Enter card number (001, 002, etc.)</li>
-                <li>Click "Generate QR Code"</li>
-                <li>Click "Download QR Code" button</li>
-                <li>Print and glue to your Magic Card</li>
-            </ol>
-            <p><strong>Card URL format:</strong> https://magic-card-business.vercel.app/card.html?card=BDAY001</p>
         </div>
     </div>
 
     <script>
-        let selectedType = 'birthday';
-        let currentQRCodeUrl = '';
-        let currentCardId = '';
+        // Get DOM elements
+        const messageTypeSelect = document.getElementById('messageType');
+        const textInput = document.getElementById('textInput');
+        const mediaInput = document.getElementById('mediaInput');
+        const fileInput = document.getElementById('fileInput');
+        const mediaPreview = document.getElementById('mediaPreview');
+        const arPageUrlInput = document.getElementById('arPageUrl');
+        const statusDiv = document.getElementById('status');
         
-        function selectCardType(type) {
-            selectedType = type;
-            
-            // Update UI
-            document.querySelectorAll('.card-option').forEach(opt => {
-                opt.classList.remove('selected');
-            });
-            document.querySelector(`.card-option.${type}`).classList.add('selected');
-        }
+        let uploadedFileUrl = '';
         
-        function generateQR() {
-            const cardNumber = document.getElementById('cardNumber').value.padStart(3, '0');
+        // Show/hide inputs based on message type
+        messageTypeSelect.addEventListener('change', function() {
+            const type = this.value;
             
-            // Generate card ID
-            let prefix = '';
-            switch(selectedType) {
-                case 'birthday': prefix = 'BDAY'; break;
-                case 'thankyou': prefix = 'THX'; break;
-                case 'love': prefix = 'LOVE'; break;
+            if (type === 'text') {
+                textInput.style.display = 'block';
+                mediaInput.style.display = 'none';
+            } else {
+                textInput.style.display = 'none';
+                mediaInput.style.display = 'block';
             }
             
-            currentCardId = `${prefix}${cardNumber}`;
+            // Clear preview
+            mediaPreview.style.display = 'none';
+            uploadedFileUrl = '';
+        });
+        
+        // Handle file upload
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
             
-            // CORRECTED URL: Uses card.html?card=BDAY001 format
-            const cardUrl = `https://magic-card-business.vercel.app/card.html?card=${currentCardId}`;
+            mediaPreview.style.display = 'block';
             
-            // Generate QR code using reliable API
-            currentQRCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(cardUrl)}&format=png`;
+            // Create preview
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    mediaPreview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+                    uploadedFileUrl = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            } else if (file.type.startsWith('video/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    mediaPreview.innerHTML = `
+                        <video controls style="max-width: 100%;">
+                            <source src="${e.target.result}" type="${file.type}">
+                        </video>
+                    `;
+                    uploadedFileUrl = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            } else if (file.type.startsWith('audio/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    mediaPreview.innerHTML = `
+                        <audio controls style="width: 100%;">
+                            <source src="${e.target.result}" type="${file.type}">
+                        </audio>
+                    `;
+                    uploadedFileUrl = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
             
-            // Display QR code
-            const qrcodeDiv = document.getElementById('qrcode');
-            qrcodeDiv.innerHTML = `
-                <div style="margin: 20px 0;">
-                    <img id="qrcode-image" src="${currentQRCodeUrl}" alt="QR Code" 
-                         style="width: 250px; height: 250px; border: 1px solid #ddd; border-radius: 10px; cursor: pointer;"
-                         onclick="downloadQR()">
-                    <div style="margin-top: 10px; font-size: 12px; color: #666;">
-                        Card: <strong>${currentCardId}</strong><br>
-                        URL: ${cardUrl}
-                    </div>
-                </div>
-            `;
+            showStatus('File uploaded successfully!', 'success');
+        });
+        
+        // 🔥🔥🔥 **MAIN FUNCTION: Generate QR Code** 🔥🔥🔥
+        function generateQRCode() {
+            const cardId = document.getElementById('cardId').value.trim();
+            const messageType = messageTypeSelect.value;
+            let messageContent = '';
             
-            // Show download section
-            document.getElementById('download-section').style.display = 'block';
+            // Validate card ID
+            if (!cardId) {
+                showStatus('Please enter a Card ID', 'error');
+                return;
+            }
             
-            // Show success message
-            showSuccess(`QR Code generated for card: ${currentCardId}`);
+            // Get message content based on type
+            if (messageType === 'text') {
+                messageContent = document.getElementById('messageText').value.trim();
+                if (!messageContent) {
+                    showStatus('Please enter a message', 'error');
+                    return;
+                }
+            } else {
+                if (!uploadedFileUrl) {
+                    showStatus('Please upload a file', 'error');
+                    return;
+                }
+                messageContent = uploadedFileUrl;
+            }
+            
+            // Get AR page URL
+            let arPageUrl = arPageUrlInput.value.trim();
+            if (!arPageUrl) {
+                arPageUrl = window.location.origin + '/ar.html';
+            }
+            
+            // 🔥 **THIS IS THE FIXED PART!** 🔥
+            // Create data object
+            const messageData = {
+                card: cardId,
+                type: messageType,
+                message: messageContent
+            };
+            
+            // Convert to JSON and then to Base64
+            const jsonString = JSON.stringify(messageData);
+            const base64Data = btoa(jsonString);
+            
+            // Create final URL with hash (#) instead of query parameters
+            const finalUrl = arPageUrl.split('#')[0] + '#' + base64Data;
+            
+            console.log('Generated URL:', finalUrl);
+            console.log('Data encoded:', messageData);
+            
+            // Generate QR code
+            document.getElementById('qrcode').innerHTML = '';
+            QRCode.toCanvas(document.getElementById('qrcode'), finalUrl, {
+                width: 250,
+                height: 250,
+                margin: 2,
+                color: {
+                    dark: '#000000',
+                    light: '#FFFFFF'
+                }
+            }, function(error) {
+                if (error) {
+                    showStatus('Error generating QR code: ' + error, 'error');
+                } else {
+                    // Show URL
+                    document.getElementById('resultUrl').textContent = finalUrl;
+                    
+                    // Enable buttons
+                    document.getElementById('copyBtn').disabled = false;
+                    document.getElementById('testBtn').disabled = false;
+                    document.getElementById('downloadBtn').disabled = false;
+                    
+                    showStatus('Magic QR code generated successfully!', 'success');
+                }
+            });
         }
         
-        function downloadQR() {
-            if (!currentQRCodeUrl) return;
+        // Copy URL to clipboard
+        function copyURL() {
+            const url = document.getElementById('resultUrl').textContent;
+            navigator.clipboard.writeText(url).then(function() {
+                showStatus('URL copied to clipboard!', 'success');
+            }).catch(function(err) {
+                showStatus('Failed to copy: ' + err, 'error');
+            });
+        }
+        
+        // Test URL in new tab
+        function testURL() {
+            const url = document.getElementById('resultUrl').textContent;
+            window.open(url, '_blank');
+        }
+        
+        // Download QR code as PNG
+        function downloadQRCode() {
+            const canvas = document.querySelector('#qrcode canvas');
+            if (!canvas) {
+                showStatus('Please generate a QR code first', 'error');
+                return;
+            }
             
-            // Create download link
             const link = document.createElement('a');
-            link.href = currentQRCodeUrl;
-            link.download = `magic-card-${currentCardId}.png`;
-            
-            // Append to body, click, and remove
-            document.body.appendChild(link);
+            link.download = 'Magic-Card-QR.png';
+            link.href = canvas.toDataURL('image/png');
             link.click();
-            document.body.removeChild(link);
             
-            showSuccess(`Download started for: ${currentCardId}.png`);
+            showStatus('QR code downloaded!', 'success');
         }
         
-        function showSuccess(message) {
-            const successDiv = document.getElementById('success-message');
-            successDiv.textContent = `✅ ${message}`;
-            successDiv.style.display = 'block';
+        // Show status message
+        function showStatus(message, type) {
+            statusDiv.textContent = message;
+            statusDiv.className = 'status ' + type;
+            statusDiv.style.display = 'block';
             
-            // Hide after 5 seconds
-            setTimeout(() => {
-                successDiv.style.display = 'none';
+            setTimeout(function() {
+                statusDiv.style.display = 'none';
             }, 5000);
         }
         
-        // Initialize
-        selectCardType('birthday');
+        // Initialize with example data
+        document.getElementById('cardId').value = 'BIRTHDAY' + Math.floor(Math.random() * 1000);
+        document.getElementById('messageText').value = '🎉 Happy Birthday! Wishing you a magical day filled with joy and surprises! 🎂';
         
-        // Add enter key support
-        document.getElementById('cardNumber').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                generateQR();
-            }
-        });
+        showStatus('Ready to create magic! Fill in the details above.', 'success');
     </script>
 </body>
 </html>
