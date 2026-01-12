@@ -4,6 +4,7 @@
     <title>Magic Card - QR Generator</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -164,14 +165,28 @@
             border: 2px solid #667eea;
         }
         
-        .video-warning {
-            background: #fff3cd;
-            border: 1px solid #ffeaa7;
-            color: #856404;
-            padding: 10px;
-            border-radius: 8px;
-            margin-top: 10px;
-            font-size: 12px;
+        .video-options {
+            margin-top: 15px;
+            padding: 15px;
+            background: #e8f4fd;
+            border-radius: 10px;
+            border: 1px solid #b3d9ff;
+        }
+        
+        .option {
+            margin-bottom: 10px;
+        }
+        
+        .option input[type="radio"] {
+            width: auto;
+            margin-right: 10px;
+        }
+        
+        .cloudinary-section {
+            background: #f0f8ff;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
             display: none;
         }
         
@@ -280,6 +295,12 @@
             border: 1px solid #f5c6cb;
         }
         
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
         .instructions {
             background: #fff3cd;
             border: 1px solid #ffeaa7;
@@ -322,6 +343,16 @@
             border-radius: 10px;
             width: 0%;
             transition: width 0.3s;
+        }
+        
+        .local-warning {
+            background: #ffebee;
+            border: 1px solid #ffcdd2;
+            color: #c62828;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-size: 12px;
         }
     </style>
 </head>
@@ -367,11 +398,29 @@
                             📁 Click to upload
                         </div>
                         <input type="file" id="fileInput" accept="image/*,video/*,audio/*">
-                        <small style="color: #666; display: block; margin-top: 10px;">Max size: 10MB for images, 50MB for videos/audio</small>
+                        <small style="color: #666; display: block; margin-top: 10px;">Max size: 5MB for testing</small>
                     </div>
                     
-                    <div class="video-warning" id="videoWarning">
-                        ⚠ Videos are stored locally. For real business, upload to Cloudinary/Firebase.
+                    <div class="video-options" id="videoOptions" style="display: none;">
+                        <h4>Video Options:</h4>
+                        <div class="option">
+                            <input type="radio" id="localOption" name="videoOption" value="local" checked>
+                            <label for="localOption">Test Locally (Only works on this device)</label>
+                        </div>
+                        <div class="option">
+                            <input type="radio" id="cloudinaryOption" name="videoOption" value="cloudinary">
+                            <label for="cloudinaryOption">Upload to Cloudinary (Works everywhere)</label>
+                        </div>
+                    </div>
+                    
+                    <div class="cloudinary-section" id="cloudinarySection">
+                        <label for="cloudinaryUrl">Or enter Cloudinary URL:</label>
+                        <input type="text" id="cloudinaryUrl" placeholder="https://res.cloudinary.com/.../video.mp4">
+                        <small style="color: #666;">Get this from Cloudinary after uploading</small>
+                    </div>
+                    
+                    <div class="local-warning" id="localWarning" style="display: none;">
+                        ⚠ Local videos ONLY work on this device. For real cards, use Cloudinary.
                     </div>
                     
                     <div class="upload-progress" id="uploadProgress">
@@ -420,14 +469,15 @@
                 </div>
                 
                 <div class="instructions">
-                    <h3>How it works:</h3>
-                    <div class="step">1. Fill in card details and message</div>
-                    <div class="step">2. Generate QR code</div>
-                    <div class="step">3. Print QR code on your card</div>
-                    <div class="step">4. Receiver scans with phone</div>
-                    <div class="step">5. Magic message appears in AR!</div>
-                    <div style="margin-top: 15px; color: #d9534f; font-weight: bold;">
-                        ⚠ For videos/audio: Only works on same device. For business, use cloud storage.
+                    <h3>For Videos:</h3>
+                    <div class="step"><strong>Test Mode:</strong> Local file - Only works on this device</div>
+                    <div class="step"><strong>Real Business:</strong> Upload to Cloudinary first</div>
+                    <div style="margin-top: 15px; color: #d9534f;">
+                        <strong>How to use Cloudinary:</strong><br>
+                        1. Sign up at cloudinary.com (free)<br>
+                        2. Upload your video<br>
+                        3. Copy the "Delivery URL"<br>
+                        4. Paste in Cloudinary URL field
                     </div>
                 </div>
             </div>
@@ -441,9 +491,12 @@
         const mediaInput = document.getElementById('mediaInput');
         const fileInput = document.getElementById('fileInput');
         const mediaPreview = document.getElementById('mediaPreview');
-        const videoWarning = document.getElementById('videoWarning');
+        const videoOptions = document.getElementById('videoOptions');
+        const cloudinarySection = document.getElementById('cloudinarySection');
+        const localWarning = document.getElementById('localWarning');
         const uploadProgress = document.getElementById('uploadProgress');
         const progressBar = document.getElementById('progressBar');
+        const cloudinaryUrlInput = document.getElementById('cloudinaryUrl');
         const statusDiv = document.getElementById('status');
         const qrcodeDiv = document.getElementById('qrcode');
         const resultUrlDiv = document.getElementById('resultUrl');
@@ -451,6 +504,7 @@
         let uploadedFileUrl = '';
         let currentQRCode = null;
         let uploadedFileName = '';
+        let videoOption = 'local'; // Default
         
         // Show/hide inputs based on message type
         messageTypeSelect.addEventListener('change', function() {
@@ -459,16 +513,21 @@
             if (type === 'text') {
                 textInput.style.display = 'block';
                 mediaInput.style.display = 'none';
-                videoWarning.style.display = 'none';
+                videoOptions.style.display = 'none';
+                cloudinarySection.style.display = 'none';
+                localWarning.style.display = 'none';
             } else {
                 textInput.style.display = 'none';
                 mediaInput.style.display = 'block';
                 
-                // Show warning for videos/audio
+                // Show video options for videos
                 if (type === 'video' || type === 'audio') {
-                    videoWarning.style.display = 'block';
+                    videoOptions.style.display = 'block';
+                    updateVideoOption();
                 } else {
-                    videoWarning.style.display = 'none';
+                    videoOptions.style.display = 'none';
+                    cloudinarySection.style.display = 'none';
+                    localWarning.style.display = 'none';
                 }
             }
             
@@ -477,17 +536,36 @@
             uploadedFileUrl = '';
             uploadedFileName = '';
             uploadProgress.style.display = 'none';
+            cloudinaryUrlInput.value = '';
         });
+        
+        // Video option change
+        document.querySelectorAll('input[name="videoOption"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                videoOption = this.value;
+                updateVideoOption();
+            });
+        });
+        
+        function updateVideoOption() {
+            if (videoOption === 'local') {
+                cloudinarySection.style.display = 'none';
+                localWarning.style.display = 'block';
+            } else {
+                cloudinarySection.style.display = 'block';
+                localWarning.style.display = 'none';
+            }
+        }
         
         // Handle file upload
         fileInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
             
-            // Check file size
-            const maxSize = file.type.startsWith('image/') ? 10 * 1024 * 1024 : 50 * 1024 * 1024; // 10MB for images, 50MB for videos/audio
+            // Check file size (5MB max for testing)
+            const maxSize = 5 * 1024 * 1024; // 5MB
             if (file.size > maxSize) {
-                showStatus(`❌ File too large! Max size: ${file.type.startsWith('image/') ? '10MB' : '50MB'}`, 'error');
+                showStatus(`❌ File too large! Max 5MB for testing.`, 'error');
                 return;
             }
             
@@ -497,65 +575,43 @@
             uploadProgress.style.display = 'block';
             progressBar.style.width = '0%';
             
-            // Simulate upload progress
-            let progress = 0;
-            const progressInterval = setInterval(() => {
-                progress += 10;
-                progressBar.style.width = progress + '%';
-                
-                if (progress >= 90) {
-                    clearInterval(progressInterval);
-                }
-            }, 50);
-            
             // Read file as data URL
             const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                uploadProgress.style.display = 'none';
+                mediaPreview.style.display = 'block';
+                
+                // Create preview
+                if (file.type.startsWith('image/')) {
+                    mediaPreview.innerHTML = `<img src="${e.target.result}" alt="Preview"><br><small>${file.name} (${formatFileSize(file.size)})</small>`;
+                    uploadedFileUrl = e.target.result;
+                } else if (file.type.startsWith('video/')) {
+                    mediaPreview.innerHTML = `
+                        <video controls style="max-width: 100%;">
+                            <source src="${e.target.result}" type="${file.type}">
+                        </video>
+                        <br><small>${file.name} (${formatFileSize(file.size)})</small>
+                    `;
+                    uploadedFileUrl = e.target.result;
+                } else if (file.type.startsWith('audio/')) {
+                    mediaPreview.innerHTML = `
+                        <audio controls style="width: 100%;">
+                            <source src="${e.target.result}" type="${file.type}">
+                        </audio>
+                        <br><small>${file.name} (${formatFileSize(file.size)})</small>
+                    `;
+                    uploadedFileUrl = e.target.result;
+                }
+                
+                showStatus(`✅ ${file.type.startsWith('image/') ? 'Image' : file.type.startsWith('video/') ? 'Video' : 'Audio'} uploaded! (${formatFileSize(file.size)})`, 'success');
+            };
             
             reader.onprogress = function(e) {
                 if (e.lengthComputable) {
                     const percentLoaded = Math.round((e.loaded / e.total) * 100);
                     progressBar.style.width = percentLoaded + '%';
                 }
-            };
-            
-            reader.onload = function(e) {
-                clearInterval(progressInterval);
-                progressBar.style.width = '100%';
-                
-                setTimeout(() => {
-                    uploadProgress.style.display = 'none';
-                    mediaPreview.style.display = 'block';
-                    
-                    // Create preview
-                    if (file.type.startsWith('image/')) {
-                        mediaPreview.innerHTML = `<img src="${e.target.result}" alt="Preview"><br><small>${file.name} (${formatFileSize(file.size)})</small>`;
-                        uploadedFileUrl = e.target.result;
-                    } else if (file.type.startsWith('video/')) {
-                        mediaPreview.innerHTML = `
-                            <video controls style="max-width: 100%;">
-                                <source src="${e.target.result}" type="${file.type}">
-                            </video>
-                            <br><small>${file.name} (${formatFileSize(file.size)})</small>
-                        `;
-                        uploadedFileUrl = e.target.result;
-                    } else if (file.type.startsWith('audio/')) {
-                        mediaPreview.innerHTML = `
-                            <audio controls style="width: 100%;">
-                                <source src="${e.target.result}" type="${file.type}">
-                            </audio>
-                            <br><small>${file.name} (${formatFileSize(file.size)})</small>
-                        `;
-                        uploadedFileUrl = e.target.result;
-                    }
-                    
-                    showStatus(`✅ ${file.type.startsWith('image/') ? 'Image' : file.type.startsWith('video/') ? 'Video' : 'Audio'} uploaded! (${formatFileSize(file.size)})`, 'success');
-                }, 500);
-            };
-            
-            reader.onerror = function() {
-                clearInterval(progressInterval);
-                uploadProgress.style.display = 'none';
-                showStatus('❌ Error reading file', 'error');
             };
             
             reader.readAsDataURL(file);
@@ -569,7 +625,7 @@
         }
         
         // 🔥 **MAIN FUNCTION: Generate QR Code** 🔥
-        function generateQRCode() {
+        async function generateQRCode() {
             console.log("Generate button clicked!");
             
             const cardId = document.getElementById('cardId').value.trim();
@@ -590,18 +646,33 @@
                     return;
                 }
             } else {
-                if (!uploadedFileUrl) {
-                    showStatus('❌ Please upload a file', 'error');
-                    return;
-                }
-                
-                // 🔥 **FIX FOR VIDEOS/AUDIO/IMAGES:** Use a placeholder
-                // Data URLs are too long for QR codes when they contain media
-                messageContent = uploadedFileUrl;
-                
-                // Warn about large files
-                if (messageContent.length > 3000) {
-                    showStatus('⚠ Media file is large. Testing on same device only.', 'success');
+                if (messageType === 'video' || messageType === 'audio') {
+                    if (videoOption === 'cloudinary') {
+                        // Use Cloudinary URL
+                        messageContent = cloudinaryUrlInput.value.trim();
+                        if (!messageContent) {
+                            showStatus('❌ Please enter a Cloudinary URL or upload a file', 'error');
+                            return;
+                        }
+                        if (!messageContent.startsWith('http')) {
+                            showStatus('❌ Please enter a valid URL starting with http:// or https://', 'error');
+                            return;
+                        }
+                    } else {
+                        // Use local file
+                        if (!uploadedFileUrl) {
+                            showStatus('❌ Please upload a file', 'error');
+                            return;
+                        }
+                        messageContent = uploadedFileUrl;
+                    }
+                } else {
+                    // For images
+                    if (!uploadedFileUrl) {
+                        showStatus('❌ Please upload a file', 'error');
+                        return;
+                    }
+                    messageContent = uploadedFileUrl;
                 }
             }
             
@@ -619,8 +690,8 @@
             const jsonString = JSON.stringify(messageData);
             
             // Check if data is too large for QR code
-            if (jsonString.length > 2953) { // QR code max capacity for alphanumeric
-                showStatus('❌ Media file too large for QR code. Try a smaller file.', 'error');
+            if (jsonString.length > 2000) { // Safe limit for QR codes
+                showStatus('❌ Data too large for QR code. Try smaller file or use Cloudinary.', 'error');
                 return;
             }
             
@@ -630,8 +701,7 @@
             const finalUrl = arPageUrl.split('#')[0] + '#' + base64Data;
             
             console.log('Generated URL length:', finalUrl.length);
-            console.log('Data length:', jsonString.length);
-            console.log('Data encoded:', messageData);
+            console.log('Message type:', messageType);
             
             // Clear previous QR code
             qrcodeDiv.innerHTML = '';
@@ -661,8 +731,8 @@
                 setTimeout(function() {
                     // Show URL (truncated if too long)
                     let displayUrl = finalUrl;
-                    if (displayUrl.length > 100) {
-                        displayUrl = displayUrl.substring(0, 100) + '...';
+                    if (displayUrl.length > 80) {
+                        displayUrl = displayUrl.substring(0, 80) + '...';
                     }
                     resultUrlDiv.textContent = displayUrl;
                     resultUrlDiv.title = finalUrl; // Full URL on hover
@@ -673,36 +743,34 @@
                     document.getElementById('testBtn').disabled = false;
                     document.getElementById('downloadBtn').disabled = false;
                     
-                    const fileType = messageType === 'text' ? 'text' : 
-                                    messageType === 'image' ? 'image' : 
-                                    messageType === 'video' ? 'video' : 'audio';
+                    // Show appropriate message
+                    if (messageType === 'video' && videoOption === 'local') {
+                        showStatus('✅ QR generated! ⚠ Local video - Test on THIS DEVICE only.', 'warning');
+                    } else {
+                        showStatus('✅ QR code generated successfully!', 'success');
+                    }
                     
-                    showStatus(`✅ ${fileType.charAt(0).toUpperCase() + fileType.slice(1)} QR code generated!`, 'success');
-                    
-                    // Auto-test the URL after 2 seconds
+                    // Auto-test the URL
                     setTimeout(function() {
                         testURL();
-                    }, 2000);
+                    }, 1500);
                     
                 }, 500);
                 
             } catch (error) {
                 console.error('QR Code generation error:', error);
-                qrcodeDiv.innerHTML = '<div style="color: red;">Error: File too large. Try smaller file or use text.</div>';
-                showStatus('❌ Error: File too large for QR code. Try smaller file or use text.', 'error');
+                qrcodeDiv.innerHTML = '<div style="color: red;">Error generating QR code.</div>';
+                showStatus('❌ Error generating QR code. Try smaller file.', 'error');
             }
         }
         
         // Copy URL to clipboard
         function copyURL() {
-            const url = resultUrlDiv.title || resultUrlDiv.textContent;
-            if (!url || url === 'URL will appear here') {
+            const fullUrl = resultUrlDiv.title || resultUrlDiv.textContent;
+            if (!fullUrl || fullUrl === 'URL will appear here') {
                 showStatus('❌ No URL to copy', 'error');
                 return;
             }
-            
-            // Get full URL from title attribute
-            const fullUrl = resultUrlDiv.title || resultUrlDiv.textContent;
             
             navigator.clipboard.writeText(fullUrl).then(function() {
                 showStatus('✅ URL copied to clipboard!', 'success');
@@ -713,14 +781,11 @@
         
         // Test URL in new tab
         function testURL() {
-            const url = resultUrlDiv.title || resultUrlDiv.textContent;
-            if (!url || url === 'URL will appear here') {
+            const fullUrl = resultUrlDiv.title || resultUrlDiv.textContent;
+            if (!fullUrl || fullUrl === 'URL will appear here') {
                 showStatus('❌ No URL to test', 'error');
                 return;
             }
-            
-            // Get full URL from title attribute
-            const fullUrl = resultUrlDiv.title || resultUrlDiv.textContent;
             
             window.open(fullUrl, '_blank');
             showStatus('🔗 Opening magic card in new tab...', 'success');
@@ -735,9 +800,8 @@
             }
             
             const cardId = document.getElementById('cardId').value || 'MagicCard';
-            const messageType = messageTypeSelect.value;
             const link = document.createElement('a');
-            link.download = `Magic-Card-${cardId}-${messageType}-QR.png`;
+            link.download = `Magic-Card-${cardId}-QR.png`;
             link.href = canvas.toDataURL('image/png');
             link.click();
             
@@ -762,9 +826,7 @@
             
             showStatus('✅ Ready to create magic! Fill in the details above.', 'success');
             
-            // Add debug info
             console.log("QR Generator loaded successfully!");
-            console.log("QRCode library available:", typeof QRCode !== 'undefined');
         };
     </script>
 </body>
