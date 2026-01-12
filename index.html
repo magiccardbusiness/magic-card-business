@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Magic Card</title>
+    <title>Magic Card AR</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     
@@ -15,6 +15,7 @@
             font-family: 'Arial', sans-serif;
         }
         
+        /* Company Logo */
         #company-logo {
             position: fixed;
             top: 25px;
@@ -43,6 +44,7 @@
             color: #FFD700;
         }
         
+        /* INSTRUCTIONS - UNDER LOGO */
         #instructions {
             position: fixed;
             top: 75px;
@@ -143,6 +145,7 @@
             cursor: not-allowed;
         }
         
+        /* Card message display */
         #card-message {
             position: fixed;
             top: 120px;
@@ -156,6 +159,7 @@
             display: none;
         }
         
+        /* Error message */
         #error-message {
             position: fixed;
             top: 150px;
@@ -169,6 +173,7 @@
             display: none;
         }
         
+        /* Loading spinner */
         .spinner {
             position: fixed;
             top: 50%;
@@ -195,14 +200,18 @@
         MAG<span class="magic-i">I</span>C CARD
     </div>
     
+    <!-- Loading Spinner -->
     <div class="spinner" id="loading-spinner"></div>
     
+    <!-- Instructions -->
     <div id="instructions">
         Point camera → Tap button for magic message
     </div>
     
+    <!-- Card Message Display -->
     <div id="card-message"></div>
     
+    <!-- Error Message Display -->
     <div id="error-message"></div>
     
     <button id="magic-btn">▶ PLAY MAGIC MESSAGE</button>
@@ -236,6 +245,7 @@
         <a-light type="ambient" color="#FFFFFF" intensity="0.8"></a-light>
         
         <a-entity position="0 0 -2">
+            <!-- Wooden Frame -->
             <a-box id="wood-frame"
                    width="2.0" height="1.4" depth="0.08"
                    position="0 0.8 0"
@@ -244,6 +254,7 @@
                    visible="false">
             </a-box>
             
+            <!-- Video screen -->
             <a-plane id="video-screen"
                     width="1.85" height="1.25"
                     position="0 0.8 0.05"
@@ -256,6 +267,7 @@
                 </a-video>
             </a-plane>
             
+            <!-- Text Display -->
             <a-text id="text-display"
                     value=""
                     color="#FFFFFF"
@@ -266,6 +278,7 @@
                     visible="false">
             </a-text>
             
+            <!-- Image Display -->
             <a-image id="image-display"
                     width="1.85" height="1.25"
                     position="0 0.8 0.05"
@@ -276,9 +289,6 @@
     </a-scene>
 
     <script>
-        // 🔥🔥🔥 **SUPER SIMPLE SOLUTION** 🔥🔥🔥
-        // We'll store the data IN THE URL itself using Base64 encoding
-        
         document.addEventListener('DOMContentLoaded', function() {
             const magicBtn = document.getElementById('magic-btn');
             const woodFrame = document.getElementById('wood-frame');
@@ -303,11 +313,12 @@
             let currentMessageContent = '';
             let cardId = '';
             
-            // 🔥 **FIX 1: Get data from URL HASH** (NOT query parameters!)
+            // 🔥 **FIXED: Get data from URL HASH** 🔥
             function getDataFromUrl() {
-                const hash = window.location.hash.substring(1); // Remove the #
+                const hash = window.location.hash.substring(1);
                 
                 if (!hash) {
+                    showError('No magic message found. Please scan a valid Magic Card QR code.');
                     return null;
                 }
                 
@@ -317,47 +328,33 @@
                     const data = JSON.parse(decoded);
                     return data;
                 } catch (error) {
-                    console.error('Failed to decode URL data:', error);
+                    console.error('Failed to decode message:', error);
+                    showError('Invalid magic message format.');
                     return null;
                 }
             }
             
-            // 🔥 **FIX 2: Create URL with data embedded**
-            function createUrlWithData(cardId, type, message) {
-                const data = {
-                    card: cardId,
-                    type: type,
-                    message: message
-                };
-                
-                // Convert to Base64 and put in URL hash
-                const jsonString = JSON.stringify(data);
-                const base64 = btoa(jsonString);
-                const currentUrl = window.location.origin + window.location.pathname;
-                return currentUrl + '#' + base64;
-            }
-            
-            // Load data on page start
-            function loadData() {
+            // Load message on page start
+            function loadMessage() {
                 loadingSpinner.style.display = 'block';
+                magicBtn.disabled = true;
                 
-                const data = getDataFromUrl();
+                const messageData = getDataFromUrl();
                 
-                if (!data) {
-                    // No data in URL - check if this is the sender page?
-                    showError('No message data found. Please scan a valid Magic Card QR code.');
-                    magicBtn.textContent = 'SCAN A CARD QR CODE';
-                    magicBtn.style.background = '#E74C3C';
+                if (!messageData) {
                     loadingSpinner.style.display = 'none';
+                    magicBtn.disabled = false;
+                    magicBtn.textContent = 'NO MESSAGE FOUND';
+                    magicBtn.style.background = '#E74C3C';
                     return;
                 }
                 
                 // We have data!
-                cardId = data.card || 'MagicCard';
-                currentMessageType = data.type || 'text';
-                currentMessageContent = data.message || '';
+                cardId = messageData.card || 'MagicCard';
+                currentMessageType = messageData.type || 'text';
+                currentMessageContent = messageData.message || '';
                 
-                console.log('Loaded message:', {cardId, currentMessageType, contentPreview: currentMessageContent.substring(0, 50)});
+                console.log('Loaded message:', {cardId, currentMessageType});
                 
                 // Update UI
                 cardMessageDiv.textContent = `Card: ${cardId}`;
@@ -369,9 +366,15 @@
                 setupMessage();
                 
                 loadingSpinner.style.display = 'none';
+                magicBtn.disabled = false;
             }
             
             function setupMessage() {
+                if (video) {
+                    video.remove();
+                    video = null;
+                }
+                
                 if (currentMessageType === 'text') {
                     textDisplay.setAttribute('value', currentMessageContent);
                     
@@ -382,6 +385,9 @@
                     if (currentMessageContent && currentMessageContent.startsWith('http')) {
                         video.src = currentMessageContent;
                         video.crossOrigin = 'anonymous';
+                    } else if (currentMessageContent && currentMessageContent.startsWith('data:')) {
+                        // Handle data URLs (local uploads)
+                        video.src = currentMessageContent;
                     } else if (currentMessageType === 'video') {
                         video.src = 'https://res.cloudinary.com/diqa9qyvh/video/upload/v1767377987/20251219_010742000_iOS_xuandm.mp4';
                         video.crossOrigin = 'anonymous';
@@ -397,34 +403,17 @@
                     document.body.appendChild(video);
                     
                     // Connect to A-Frame
-                    const scene = document.querySelector('a-scene');
-                    scene.addEventListener('loaded', function() {
-                        const arVideo = document.getElementById('ar-video');
-                        if (arVideo) {
-                            arVideo.setAttribute('src', '#message-video');
-                        }
-                    });
+                    const arVideo = document.getElementById('ar-video');
+                    if (arVideo) {
+                        arVideo.setAttribute('src', '#message-video');
+                    }
                     
                 } else if (currentMessageType === 'image') {
-                    if (currentMessageContent && currentMessageContent.startsWith('http')) {
+                    if (currentMessageContent) {
                         imageDisplay.setAttribute('src', currentMessageContent);
                     }
                 }
             }
-            
-            // 🔥 **FIX 3: Test function - Try this in your sender page!**
-            // Add this to your SENDER page (card creation page):
-            /*
-            function createReceiverUrl() {
-                const cardId = 'CARD123';
-                const messageType = 'text';
-                const messageContent = 'Hello from Magic Card!';
-                
-                const url = createUrlWithData(cardId, messageType, messageContent);
-                console.log('Receiver URL:', url);
-                // Copy this URL and open in new tab - IT WILL WORK!
-            }
-            */
             
             function showError(message) {
                 errorMessageDiv.textContent = message;
@@ -437,33 +426,109 @@
                 return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
             }
             
+            // Update timeline
+            function updateVideoProgress() {
+                if (video && video.duration) {
+                    const percent = (video.currentTime / video.duration) * 100;
+                    progressBar.style.width = percent + '%';
+                    currentTimeEl.textContent = formatTime(video.currentTime);
+                }
+            }
+            
             // Video handlers
             function setupVideoHandlers() {
                 if (!video) return;
                 
-                video.addEventListener('timeupdate', function() {
-                    if (video.duration) {
-                        const percent = (video.currentTime / video.duration) * 100;
-                        progressBar.style.width = percent + '%';
-                        currentTimeEl.textContent = formatTime(video.currentTime);
-                    }
+                video.addEventListener('error', function(e) {
+                    showError('Media cannot load. Try again or check connection.');
                 });
+                
+                video.addEventListener('timeupdate', updateVideoProgress);
                 
                 video.addEventListener('loadedmetadata', function() {
                     if (video.duration) {
                         totalTimeEl.textContent = formatTime(video.duration);
                     }
                 });
-                
-                video.addEventListener('error', function() {
-                    showError('Media failed to load');
-                });
             }
             
-            // Magic button click
+            // Click timeline to seek
+            timelineContainer.addEventListener('click', function(e) {
+                if (video && video.duration) {
+                    const rect = this.getBoundingClientRect();
+                    const percent = (e.clientX - rect.left) / rect.width;
+                    video.currentTime = percent * video.duration;
+                    updateVideoProgress();
+                }
+            });
+            
+            // Play/Pause button
+            playPauseBtn.addEventListener('click', function() {
+                if (!video) return;
+                
+                if (video.paused) {
+                    video.play().then(() => {
+                        playPauseBtn.innerHTML = '<span>⏸</span> <span>PAUSE</span>';
+                        playPauseBtn.style.background = '#27AE60';
+                        errorMessageDiv.style.display = 'none';
+                    }).catch(error => {
+                        showError('Cannot play media. Try again.');
+                    });
+                } else {
+                    video.pause();
+                    playPauseBtn.innerHTML = '<span>▶</span> <span>PLAY</span>';
+                    playPauseBtn.style.background = '#3498DB';
+                }
+            });
+            
+            // Stop button
+            stopBtn.addEventListener('click', function() {
+                if (!video) return;
+                
+                video.pause();
+                video.currentTime = 0;
+                playPauseBtn.innerHTML = '<span>▶</span> <span>PLAY</span>';
+                playPauseBtn.style.background = '#3498DB';
+                updateVideoProgress();
+            });
+            
+            // Save button
+            saveBtn.addEventListener('click', function() {
+                if (!video || !video.src) return;
+                
+                const a = document.createElement('a');
+                a.href = video.src;
+                a.download = `Magic-Card-${cardId || 'Message'}.mp4`;
+                
+                const originalHTML = saveBtn.innerHTML;
+                saveBtn.innerHTML = '<span>⏳</span> <span>SAVING...</span>';
+                saveBtn.style.background = '#FF9800';
+                saveBtn.disabled = true;
+                
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                
+                setTimeout(() => {
+                    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+                    
+                    if (isIOS) {
+                        alert('📱 To save to Photos:\n1. Open Files app\n2. Find the video\n3. Tap Share → Save Video');
+                    } else {
+                        alert('✅ Video saved! Check Downloads folder.');
+                    }
+                    
+                    saveBtn.innerHTML = originalHTML;
+                    saveBtn.style.background = '#9B59B6';
+                    saveBtn.disabled = false;
+                }, 1500);
+            });
+            
+            // MAGIC BUTTON - Main trigger
             magicBtn.addEventListener('click', function() {
                 magicBtn.textContent = 'LOADING...';
                 magicBtn.style.background = '#27AE60';
+                errorMessageDiv.style.display = 'none';
                 
                 if (currentMessageType === 'text') {
                     woodFrame.setAttribute('visible', 'true');
@@ -502,6 +567,10 @@
                                 videoControls.style.display = 'block';
                                 instructions.textContent = `Message from card: ${cardId}`;
                                 
+                                if (video.duration && totalTimeEl.textContent === '0:00') {
+                                    totalTimeEl.textContent = formatTime(video.duration);
+                                }
+                                
                             }).catch(function(error) {
                                 showError('Cannot play media. Tap to try again.');
                                 magicBtn.textContent = `▶ PLAY ${cardId}`;
@@ -513,26 +582,18 @@
                 }
             });
             
-            // Auto-play if we have data
+            // Auto-load message
             setTimeout(function() {
-                loadData();
+                loadMessage();
                 
                 if (cardId) {
                     setTimeout(() => {
-                        magicBtn.click();
+                        if (magicBtn.textContent.includes('PLAY')) {
+                            magicBtn.click();
+                        }
                     }, 1000);
                 }
             }, 500);
-            
-            // For testing: If you want to see the URL with data
-            // Uncomment this and open browser console:
-            /*
-            console.log('Current URL with data:', createUrlWithData(
-                'TEST123', 
-                'text', 
-                'This is a test message that will work in ANY tab or device!'
-            ));
-            */
         });
     </script>
 </body>
