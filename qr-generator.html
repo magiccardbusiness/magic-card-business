@@ -3,7 +3,7 @@
 <head>
     <title>Magic Card - QR Generator</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -87,6 +87,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            min-height: 500px;
         }
         
         h2 {
@@ -196,6 +197,12 @@
             background: white;
             border-radius: 10px;
             border: 2px solid #e9ecef;
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: #666;
         }
         
         .result-url {
@@ -207,6 +214,7 @@
             font-size: 14px;
             width: 100%;
             margin-top: 20px;
+            min-height: 60px;
         }
         
         .action-buttons {
@@ -288,6 +296,11 @@
             left: 0;
             color: #28a745;
         }
+        
+        .empty-state {
+            color: #999;
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
@@ -338,8 +351,8 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="arPageUrl">Your AR Page URL:</label>
-                    <input type="text" id="arPageUrl" value="https://magic-card-business.vercel.app/" placeholder="URL of your AR page" readonly>
+                    <label>AR Page URL:</label>
+                    <input type="text" value="https://magic-card-business.vercel.app/" readonly style="background: #f0f0f0;">
                     <small style="color: #666; font-size: 12px;">This is your Magic Card business AR page</small>
                 </div>
                 
@@ -354,10 +367,13 @@
             <div class="result-section">
                 <h2>Your Magic QR Code</h2>
                 
-                <div id="qrcode"></div>
+                <div id="qrcode" class="empty-state">
+                    Your QR code will appear here<br>
+                    ⬅ Fill out the form and click "Generate"
+                </div>
                 
                 <div class="result-url" id="resultUrl">
-                    QR code will appear here after generation
+                    URL will appear here
                 </div>
                 
                 <div class="action-buttons">
@@ -392,8 +408,11 @@
         const fileInput = document.getElementById('fileInput');
         const mediaPreview = document.getElementById('mediaPreview');
         const statusDiv = document.getElementById('status');
+        const qrcodeDiv = document.getElementById('qrcode');
+        const resultUrlDiv = document.getElementById('resultUrl');
         
         let uploadedFileUrl = '';
+        let currentQRCode = null;
         
         // Show/hide inputs based on message type
         messageTypeSelect.addEventListener('change', function() {
@@ -456,13 +475,15 @@
         
         // 🔥 **MAIN FUNCTION: Generate QR Code** 🔥
         function generateQRCode() {
+            console.log("Generate button clicked!");
+            
             const cardId = document.getElementById('cardId').value.trim();
             const messageType = messageTypeSelect.value;
             let messageContent = '';
             
             // Validate card ID
             if (!cardId) {
-                showStatus('Please enter a Card ID', 'error');
+                showStatus('❌ Please enter a Card ID', 'error');
                 return;
             }
             
@@ -470,12 +491,12 @@
             if (messageType === 'text') {
                 messageContent = document.getElementById('messageText').value.trim();
                 if (!messageContent) {
-                    showStatus('Please enter a message', 'error');
+                    showStatus('❌ Please enter a message', 'error');
                     return;
                 }
             } else {
                 if (!uploadedFileUrl) {
-                    showStatus('Please upload a file', 'error');
+                    showStatus('❌ Please upload a file', 'error');
                     return;
                 }
                 messageContent = uploadedFileUrl;
@@ -501,69 +522,99 @@
             console.log('Generated URL:', finalUrl);
             console.log('Data encoded:', messageData);
             
+            // Clear previous QR code
+            qrcodeDiv.innerHTML = '';
+            qrcodeDiv.classList.remove('empty-state');
+            
+            // Show loading
+            qrcodeDiv.innerHTML = '<div style="color: #666;">Generating QR code...</div>';
+            
             // Generate QR code
-            document.getElementById('qrcode').innerHTML = '';
-            QRCode.toCanvas(document.getElementById('qrcode'), finalUrl, {
-                width: 250,
-                height: 250,
-                margin: 2,
-                color: {
-                    dark: '#000000',
-                    light: '#FFFFFF'
+            try {
+                // Clear any existing QR code
+                if (currentQRCode) {
+                    currentQRCode.clear();
                 }
-            }, function(error) {
-                if (error) {
-                    showStatus('Error generating QR code: ' + error, 'error');
-                } else {
+                
+                // Create new QR code
+                currentQRCode = new QRCode(qrcodeDiv, {
+                    text: finalUrl,
+                    width: 250,
+                    height: 250,
+                    colorDark: "#000000",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+                
+                // Wait a moment for QR code to render
+                setTimeout(function() {
                     // Show URL
-                    document.getElementById('resultUrl').textContent = finalUrl;
+                    resultUrlDiv.textContent = finalUrl;
+                    resultUrlDiv.style.color = '#333';
                     
                     // Enable buttons
                     document.getElementById('copyBtn').disabled = false;
                     document.getElementById('testBtn').disabled = false;
                     document.getElementById('downloadBtn').disabled = false;
                     
-                    showStatus('Magic QR code generated successfully!', 'success');
+                    showStatus('✅ Magic QR code generated successfully!', 'success');
                     
-                    // Auto-test the URL
-                    setTimeout(testURL, 1000);
-                }
-            });
+                    // Auto-test the URL after 2 seconds
+                    setTimeout(function() {
+                        testURL();
+                    }, 2000);
+                    
+                }, 500);
+                
+            } catch (error) {
+                console.error('QR Code generation error:', error);
+                qrcodeDiv.innerHTML = '<div style="color: red;">Error generating QR code. Please try again.</div>';
+                showStatus('❌ Error generating QR code: ' + error, 'error');
+            }
         }
         
         // Copy URL to clipboard
         function copyURL() {
-            const url = document.getElementById('resultUrl').textContent;
+            const url = resultUrlDiv.textContent;
+            if (!url || url === 'URL will appear here') {
+                showStatus('❌ No URL to copy', 'error');
+                return;
+            }
+            
             navigator.clipboard.writeText(url).then(function() {
-                showStatus('URL copied to clipboard!', 'success');
+                showStatus('✅ URL copied to clipboard!', 'success');
             }).catch(function(err) {
-                showStatus('Failed to copy: ' + err, 'error');
+                showStatus('❌ Failed to copy: ' + err, 'error');
             });
         }
         
         // Test URL in new tab
         function testURL() {
-            const url = document.getElementById('resultUrl').textContent;
-            if (url && url !== 'QR code will appear here after generation') {
-                window.open(url, '_blank');
-                showStatus('Opening magic card in new tab...', 'success');
+            const url = resultUrlDiv.textContent;
+            if (!url || url === 'URL will appear here') {
+                showStatus('❌ No URL to test', 'error');
+                return;
             }
+            
+            window.open(url, '_blank');
+            showStatus('🔗 Opening magic card in new tab...', 'success');
         }
         
         // Download QR code as PNG
         function downloadQRCode() {
-            const canvas = document.querySelector('#qrcode canvas');
+            const canvas = qrcodeDiv.querySelector('canvas');
             if (!canvas) {
-                showStatus('Please generate a QR code first', 'error');
+                showStatus('❌ Please generate a QR code first', 'error');
                 return;
             }
             
+            const cardId = document.getElementById('cardId').value || 'MagicCard';
             const link = document.createElement('a');
-            link.download = 'Magic-Card-' + document.getElementById('cardId').value + '-QR.png';
+            link.download = 'Magic-Card-' + cardId + '-QR.png';
             link.href = canvas.toDataURL('image/png');
             link.click();
             
-            showStatus('QR code downloaded!', 'success');
+            showStatus('⬇ QR code downloaded!', 'success');
         }
         
         // Show status message
@@ -578,10 +629,16 @@
         }
         
         // Initialize with example data
-        document.getElementById('cardId').value = 'BIRTHDAY' + Math.floor(Math.random() * 1000);
-        document.getElementById('messageText').value = '🎉 Happy Birthday! Wishing you a magical day filled with joy and surprises! 🎂';
-        
-        showStatus('Ready to create magic! Fill in the details above.', 'success');
+        window.onload = function() {
+            document.getElementById('cardId').value = 'BIRTHDAY' + Math.floor(Math.random() * 1000);
+            document.getElementById('messageText').value = '🎉 Happy Birthday! Wishing you a magical day filled with joy and surprises! 🎂';
+            
+            showStatus('✅ Ready to create magic! Fill in the details above.', 'success');
+            
+            // Add debug info
+            console.log("QR Generator loaded successfully!");
+            console.log("QRCode library available:", typeof QRCode !== 'undefined');
+        };
     </script>
 </body>
 </html>
