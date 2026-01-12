@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Magic Card - QR Generator</title>
+    <title>Magic Card QR Generator</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -12,79 +12,66 @@
         }
         
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
             min-height: 100vh;
-            padding: 15px;
         }
         
         .container {
             max-width: 800px;
             margin: 0 auto;
             background: white;
-            border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-        }
-        
-        .header {
-            text-align: center;
-            margin-bottom: 25px;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
         }
         
         .logo {
-            font-size: 32px;
+            text-align: center;
+            font-size: 36px;
             font-weight: bold;
             color: #333;
-            margin-bottom: 8px;
+            margin-bottom: 20px;
         }
         
-        .logo .magic-i {
+        .magic-i {
             color: #FFD700;
-            position: relative;
             display: inline-block;
+            position: relative;
         }
         
-        .logo .magic-i::before {
+        .magic-i::before {
             content: "★";
             position: absolute;
-            top: -12px;
+            top: -15px;
             left: 50%;
             transform: translateX(-50%);
-            font-size: 14px;
-        }
-        
-        .tagline {
-            color: #666;
             font-size: 16px;
         }
         
-        h2 {
+        .card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            border: 2px solid #e9ecef;
+        }
+        
+        .card h3 {
             color: #333;
             margin-bottom: 15px;
             font-size: 20px;
-            border-bottom: 2px solid #667eea;
-            padding-bottom: 8px;
-        }
-        
-        .form-group {
-            margin-bottom: 15px;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 6px;
-            font-weight: 600;
-            color: #444;
-            font-size: 14px;
         }
         
         input, textarea, select {
             width: 100%;
             padding: 12px;
             border: 2px solid #ddd;
-            border-radius: 8px;
+            border-radius: 10px;
             font-size: 16px;
+            margin-bottom: 15px;
+            font-family: inherit;
         }
         
         textarea {
@@ -93,73 +80,71 @@
         }
         
         .file-upload {
-            border: 2px dashed #667eea;
-            border-radius: 8px;
-            padding: 20px;
+            border: 3px dashed #667eea;
+            border-radius: 10px;
+            padding: 30px;
             text-align: center;
             background: #f0f4ff;
+            margin-bottom: 15px;
             cursor: pointer;
         }
         
+        .file-upload:active {
+            background: #e6ebff;
+        }
+        
         .file-label {
+            font-size: 18px;
             color: #667eea;
-            font-size: 16px;
-            display: block;
+            font-weight: bold;
         }
         
         .preview {
             margin-top: 15px;
-            display: none;
             text-align: center;
         }
         
         .preview video, .preview img {
             max-width: 100%;
             max-height: 200px;
-            border-radius: 8px;
-            border: 2px solid #667eea;
+            border-radius: 10px;
+            border: 3px solid #667eea;
         }
         
         .generate-btn {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            padding: 15px;
-            font-size: 18px;
+            padding: 18px;
+            font-size: 20px;
             font-weight: bold;
-            border-radius: 8px;
-            cursor: pointer;
+            border-radius: 10px;
             width: 100%;
+            cursor: pointer;
             margin-top: 10px;
         }
         
-        #qrcode {
-            margin: 20px auto;
-            padding: 15px;
+        .generate-btn:active {
+            transform: scale(0.98);
+        }
+        
+        .qrcode-container {
             background: white;
-            border-radius: 10px;
-            border: 2px solid #e9ecef;
-            min-height: 250px;
+            padding: 20px;
+            border-radius: 15px;
+            border: 3px solid #e9ecef;
+            margin-top: 20px;
+            min-height: 300px;
             display: flex;
             align-items: center;
             justify-content: center;
             text-align: center;
         }
         
-        .result-url {
-            background: #f8f9fa;
-            padding: 12px;
-            border-radius: 8px;
-            word-break: break-all;
-            font-size: 13px;
-            margin-top: 15px;
-            border: 1px solid #dee2e6;
-        }
-        
         .status {
-            margin-top: 15px;
-            padding: 10px;
-            border-radius: 8px;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
             text-align: center;
             font-weight: bold;
             display: none;
@@ -168,136 +153,128 @@
         .success {
             background: #d4edda;
             color: #155724;
-            border: 1px solid #c3e6cb;
+            border: 2px solid #c3e6cb;
         }
         
         .error {
             background: #f8d7da;
             color: #721c24;
-            border: 1px solid #f5c6cb;
+            border: 2px solid #f5c6cb;
         }
         
-        .cache-fix {
-            background: #e8f4fd;
-            border: 1px solid #b3d9ff;
-            color: #004085;
-            padding: 10px;
-            border-radius: 8px;
-            margin-top: 10px;
-            font-size: 13px;
+        .url-display {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            word-break: break-all;
+            font-size: 14px;
+            margin-top: 15px;
+            border: 2px solid #dee2e6;
         }
         
-        .clear-cache-btn {
-            background: #ff6b6b;
+        .test-btn {
+            background: #28a745;
             color: white;
             border: none;
-            padding: 8px 15px;
-            border-radius: 6px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 15px;
+            width: 100%;
+        }
+        
+        .clear-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
             cursor: pointer;
             margin-top: 10px;
-            font-size: 14px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <div class="logo">MAG<span class="magic-i">I</span>C CARD</div>
-            <div class="tagline">Create AR messages for your cards</div>
-        </div>
+        <div class="logo">MAG<span class="magic-i">I</span>C CARD</div>
         
-        <div class="cache-fix">
-            <strong>⚠ CACHE PROBLEM FIX:</strong><br>
-            If you see old video, try:<br>
-            1. Close ALL browser tabs<br>
-            2. Clear cache below<br>
-            3. Generate new QR code
-            <button class="clear-cache-btn" onclick="clearCache()">🗑️ Clear Cache</button>
-        </div>
-        
-        <div class="form-group">
-            <label for="cardId">Card ID:</label>
-            <input type="text" id="cardId" placeholder="BIRTHDAY001" value="TEST" + Date.now().toString().slice(-4)">
-        </div>
-        
-        <div class="form-group">
-            <label for="messageType">Message Type:</label>
+        <div class="card">
+            <h3>📝 Create Your Message</h3>
+            
+            <input type="text" id="cardId" placeholder="Card ID (e.g., BIRTHDAY001)" value="TEST<?php echo rand(100,999); ?>">
+            
             <select id="messageType">
-                <option value="text">Text</option>
-                <option value="video" selected>Video</option>
-                <option value="image">Image</option>
+                <option value="text">Text Message</option>
+                <option value="video" selected>Video Message</option>
+                <option value="image">Image Message</option>
             </select>
-        </div>
-        
-        <div class="form-group" id="textInput" style="display: none;">
-            <label for="messageText">Your Message:</label>
-            <textarea id="messageText">Test message</textarea>
-        </div>
-        
-        <div class="form-group" id="mediaInput">
-            <div class="file-upload" onclick="document.getElementById('fileInput').click()">
-                <div class="file-label">
-                    📱 Tap to upload video/image
-                </div>
-                <input type="file" id="fileInput" accept="video/*,image/*" style="display: none;">
+            
+            <div id="textInput">
+                <textarea id="messageText" placeholder="Type your message here...">🎉 Happy Birthday! 🎂</textarea>
             </div>
             
-            <div class="preview" id="mediaPreview"></div>
+            <div id="mediaInput" style="display: none;">
+                <div class="file-upload" onclick="document.getElementById('fileInput').click()">
+                    <div class="file-label">
+                        📱 TAP TO UPLOAD VIDEO/IMAGE
+                    </div>
+                    <input type="file" id="fileInput" accept="video/*,image/*" style="display: none;">
+                </div>
+                
+                <div class="preview" id="mediaPreview"></div>
+            </div>
+            
+            <input type="text" id="cloudinaryUrl" placeholder="Cloudinary URL (optional)" value="https://res.cloudinary.com/diqa9qyvh/video/upload/v1767377987/20251219_010742000_iOS_xuandm.mp4">
+            
+            <button class="generate-btn" onclick="generateQR()">
+                🪄 GENERATE QR CODE
+            </button>
+            
+            <button class="clear-btn" onclick="clearAll()">
+                🗑️ CLEAR & RESET
+            </button>
         </div>
-        
-        <div class="form-group">
-            <label for="cloudinaryUrl">Cloudinary URL (for real cards):</label>
-            <input type="text" id="cloudinaryUrl" placeholder="https://res.cloudinary.com/.../video.mp4">
-            <small style="color: #666; font-size: 12px;">Optional: Paste Cloudinary URL for cross-device</small>
-        </div>
-        
-        <button class="generate-btn" onclick="generateQRCode()">
-            🪄 GENERATE NEW QR CODE
-        </button>
         
         <div id="status" class="status"></div>
         
-        <h2 style="margin-top: 30px;">Your QR Code</h2>
-        
-        <div id="qrcode">
-            QR code will appear here
-        </div>
-        
-        <div class="result-url" id="resultUrl">
-            URL will appear here
-        </div>
-        
-        <div style="margin-top: 20px; text-align: center;">
-            <button onclick="testQR()" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">
-                🔗 Test QR in New Tab
+        <div class="card">
+            <h3>📱 Your QR Code</h3>
+            <div class="qrcode-container" id="qrcode">
+                <div style="color: #666;">
+                    QR Code will appear here<br>
+                    ⬆ Fill form above and click "GENERATE"
+                </div>
+            </div>
+            
+            <div class="url-display" id="urlDisplay">
+                URL will appear here
+            </div>
+            
+            <button class="test-btn" onclick="testQR()" id="testBtn" disabled>
+                🔗 TEST IN NEW TAB
             </button>
         </div>
     </div>
 
     <script>
-        // Get elements
+        // Elements
         const messageTypeSelect = document.getElementById('messageType');
         const textInput = document.getElementById('textInput');
         const mediaInput = document.getElementById('mediaInput');
         const fileInput = document.getElementById('fileInput');
         const mediaPreview = document.getElementById('mediaPreview');
-        const cloudinaryUrlInput = document.getElementById('cloudinaryUrl');
         const statusDiv = document.getElementById('status');
         const qrcodeDiv = document.getElementById('qrcode');
-        const resultUrlDiv = document.getElementById('resultUrl');
-        const cardIdInput = document.getElementById('cardId');
+        const urlDisplay = document.getElementById('urlDisplay');
+        const testBtn = document.getElementById('testBtn');
         
         let uploadedFileUrl = '';
-        let currentQRCode = null;
-        let uploadTimestamp = Date.now();
+        let generatedUrl = '';
         
-        // Generate unique card ID
-        cardIdInput.value = "TEST" + Date.now().toString().slice(-6);
-        
-        // Show/hide inputs
+        // Show/hide fields based on message type
         messageTypeSelect.addEventListener('change', function() {
             const type = this.value;
-            
             if (type === 'text') {
                 textInput.style.display = 'block';
                 mediaInput.style.display = 'none';
@@ -305,64 +282,67 @@
                 textInput.style.display = 'none';
                 mediaInput.style.display = 'block';
             }
-            
             mediaPreview.style.display = 'none';
             uploadedFileUrl = '';
         });
+        
+        // Set default to video
+        messageTypeSelect.value = 'video';
+        mediaInput.style.display = 'block';
+        textInput.style.display = 'none';
         
         // Handle file upload
         fileInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
             
-            console.log("New file selected:", file.name, file.size, "bytes");
+            console.log('File selected:', file.name, file.size);
             
-            // Clear old object URLs to prevent memory leaks
-            if (uploadedFileUrl && uploadedFileUrl.startsWith('blob:')) {
-                URL.revokeObjectURL(uploadedFileUrl);
-            }
-            
+            // Clear old preview
+            mediaPreview.innerHTML = '';
             mediaPreview.style.display = 'block';
             
             if (file.type.startsWith('video/')) {
-                const objectUrl = URL.createObjectURL(file);
+                const url = URL.createObjectURL(file);
                 mediaPreview.innerHTML = `
                     <video controls style="max-width: 100%; max-height: 200px;">
-                        <source src="${objectUrl}" type="${file.type}">
+                        <source src="${url}" type="${file.type}">
                     </video>
-                    <br><small>${file.name} (${formatFileSize(file.size)})</small>
+                    <div style="margin-top: 10px; color: #666;">
+                        ${file.name} (${formatSize(file.size)})
+                    </div>
                 `;
-                uploadedFileUrl = objectUrl;
+                uploadedFileUrl = url;
             } else if (file.type.startsWith('image/')) {
-                const objectUrl = URL.createObjectURL(file);
+                const url = URL.createObjectURL(file);
                 mediaPreview.innerHTML = `
-                    <img src="${objectUrl}" style="max-width: 100%; max-height: 200px;">
-                    <br><small>${file.name} (${formatFileSize(file.size)})</small>
+                    <img src="${url}" style="max-width: 100%; max-height: 200px;">
+                    <div style="margin-top: 10px; color: #666;">
+                        ${file.name} (${formatSize(file.size)})
+                    </div>
                 `;
-                uploadedFileUrl = objectUrl;
+                uploadedFileUrl = url;
             }
             
-            // Update timestamp for cache busting
-            uploadTimestamp = Date.now();
-            
-            showStatus(`✅ New ${file.type.startsWith('video/') ? 'video' : 'image'} loaded!`, 'success');
+            showStatus('✅ File loaded successfully!', 'success');
         });
         
-        function formatFileSize(bytes) {
+        // Format file size
+        function formatSize(bytes) {
             if (bytes < 1024) return bytes + ' B';
             if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + ' KB';
             return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
         }
         
-        // 🔥 **CACHE-BUSTING QR GENERATOR** 🔥
-        function generateQRCode() {
-            console.log("Generate button clicked at:", new Date().toISOString());
+        // 🚀 MAIN FUNCTION: Generate QR Code
+        function generateQR() {
+            console.log('Generate QR called');
             
-            const cardId = cardIdInput.value.trim() || "CARD" + Date.now().toString().slice(-6);
+            const cardId = document.getElementById('cardId').value.trim() || 'TEST' + Date.now().toString().slice(-6);
             const messageType = messageTypeSelect.value;
             let messageContent = '';
             
-            // Get message content
+            // Get content
             if (messageType === 'text') {
                 messageContent = document.getElementById('messageText').value.trim();
                 if (!messageContent) {
@@ -370,113 +350,121 @@
                     return;
                 }
             } else {
-                // Check Cloudinary URL first
-                const cloudinaryUrl = cloudinaryUrlInput.value.trim();
+                // Check Cloudinary URL
+                const cloudinaryUrl = document.getElementById('cloudinaryUrl').value.trim();
                 if (cloudinaryUrl && cloudinaryUrl.startsWith('http')) {
                     messageContent = cloudinaryUrl;
-                    showStatus('✅ Using Cloudinary URL', 'success');
                 } else if (uploadedFileUrl) {
-                    // For local files, we'll use a timestamped reference
-                    messageContent = "LOCAL_FILE_" + uploadTimestamp;
-                    showStatus('⚠ Using local file (same device only)', 'warning');
+                    // Use local file (for testing)
+                    messageContent = 'LOCAL_FILE_' + Date.now();
+                    showStatus('⚠ Using local file (test mode)', 'success');
                 } else {
                     showStatus('❌ Please upload a file or enter Cloudinary URL', 'error');
                     return;
                 }
             }
             
-            // Use your Vercel URL
-            const arPageUrl = "https://magic-card-business.vercel.app/";
-            
-            // 🔥 **ADD CACHE BUSTING: Add timestamp to card ID** 🔥
-            const uniqueCardId = cardId + "_" + uploadTimestamp;
-            
-            // Create data object with UNIQUE ID
+            // Create data with cache-busting timestamp
             const messageData = {
-                card: uniqueCardId,  // Changed: Now includes timestamp
+                card: cardId + '_' + Date.now(), // UNIQUE every time
                 type: messageType,
                 message: messageContent,
-                timestamp: uploadTimestamp  // Added: Explicit timestamp
+                timestamp: Date.now()
             };
             
-            console.log("Generating QR with data:", messageData);
+            // Convert to URL
+            const arPageUrl = 'https://magic-card-business.vercel.app/';
+            const jsonStr = JSON.stringify(messageData);
+            const base64 = btoa(jsonStr);
+            generatedUrl = arPageUrl + '#' + base64;
             
-            // Convert to Base64
+            console.log('Generated URL:', generatedUrl);
+            
+            // Clear QR code area
+            qrcodeDiv.innerHTML = '';
+            
+            // Generate QR code
             try {
-                const jsonString = JSON.stringify(messageData);
-                const base64Data = btoa(jsonString);
-                const finalUrl = arPageUrl.split('#')[0] + '#' + base64Data;
-                
-                console.log("New QR URL generated:", finalUrl);
-                
-                // Clear previous QR
-                if (currentQRCode) {
-                    currentQRCode.clear();
-                }
-                qrcodeDiv.innerHTML = '';
-                
-                // Generate NEW QR code
-                currentQRCode = new QRCode(qrcodeDiv, {
-                    text: finalUrl,
-                    width: 220,
-                    height: 220,
+                // Create QR code using the library
+                new QRCode(qrcodeDiv, {
+                    text: generatedUrl,
+                    width: 256,
+                    height: 256,
                     colorDark: "#000000",
-                    colorLight: "#ffffff"
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.H
                 });
                 
                 // Show URL
-                resultUrlDiv.textContent = finalUrl.substring(0, 80) + '...';
-                resultUrlDiv.title = finalUrl;
+                urlDisplay.textContent = generatedUrl.substring(0, 100) + '...';
+                urlDisplay.title = generatedUrl;
                 
-                // Store in localStorage for testing
-                localStorage.setItem('lastQRUrl', finalUrl);
-                localStorage.setItem('lastQRTime', new Date().toISOString());
+                // Enable test button
+                testBtn.disabled = false;
                 
-                showStatus('✅ NEW QR code generated! Scan this fresh one.', 'success');
-                
-                // Update card ID for next time
-                cardIdInput.value = "CARD" + Date.now().toString().slice(-6);
+                showStatus('✅ QR Code Generated Successfully!', 'success');
                 
             } catch (error) {
-                console.error("QR generation error:", error);
-                showStatus('❌ Error: ' + error.message, 'error');
+                console.error('QR Code error:', error);
+                qrcodeDiv.innerHTML = `
+                    <div style="color: red;">
+                        ❌ QR Code Error<br>
+                        <small>${error.message}</small>
+                    </div>
+                `;
+                showStatus('❌ Error generating QR code', 'error');
             }
         }
         
+        // Test QR code
         function testQR() {
-            const fullUrl = resultUrlDiv.title || localStorage.getItem('lastQRUrl');
-            if (fullUrl && !fullUrl.includes('will appear')) {
-                // 🔥 **ADD CACHE BUSTING TO TEST URL TOO** 🔥
-                const cacheBustedUrl = fullUrl + "&nocache=" + Date.now();
-                window.open(cacheBustedUrl, '_blank');
-                showStatus('🔗 Opening FRESH version...', 'success');
-            } else {
+            if (!generatedUrl) {
                 showStatus('❌ Generate a QR code first', 'error');
+                return;
             }
+            
+            // Add cache busting
+            const testUrl = generatedUrl + '&_=' + Date.now();
+            window.open(testUrl, '_blank');
+            showStatus('🔗 Opening in new tab...', 'success');
         }
         
-        function clearCache() {
-            // Clear localStorage
-            localStorage.clear();
-            
-            // Clear any object URLs
+        // Clear everything
+        function clearAll() {
+            // Clear file preview
             if (uploadedFileUrl && uploadedFileUrl.startsWith('blob:')) {
                 URL.revokeObjectURL(uploadedFileUrl);
-                uploadedFileUrl = '';
             }
             
+            // Reset form
+            document.getElementById('cardId').value = 'TEST' + Date.now().toString().slice(-6);
+            document.getElementById('messageText').value = '🎉 Happy Birthday! 🎂';
+            document.getElementById('cloudinaryUrl').value = 'https://res.cloudinary.com/diqa9qyvh/video/upload/v1767377987/20251219_010742000_iOS_xuandm.mp4';
+            
             // Clear preview
-            mediaPreview.style.display = 'none';
             mediaPreview.innerHTML = '';
+            mediaPreview.style.display = 'none';
+            uploadedFileUrl = '';
             
-            // Force page reload
-            showStatus('🗑️ Cache cleared! Page will reload...', 'success');
+            // Clear QR code
+            qrcodeDiv.innerHTML = `
+                <div style="color: #666;">
+                    QR Code will appear here<br>
+                    ⬆ Fill form above and click "GENERATE"
+                </div>
+            `;
             
-            setTimeout(() => {
-                location.reload(true); // true forces reload from server, not cache
-            }, 1000);
+            // Clear URL
+            urlDisplay.textContent = 'URL will appear here';
+            testBtn.disabled = true;
+            
+            // Force reload
+            location.reload();
+            
+            showStatus('🗑️ Everything cleared! Ready for new QR code.', 'success');
         }
         
+        // Show status message
         function showStatus(message, type) {
             statusDiv.textContent = message;
             statusDiv.className = 'status ' + type;
@@ -484,18 +472,17 @@
             
             setTimeout(() => {
                 statusDiv.style.display = 'none';
-            }, 4000);
+            }, 3000);
         }
         
         // Initialize
         window.onload = function() {
-            console.log("Cache-busting QR Generator ready!");
-            showStatus('Ready! Upload new video to get FRESH QR code', 'success');
+            console.log('QR Generator loaded');
+            showStatus('📱 Ready! Upload video or use Cloudinary URL', 'success');
             
-            // Show last generated time if exists
-            const lastTime = localStorage.getItem('lastQRTime');
-            if (lastTime) {
-                console.log("Last QR generated at:", lastTime);
+            // Test if QRCode library is loaded
+            if (typeof QRCode === 'undefined') {
+                showStatus('❌ QRCode library failed to load. Refresh page.', 'error');
             }
         };
     </script>
