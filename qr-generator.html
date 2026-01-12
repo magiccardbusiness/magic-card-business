@@ -4,7 +4,6 @@
     <title>Magic Card - QR Generator</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -13,31 +12,31 @@
         }
         
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            padding: 20px;
+            padding: 15px;
         }
         
         .container {
-            max-width: 1200px;
+            max-width: 800px;
             margin: 0 auto;
             background: white;
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
         }
         
         .header {
             text-align: center;
-            margin-bottom: 40px;
+            margin-bottom: 25px;
         }
         
         .logo {
-            font-size: 42px;
+            font-size: 32px;
             font-weight: bold;
             color: #333;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
         
         .logo .magic-i {
@@ -49,238 +48,121 @@
         .logo .magic-i::before {
             content: "★";
             position: absolute;
-            top: -15px;
+            top: -12px;
             left: 50%;
             transform: translateX(-50%);
-            font-size: 16px;
+            font-size: 14px;
         }
         
         .tagline {
             color: #666;
-            font-size: 18px;
-        }
-        
-        .main-content {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 40px;
-        }
-        
-        @media (max-width: 768px) {
-            .main-content {
-                grid-template-columns: 1fr;
-            }
-        }
-        
-        .form-section {
-            background: #f8f9fa;
-            padding: 25px;
-            border-radius: 15px;
-            border: 2px solid #e9ecef;
-        }
-        
-        .result-section {
-            background: #f8f9fa;
-            padding: 25px;
-            border-radius: 15px;
-            border: 2px solid #e9ecef;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 500px;
+            font-size: 16px;
         }
         
         h2 {
             color: #333;
-            margin-bottom: 20px;
-            font-size: 24px;
-            border-bottom: 3px solid #667eea;
-            padding-bottom: 10px;
+            margin-bottom: 15px;
+            font-size: 20px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 8px;
         }
         
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
         
         label {
             display: block;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             font-weight: 600;
             color: #444;
+            font-size: 14px;
         }
         
         input, textarea, select {
             width: 100%;
-            padding: 12px 15px;
+            padding: 12px;
             border: 2px solid #ddd;
-            border-radius: 10px;
+            border-radius: 8px;
             font-size: 16px;
-            transition: border-color 0.3s;
-        }
-        
-        input:focus, textarea:focus, select:focus {
-            outline: none;
-            border-color: #667eea;
         }
         
         textarea {
-            min-height: 120px;
+            min-height: 100px;
             resize: vertical;
         }
         
         .file-upload {
             border: 2px dashed #667eea;
-            border-radius: 10px;
-            padding: 25px;
+            border-radius: 8px;
+            padding: 20px;
             text-align: center;
             background: #f0f4ff;
             cursor: pointer;
-            transition: background 0.3s;
-        }
-        
-        .file-upload:hover {
-            background: #e6ebff;
-        }
-        
-        .file-upload input {
-            display: none;
         }
         
         .file-label {
             color: #667eea;
-            font-size: 18px;
+            font-size: 16px;
             display: block;
         }
         
         .preview {
             margin-top: 15px;
-            max-width: 200px;
             display: none;
+            text-align: center;
         }
         
-        .preview img, .preview video {
+        .preview video, .preview img {
             max-width: 100%;
+            max-height: 200px;
             border-radius: 8px;
             border: 2px solid #667eea;
-        }
-        
-        .video-options {
-            margin-top: 15px;
-            padding: 15px;
-            background: #e8f4fd;
-            border-radius: 10px;
-            border: 1px solid #b3d9ff;
-        }
-        
-        .option {
-            margin-bottom: 10px;
-        }
-        
-        .option input[type="radio"] {
-            width: auto;
-            margin-right: 10px;
-        }
-        
-        .cloudinary-section {
-            background: #f0f8ff;
-            padding: 15px;
-            border-radius: 10px;
-            margin-top: 15px;
-            display: none;
         }
         
         .generate-btn {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            padding: 16px 30px;
+            padding: 15px;
             font-size: 18px;
             font-weight: bold;
-            border-radius: 10px;
+            border-radius: 8px;
             cursor: pointer;
             width: 100%;
-            transition: transform 0.3s, box-shadow 0.3s;
-        }
-        
-        .generate-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
-        }
-        
-        .generate-btn:active {
-            transform: translateY(0);
+            margin-top: 10px;
         }
         
         #qrcode {
-            margin: 20px 0;
-            padding: 20px;
+            margin: 20px auto;
+            padding: 15px;
             background: white;
             border-radius: 10px;
             border: 2px solid #e9ecef;
-            min-height: 300px;
+            min-height: 250px;
             display: flex;
             align-items: center;
             justify-content: center;
             text-align: center;
-            color: #666;
         }
         
         .result-url {
-            background: white;
-            padding: 15px;
-            border-radius: 10px;
-            border: 2px solid #e9ecef;
-            word-break: break-all;
-            font-size: 14px;
-            width: 100%;
-            margin-top: 20px;
-            min-height: 60px;
-        }
-        
-        .action-buttons {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-            width: 100%;
-        }
-        
-        .action-btn {
-            flex: 1;
+            background: #f8f9fa;
             padding: 12px;
-            border: none;
             border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: opacity 0.3s;
-        }
-        
-        .action-btn:hover {
-            opacity: 0.9;
-        }
-        
-        .copy-btn {
-            background: #28a745;
-            color: white;
-        }
-        
-        .test-btn {
-            background: #007bff;
-            color: white;
-        }
-        
-        .download-btn {
-            background: #6f42c1;
-            color: white;
+            word-break: break-all;
+            font-size: 13px;
+            margin-top: 15px;
+            border: 1px solid #dee2e6;
         }
         
         .status {
             margin-top: 15px;
             padding: 10px;
             border-radius: 8px;
-            display: none;
             text-align: center;
             font-weight: bold;
+            display: none;
         }
         
         .success {
@@ -295,64 +177,25 @@
             border: 1px solid #f5c6cb;
         }
         
-        .warning {
-            background: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeaa7;
-        }
-        
-        .instructions {
-            background: #fff3cd;
-            border: 1px solid #ffeaa7;
-            color: #856404;
-            padding: 15px;
-            border-radius: 10px;
-            margin-top: 30px;
-            font-size: 14px;
-        }
-        
-        .step {
-            margin: 10px 0;
-            padding-left: 20px;
-            position: relative;
-        }
-        
-        .step:before {
-            content: "✓";
-            position: absolute;
-            left: 0;
-            color: #28a745;
-        }
-        
-        .empty-state {
-            color: #999;
-            font-style: italic;
-        }
-        
-        .upload-progress {
-            width: 100%;
-            background: #f0f0f0;
-            border-radius: 10px;
-            margin: 10px 0;
-            display: none;
-        }
-        
-        .progress-bar {
-            height: 20px;
-            background: #4CAF50;
-            border-radius: 10px;
-            width: 0%;
-            transition: width 0.3s;
-        }
-        
-        .local-warning {
-            background: #ffebee;
-            border: 1px solid #ffcdd2;
-            color: #c62828;
+        .cache-fix {
+            background: #e8f4fd;
+            border: 1px solid #b3d9ff;
+            color: #004085;
             padding: 10px;
             border-radius: 8px;
             margin-top: 10px;
-            font-size: 12px;
+            font-size: 13px;
+        }
+        
+        .clear-cache-btn {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-size: 14px;
         }
     </style>
 </head>
@@ -360,285 +203,166 @@
     <div class="container">
         <div class="header">
             <div class="logo">MAG<span class="magic-i">I</span>C CARD</div>
-            <div class="tagline">Create magical AR messages for your cards</div>
+            <div class="tagline">Create AR messages for your cards</div>
         </div>
         
-        <div class="main-content">
-            <!-- LEFT: Form Section -->
-            <div class="form-section">
-                <h2>Create Your Magic Message</h2>
-                
-                <div class="form-group">
-                    <label for="cardId">Card ID (Required):</label>
-                    <input type="text" id="cardId" placeholder="e.g., BIRTHDAY001, THANKYOU123" maxlength="50">
-                    <small style="color: #666; font-size: 12px;">Unique ID for this card. Receiver will see this.</small>
+        <div class="cache-fix">
+            <strong>⚠ CACHE PROBLEM FIX:</strong><br>
+            If you see old video, try:<br>
+            1. Close ALL browser tabs<br>
+            2. Clear cache below<br>
+            3. Generate new QR code
+            <button class="clear-cache-btn" onclick="clearCache()">🗑️ Clear Cache</button>
+        </div>
+        
+        <div class="form-group">
+            <label for="cardId">Card ID:</label>
+            <input type="text" id="cardId" placeholder="BIRTHDAY001" value="TEST" + Date.now().toString().slice(-4)">
+        </div>
+        
+        <div class="form-group">
+            <label for="messageType">Message Type:</label>
+            <select id="messageType">
+                <option value="text">Text</option>
+                <option value="video" selected>Video</option>
+                <option value="image">Image</option>
+            </select>
+        </div>
+        
+        <div class="form-group" id="textInput" style="display: none;">
+            <label for="messageText">Your Message:</label>
+            <textarea id="messageText">Test message</textarea>
+        </div>
+        
+        <div class="form-group" id="mediaInput">
+            <div class="file-upload" onclick="document.getElementById('fileInput').click()">
+                <div class="file-label">
+                    📱 Tap to upload video/image
                 </div>
-                
-                <div class="form-group">
-                    <label for="messageType">Message Type:</label>
-                    <select id="messageType">
-                        <option value="text">Text Message</option>
-                        <option value="image">Image</option>
-                        <option value="video">Video</option>
-                        <option value="audio">Audio Message</option>
-                    </select>
-                </div>
-                
-                <!-- Text Input -->
-                <div class="form-group" id="textInput">
-                    <label for="messageText">Your Message:</label>
-                    <textarea id="messageText" placeholder="Type your magic message here..."></textarea>
-                </div>
-                
-                <!-- Media Upload -->
-                <div class="form-group" id="mediaInput" style="display: none;">
-                    <label>Upload Media:</label>
-                    <div class="file-upload" onclick="document.getElementById('fileInput').click()">
-                        <div class="file-label">
-                            📁 Click to upload
-                        </div>
-                        <input type="file" id="fileInput" accept="image/*,video/*,audio/*">
-                        <small style="color: #666; display: block; margin-top: 10px;">Max size: 5MB for testing</small>
-                    </div>
-                    
-                    <div class="video-options" id="videoOptions" style="display: none;">
-                        <h4>Video Options:</h4>
-                        <div class="option">
-                            <input type="radio" id="localOption" name="videoOption" value="local" checked>
-                            <label for="localOption">Test Locally (Only works on this device)</label>
-                        </div>
-                        <div class="option">
-                            <input type="radio" id="cloudinaryOption" name="videoOption" value="cloudinary">
-                            <label for="cloudinaryOption">Upload to Cloudinary (Works everywhere)</label>
-                        </div>
-                    </div>
-                    
-                    <div class="cloudinary-section" id="cloudinarySection">
-                        <label for="cloudinaryUrl">Or enter Cloudinary URL:</label>
-                        <input type="text" id="cloudinaryUrl" placeholder="https://res.cloudinary.com/.../video.mp4">
-                        <small style="color: #666;">Get this from Cloudinary after uploading</small>
-                    </div>
-                    
-                    <div class="local-warning" id="localWarning" style="display: none;">
-                        ⚠ Local videos ONLY work on this device. For real cards, use Cloudinary.
-                    </div>
-                    
-                    <div class="upload-progress" id="uploadProgress">
-                        <div class="progress-bar" id="progressBar"></div>
-                    </div>
-                    
-                    <div class="preview" id="mediaPreview"></div>
-                </div>
-                
-                <div class="form-group">
-                    <label>AR Page URL:</label>
-                    <input type="text" value="https://magic-card-business.vercel.app/" readonly style="background: #f0f0f0;">
-                    <small style="color: #666; font-size: 12px;">This is your Magic Card business AR page</small>
-                </div>
-                
-                <button class="generate-btn" onclick="generateQRCode()">
-                    🪄 GENERATE MAGIC QR CODE
-                </button>
-                
-                <div id="status" class="status"></div>
+                <input type="file" id="fileInput" accept="video/*,image/*" style="display: none;">
             </div>
             
-            <!-- RIGHT: Result Section -->
-            <div class="result-section">
-                <h2>Your Magic QR Code</h2>
-                
-                <div id="qrcode" class="empty-state">
-                    Your QR code will appear here<br>
-                    ⬅ Fill out the form and click "Generate"
-                </div>
-                
-                <div class="result-url" id="resultUrl">
-                    URL will appear here
-                </div>
-                
-                <div class="action-buttons">
-                    <button class="action-btn copy-btn" onclick="copyURL()" id="copyBtn" disabled>
-                        📋 Copy URL
-                    </button>
-                    <button class="action-btn test-btn" onclick="testURL()" id="testBtn" disabled>
-                        🔗 Test in New Tab
-                    </button>
-                    <button class="action-btn download-btn" onclick="downloadQRCode()" id="downloadBtn" disabled>
-                        ⬇ Download QR
-                    </button>
-                </div>
-                
-                <div class="instructions">
-                    <h3>For Videos:</h3>
-                    <div class="step"><strong>Test Mode:</strong> Local file - Only works on this device</div>
-                    <div class="step"><strong>Real Business:</strong> Upload to Cloudinary first</div>
-                    <div style="margin-top: 15px; color: #d9534f;">
-                        <strong>How to use Cloudinary:</strong><br>
-                        1. Sign up at cloudinary.com (free)<br>
-                        2. Upload your video<br>
-                        3. Copy the "Delivery URL"<br>
-                        4. Paste in Cloudinary URL field
-                    </div>
-                </div>
-            </div>
+            <div class="preview" id="mediaPreview"></div>
+        </div>
+        
+        <div class="form-group">
+            <label for="cloudinaryUrl">Cloudinary URL (for real cards):</label>
+            <input type="text" id="cloudinaryUrl" placeholder="https://res.cloudinary.com/.../video.mp4">
+            <small style="color: #666; font-size: 12px;">Optional: Paste Cloudinary URL for cross-device</small>
+        </div>
+        
+        <button class="generate-btn" onclick="generateQRCode()">
+            🪄 GENERATE NEW QR CODE
+        </button>
+        
+        <div id="status" class="status"></div>
+        
+        <h2 style="margin-top: 30px;">Your QR Code</h2>
+        
+        <div id="qrcode">
+            QR code will appear here
+        </div>
+        
+        <div class="result-url" id="resultUrl">
+            URL will appear here
+        </div>
+        
+        <div style="margin-top: 20px; text-align: center;">
+            <button onclick="testQR()" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">
+                🔗 Test QR in New Tab
+            </button>
         </div>
     </div>
 
     <script>
-        // Get DOM elements
+        // Get elements
         const messageTypeSelect = document.getElementById('messageType');
         const textInput = document.getElementById('textInput');
         const mediaInput = document.getElementById('mediaInput');
         const fileInput = document.getElementById('fileInput');
         const mediaPreview = document.getElementById('mediaPreview');
-        const videoOptions = document.getElementById('videoOptions');
-        const cloudinarySection = document.getElementById('cloudinarySection');
-        const localWarning = document.getElementById('localWarning');
-        const uploadProgress = document.getElementById('uploadProgress');
-        const progressBar = document.getElementById('progressBar');
         const cloudinaryUrlInput = document.getElementById('cloudinaryUrl');
         const statusDiv = document.getElementById('status');
         const qrcodeDiv = document.getElementById('qrcode');
         const resultUrlDiv = document.getElementById('resultUrl');
+        const cardIdInput = document.getElementById('cardId');
         
         let uploadedFileUrl = '';
         let currentQRCode = null;
-        let uploadedFileName = '';
-        let videoOption = 'local'; // Default
+        let uploadTimestamp = Date.now();
         
-        // Show/hide inputs based on message type
+        // Generate unique card ID
+        cardIdInput.value = "TEST" + Date.now().toString().slice(-6);
+        
+        // Show/hide inputs
         messageTypeSelect.addEventListener('change', function() {
             const type = this.value;
             
             if (type === 'text') {
                 textInput.style.display = 'block';
                 mediaInput.style.display = 'none';
-                videoOptions.style.display = 'none';
-                cloudinarySection.style.display = 'none';
-                localWarning.style.display = 'none';
             } else {
                 textInput.style.display = 'none';
                 mediaInput.style.display = 'block';
-                
-                // Show video options for videos
-                if (type === 'video' || type === 'audio') {
-                    videoOptions.style.display = 'block';
-                    updateVideoOption();
-                } else {
-                    videoOptions.style.display = 'none';
-                    cloudinarySection.style.display = 'none';
-                    localWarning.style.display = 'none';
-                }
             }
             
-            // Clear preview
             mediaPreview.style.display = 'none';
             uploadedFileUrl = '';
-            uploadedFileName = '';
-            uploadProgress.style.display = 'none';
-            cloudinaryUrlInput.value = '';
         });
-        
-        // Video option change
-        document.querySelectorAll('input[name="videoOption"]').forEach(radio => {
-            radio.addEventListener('change', function() {
-                videoOption = this.value;
-                updateVideoOption();
-            });
-        });
-        
-        function updateVideoOption() {
-            if (videoOption === 'local') {
-                cloudinarySection.style.display = 'none';
-                localWarning.style.display = 'block';
-            } else {
-                cloudinarySection.style.display = 'block';
-                localWarning.style.display = 'none';
-            }
-        }
         
         // Handle file upload
         fileInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
             
-            // Check file size (5MB max for testing)
-            const maxSize = 5 * 1024 * 1024; // 5MB
-            if (file.size > maxSize) {
-                showStatus(`❌ File too large! Max 5MB for testing.`, 'error');
-                return;
+            console.log("New file selected:", file.name, file.size, "bytes");
+            
+            // Clear old object URLs to prevent memory leaks
+            if (uploadedFileUrl && uploadedFileUrl.startsWith('blob:')) {
+                URL.revokeObjectURL(uploadedFileUrl);
             }
             
-            uploadedFileName = file.name;
+            mediaPreview.style.display = 'block';
             
-            // Show upload progress
-            uploadProgress.style.display = 'block';
-            progressBar.style.width = '0%';
+            if (file.type.startsWith('video/')) {
+                const objectUrl = URL.createObjectURL(file);
+                mediaPreview.innerHTML = `
+                    <video controls style="max-width: 100%; max-height: 200px;">
+                        <source src="${objectUrl}" type="${file.type}">
+                    </video>
+                    <br><small>${file.name} (${formatFileSize(file.size)})</small>
+                `;
+                uploadedFileUrl = objectUrl;
+            } else if (file.type.startsWith('image/')) {
+                const objectUrl = URL.createObjectURL(file);
+                mediaPreview.innerHTML = `
+                    <img src="${objectUrl}" style="max-width: 100%; max-height: 200px;">
+                    <br><small>${file.name} (${formatFileSize(file.size)})</small>
+                `;
+                uploadedFileUrl = objectUrl;
+            }
             
-            // Read file as data URL
-            const reader = new FileReader();
+            // Update timestamp for cache busting
+            uploadTimestamp = Date.now();
             
-            reader.onload = function(e) {
-                uploadProgress.style.display = 'none';
-                mediaPreview.style.display = 'block';
-                
-                // Create preview
-                if (file.type.startsWith('image/')) {
-                    mediaPreview.innerHTML = `<img src="${e.target.result}" alt="Preview"><br><small>${file.name} (${formatFileSize(file.size)})</small>`;
-                    uploadedFileUrl = e.target.result;
-                } else if (file.type.startsWith('video/')) {
-                    mediaPreview.innerHTML = `
-                        <video controls style="max-width: 100%;">
-                            <source src="${e.target.result}" type="${file.type}">
-                        </video>
-                        <br><small>${file.name} (${formatFileSize(file.size)})</small>
-                    `;
-                    uploadedFileUrl = e.target.result;
-                } else if (file.type.startsWith('audio/')) {
-                    mediaPreview.innerHTML = `
-                        <audio controls style="width: 100%;">
-                            <source src="${e.target.result}" type="${file.type}">
-                        </audio>
-                        <br><small>${file.name} (${formatFileSize(file.size)})</small>
-                    `;
-                    uploadedFileUrl = e.target.result;
-                }
-                
-                showStatus(`✅ ${file.type.startsWith('image/') ? 'Image' : file.type.startsWith('video/') ? 'Video' : 'Audio'} uploaded! (${formatFileSize(file.size)})`, 'success');
-            };
-            
-            reader.onprogress = function(e) {
-                if (e.lengthComputable) {
-                    const percentLoaded = Math.round((e.loaded / e.total) * 100);
-                    progressBar.style.width = percentLoaded + '%';
-                }
-            };
-            
-            reader.readAsDataURL(file);
+            showStatus(`✅ New ${file.type.startsWith('video/') ? 'video' : 'image'} loaded!`, 'success');
         });
         
-        // Format file size
         function formatFileSize(bytes) {
-            if (bytes < 1024) return bytes + ' bytes';
-            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + ' KB';
             return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
         }
         
-        // 🔥 **MAIN FUNCTION: Generate QR Code** 🔥
-        async function generateQRCode() {
-            console.log("Generate button clicked!");
+        // 🔥 **CACHE-BUSTING QR GENERATOR** 🔥
+        function generateQRCode() {
+            console.log("Generate button clicked at:", new Date().toISOString());
             
-            const cardId = document.getElementById('cardId').value.trim();
+            const cardId = cardIdInput.value.trim() || "CARD" + Date.now().toString().slice(-6);
             const messageType = messageTypeSelect.value;
             let messageContent = '';
             
-            // Validate card ID
-            if (!cardId) {
-                showStatus('❌ Please enter a Card ID', 'error');
-                return;
-            }
-            
-            // Get message content based on type
+            // Get message content
             if (messageType === 'text') {
                 messageContent = document.getElementById('messageText').value.trim();
                 if (!messageContent) {
@@ -646,187 +370,133 @@
                     return;
                 }
             } else {
-                if (messageType === 'video' || messageType === 'audio') {
-                    if (videoOption === 'cloudinary') {
-                        // Use Cloudinary URL
-                        messageContent = cloudinaryUrlInput.value.trim();
-                        if (!messageContent) {
-                            showStatus('❌ Please enter a Cloudinary URL or upload a file', 'error');
-                            return;
-                        }
-                        if (!messageContent.startsWith('http')) {
-                            showStatus('❌ Please enter a valid URL starting with http:// or https://', 'error');
-                            return;
-                        }
-                    } else {
-                        // Use local file
-                        if (!uploadedFileUrl) {
-                            showStatus('❌ Please upload a file', 'error');
-                            return;
-                        }
-                        messageContent = uploadedFileUrl;
-                    }
+                // Check Cloudinary URL first
+                const cloudinaryUrl = cloudinaryUrlInput.value.trim();
+                if (cloudinaryUrl && cloudinaryUrl.startsWith('http')) {
+                    messageContent = cloudinaryUrl;
+                    showStatus('✅ Using Cloudinary URL', 'success');
+                } else if (uploadedFileUrl) {
+                    // For local files, we'll use a timestamped reference
+                    messageContent = "LOCAL_FILE_" + uploadTimestamp;
+                    showStatus('⚠ Using local file (same device only)', 'warning');
                 } else {
-                    // For images
-                    if (!uploadedFileUrl) {
-                        showStatus('❌ Please upload a file', 'error');
-                        return;
-                    }
-                    messageContent = uploadedFileUrl;
+                    showStatus('❌ Please upload a file or enter Cloudinary URL', 'error');
+                    return;
                 }
             }
             
-            // 🔥 **FIXED: Use YOUR Vercel URL** 🔥
+            // Use your Vercel URL
             const arPageUrl = "https://magic-card-business.vercel.app/";
             
-            // Create data object
+            // 🔥 **ADD CACHE BUSTING: Add timestamp to card ID** 🔥
+            const uniqueCardId = cardId + "_" + uploadTimestamp;
+            
+            // Create data object with UNIQUE ID
             const messageData = {
-                card: cardId,
+                card: uniqueCardId,  // Changed: Now includes timestamp
                 type: messageType,
-                message: messageContent
+                message: messageContent,
+                timestamp: uploadTimestamp  // Added: Explicit timestamp
             };
             
-            // Convert to JSON and then to Base64
-            const jsonString = JSON.stringify(messageData);
+            console.log("Generating QR with data:", messageData);
             
-            // Check if data is too large for QR code
-            if (jsonString.length > 2000) { // Safe limit for QR codes
-                showStatus('❌ Data too large for QR code. Try smaller file or use Cloudinary.', 'error');
-                return;
-            }
-            
-            const base64Data = btoa(jsonString);
-            
-            // Create final URL with hash (#) instead of query parameters
-            const finalUrl = arPageUrl.split('#')[0] + '#' + base64Data;
-            
-            console.log('Generated URL length:', finalUrl.length);
-            console.log('Message type:', messageType);
-            
-            // Clear previous QR code
-            qrcodeDiv.innerHTML = '';
-            qrcodeDiv.classList.remove('empty-state');
-            
-            // Show loading
-            qrcodeDiv.innerHTML = '<div style="color: #666;">Generating QR code...</div>';
-            
-            // Generate QR code
+            // Convert to Base64
             try {
-                // Clear any existing QR code
+                const jsonString = JSON.stringify(messageData);
+                const base64Data = btoa(jsonString);
+                const finalUrl = arPageUrl.split('#')[0] + '#' + base64Data;
+                
+                console.log("New QR URL generated:", finalUrl);
+                
+                // Clear previous QR
                 if (currentQRCode) {
                     currentQRCode.clear();
                 }
+                qrcodeDiv.innerHTML = '';
                 
-                // Create new QR code
+                // Generate NEW QR code
                 currentQRCode = new QRCode(qrcodeDiv, {
                     text: finalUrl,
-                    width: 250,
-                    height: 250,
+                    width: 220,
+                    height: 220,
                     colorDark: "#000000",
-                    colorLight: "#ffffff",
-                    correctLevel: QRCode.CorrectLevel.H
+                    colorLight: "#ffffff"
                 });
                 
-                // Wait a moment for QR code to render
-                setTimeout(function() {
-                    // Show URL (truncated if too long)
-                    let displayUrl = finalUrl;
-                    if (displayUrl.length > 80) {
-                        displayUrl = displayUrl.substring(0, 80) + '...';
-                    }
-                    resultUrlDiv.textContent = displayUrl;
-                    resultUrlDiv.title = finalUrl; // Full URL on hover
-                    resultUrlDiv.style.color = '#333';
-                    
-                    // Enable buttons
-                    document.getElementById('copyBtn').disabled = false;
-                    document.getElementById('testBtn').disabled = false;
-                    document.getElementById('downloadBtn').disabled = false;
-                    
-                    // Show appropriate message
-                    if (messageType === 'video' && videoOption === 'local') {
-                        showStatus('✅ QR generated! ⚠ Local video - Test on THIS DEVICE only.', 'warning');
-                    } else {
-                        showStatus('✅ QR code generated successfully!', 'success');
-                    }
-                    
-                    // Auto-test the URL
-                    setTimeout(function() {
-                        testURL();
-                    }, 1500);
-                    
-                }, 500);
+                // Show URL
+                resultUrlDiv.textContent = finalUrl.substring(0, 80) + '...';
+                resultUrlDiv.title = finalUrl;
+                
+                // Store in localStorage for testing
+                localStorage.setItem('lastQRUrl', finalUrl);
+                localStorage.setItem('lastQRTime', new Date().toISOString());
+                
+                showStatus('✅ NEW QR code generated! Scan this fresh one.', 'success');
+                
+                // Update card ID for next time
+                cardIdInput.value = "CARD" + Date.now().toString().slice(-6);
                 
             } catch (error) {
-                console.error('QR Code generation error:', error);
-                qrcodeDiv.innerHTML = '<div style="color: red;">Error generating QR code.</div>';
-                showStatus('❌ Error generating QR code. Try smaller file.', 'error');
+                console.error("QR generation error:", error);
+                showStatus('❌ Error: ' + error.message, 'error');
             }
         }
         
-        // Copy URL to clipboard
-        function copyURL() {
-            const fullUrl = resultUrlDiv.title || resultUrlDiv.textContent;
-            if (!fullUrl || fullUrl === 'URL will appear here') {
-                showStatus('❌ No URL to copy', 'error');
-                return;
+        function testQR() {
+            const fullUrl = resultUrlDiv.title || localStorage.getItem('lastQRUrl');
+            if (fullUrl && !fullUrl.includes('will appear')) {
+                // 🔥 **ADD CACHE BUSTING TO TEST URL TOO** 🔥
+                const cacheBustedUrl = fullUrl + "&nocache=" + Date.now();
+                window.open(cacheBustedUrl, '_blank');
+                showStatus('🔗 Opening FRESH version...', 'success');
+            } else {
+                showStatus('❌ Generate a QR code first', 'error');
             }
-            
-            navigator.clipboard.writeText(fullUrl).then(function() {
-                showStatus('✅ URL copied to clipboard!', 'success');
-            }).catch(function(err) {
-                showStatus('❌ Failed to copy: ' + err, 'error');
-            });
         }
         
-        // Test URL in new tab
-        function testURL() {
-            const fullUrl = resultUrlDiv.title || resultUrlDiv.textContent;
-            if (!fullUrl || fullUrl === 'URL will appear here') {
-                showStatus('❌ No URL to test', 'error');
-                return;
+        function clearCache() {
+            // Clear localStorage
+            localStorage.clear();
+            
+            // Clear any object URLs
+            if (uploadedFileUrl && uploadedFileUrl.startsWith('blob:')) {
+                URL.revokeObjectURL(uploadedFileUrl);
+                uploadedFileUrl = '';
             }
             
-            window.open(fullUrl, '_blank');
-            showStatus('🔗 Opening magic card in new tab...', 'success');
+            // Clear preview
+            mediaPreview.style.display = 'none';
+            mediaPreview.innerHTML = '';
+            
+            // Force page reload
+            showStatus('🗑️ Cache cleared! Page will reload...', 'success');
+            
+            setTimeout(() => {
+                location.reload(true); // true forces reload from server, not cache
+            }, 1000);
         }
         
-        // Download QR code as PNG
-        function downloadQRCode() {
-            const canvas = qrcodeDiv.querySelector('canvas');
-            if (!canvas) {
-                showStatus('❌ Please generate a QR code first', 'error');
-                return;
-            }
-            
-            const cardId = document.getElementById('cardId').value || 'MagicCard';
-            const link = document.createElement('a');
-            link.download = `Magic-Card-${cardId}-QR.png`;
-            link.href = canvas.toDataURL('image/png');
-            link.click();
-            
-            showStatus('⬇ QR code downloaded!', 'success');
-        }
-        
-        // Show status message
         function showStatus(message, type) {
             statusDiv.textContent = message;
             statusDiv.className = 'status ' + type;
             statusDiv.style.display = 'block';
             
-            setTimeout(function() {
+            setTimeout(() => {
                 statusDiv.style.display = 'none';
-            }, 5000);
+            }, 4000);
         }
         
-        // Initialize with example data
+        // Initialize
         window.onload = function() {
-            document.getElementById('cardId').value = 'BIRTHDAY' + Math.floor(Math.random() * 1000);
-            document.getElementById('messageText').value = '🎉 Happy Birthday! Wishing you a magical day filled with joy and surprises! 🎂';
+            console.log("Cache-busting QR Generator ready!");
+            showStatus('Ready! Upload new video to get FRESH QR code', 'success');
             
-            showStatus('✅ Ready to create magic! Fill in the details above.', 'success');
-            
-            console.log("QR Generator loaded successfully!");
+            // Show last generated time if exists
+            const lastTime = localStorage.getItem('lastQRTime');
+            if (lastTime) {
+                console.log("Last QR generated at:", lastTime);
+            }
         };
     </script>
 </body>
