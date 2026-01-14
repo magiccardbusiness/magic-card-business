@@ -1,878 +1,102 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Magic Card AR</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>Magic Card</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-    
-    <!-- 🔥 FIREBASE MAGIC -->
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js"></script>
-    
     <style>
-        * { margin: 0; padding: 0; }
-        body { 
-            background: black; 
-            overflow: hidden;
-            width: 100vw;
-            height: 100vh;
-            font-family: 'Arial', sans-serif;
+        body { margin: 0; padding: 0; background: black; }
+        #play-btn {
+            position: fixed; bottom: 50px; left: 50%; transform: translateX(-50%);
+            background: #667eea; color: white; padding: 20px 40px;
+            font-size: 20px; border: none; border-radius: 10px;
+            cursor: pointer; z-index: 1000;
         }
-        
-        /* Company Logo */
-        #company-logo {
-            position: fixed;
-            top: 25px;
-            left: 0;
-            width: 100%;
-            color: white;
-            text-align: center;
-            font-size: 32px;
-            font-weight: bold;
-            z-index: 1000;
+        #info {
+            position: fixed; top: 20px; left: 0; width: 100%;
+            color: white; text-align: center; font-size: 18px; z-index: 1000;
         }
-        
-        .magic-i {
-            position: relative;
-            display: inline-block;
-            color: #FFD700;
-        }
-        
-        .magic-i::before {
-            content: "★";
-            position: absolute;
-            top: -15px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 14px;
-            color: #FFD700;
-        }
-        
-        /* INSTRUCTIONS - UNDER LOGO */
-        #instructions {
-            position: fixed;
-            top: 75px;
-            left: 0;
-            width: 100%;
-            color: #AAAAAA;
-            text-align: center;
-            font-size: 14px;
-            z-index: 1001;
-            padding: 0 20px;
-            line-height: 1.4;
-        }
-        
-        /* Card ID Display */
-        #card-id-display {
-            position: fixed;
-            top: 100px;
-            left: 0;
-            width: 100%;
-            color: #FFD700;
-            text-align: center;
-            font-size: 14px;
-            z-index: 1002;
-            display: none;
-        }
-        
-        #magic-btn {
-            position: fixed;
-            bottom: 50px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #2C3E50;
-            color: white;
-            border: none;
-            padding: 16px 40px;
-            font-size: 18px;
-            font-weight: bold;
-            border-radius: 8px;
-            z-index: 1003;
-            cursor: pointer;
-            border: 1px solid #34495E;
-            transition: all 0.3s;
-        }
-        
-        #magic-btn:hover {
-            background: #34495E;
-        }
-        
-        #video-controls {
-            position: fixed;
-            bottom: 20px;
-            left: 0;
-            width: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            padding: 12px 15px;
-            z-index: 1004;
-            display: none;
-            border-top: 1px solid #333;
-        }
-        
-        #timeline-container {
-            width: 100%;
-            height: 6px;
-            background: #444;
-            border-radius: 3px;
-            margin-bottom: 14px;
-            cursor: pointer;
-        }
-        
-        #progress-bar {
-            height: 100%;
-            background: #FFD700;
-            border-radius: 3px;
-            width: 0%;
-        }
-        
-        .controls-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .time-display {
-            color: #AAA;
-            font-size: 13px;
-            font-family: monospace;
-            min-width: 80px;
-        }
-        
-        .buttons-container {
-            display: flex;
-            gap: 8px;
-        }
-        
-        .control-btn {
-            background: #2C3E50;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-            min-width: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-        }
-        
-        #play-pause-btn { background: #27AE60; }
-        #stop-btn { background: #E74C3C; }
-        #save-btn { background: #9B59B6; }
-        
-        .control-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        
-        /* Card message display */
-        #card-message {
-            position: fixed;
-            top: 120px;
-            left: 0;
-            width: 100%;
-            color: #FFD700;
-            text-align: center;
-            font-size: 16px;
-            z-index: 1005;
-            padding: 0 20px;
-            display: none;
-        }
-        
-        /* Error message */
-        #error-message {
-            position: fixed;
-            top: 150px;
-            left: 0;
-            width: 100%;
-            color: #FF6B6B;
-            text-align: center;
-            font-size: 14px;
-            z-index: 1006;
-            padding: 0 20px;
-            display: none;
-        }
-        
-        /* Loading spinner */
-        .spinner {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top: 4px solid #FFD700;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            display: none;
-            z-index: 1007;
-        }
-        
-        @keyframes spin {
-            0% { transform: translate(-50%, -50%) rotate(0deg); }
-            100% { transform: translate(-50%, -50%) rotate(360deg); }
-        }
-        
-        /* Additional buttons */
-        #extra-buttons {
-            position: fixed;
-            bottom: 120px;
-            left: 0;
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            z-index: 1008;
-            display: none;
-        }
-        
-        .extra-btn {
-            background: rgba(255, 215, 0, 0.2);
-            color: #FFD700;
-            border: 1px solid #FFD700;
-            padding: 10px 20px;
-            border-radius: 6px;
-            font-size: 14px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s;
-        }
-        
-        .extra-btn:hover {
-            background: rgba(255, 215, 0, 0.3);
-        }
-        
-        /* Connection status */
-        #connection-status {
-            position: fixed;
-            top: 180px;
-            left: 0;
-            width: 100%;
-            text-align: center;
-            font-size: 12px;
-            color: #aaa;
-            z-index: 1009;
+        .firebase-badge {
+            position: fixed; top: 10px; right: 10px;
+            background: #666; color: white; padding: 5px 10px;
+            border-radius: 10px; font-size: 12px;
         }
     </style>
 </head>
 <body>
-    <div id="company-logo">
-        MAG<span class="magic-i">I</span>C CARD
-    </div>
-    
-    <!-- Loading Spinner -->
-    <div class="spinner" id="loading-spinner"></div>
-    
-    <!-- Connection Status -->
-    <div id="connection-status"></div>
-    
-    <!-- Card ID Display -->
-    <div id="card-id-display"></div>
-    
-    <!-- Instructions -->
-    <div id="instructions">
-        Loading magic...
-    </div>
-    
-    <!-- Card Message Display -->
-    <div id="card-message"></div>
-    
-    <!-- Error Message Display -->
-    <div id="error-message"></div>
-    
-    <!-- Extra Buttons -->
-    <div id="extra-buttons">
-        <button class="extra-btn" id="share-btn">
-            <span>📤</span> SHARE
-        </button>
-        <button class="extra-btn" id="upload-btn">
-            <span>📝</span> UPLOAD NEW
-        </button>
-    </div>
-    
-    <button id="magic-btn">LOADING...</button>
-    
-    <div id="video-controls">
-        <div id="timeline-container">
-            <div id="progress-bar"></div>
-        </div>
-        
-        <div class="controls-row">
-            <div class="time-display">
-                <span id="current-time">0:00</span> / <span id="total-time">0:00</span>
-            </div>
-            
-            <div class="buttons-container">
-                <button id="play-pause-btn" class="control-btn">
-                    <span>⏸</span> <span>PAUSE</span>
-                </button>
-                <button id="stop-btn" class="control-btn">
-                    <span>⏹</span> <span>STOP</span>
-                </button>
-                <button id="save-btn" class="control-btn">
-                    <span>💾</span> <span>SAVE</span>
-                </button>
-            </div>
-        </div>
-    </div>
+    <div class="firebase-badge">☁️ Local Mode</div>
+    <div id="info">🎴 Magic Card</div>
+    <button id="play-btn">🎬 PLAY MAGIC</button>
     
     <a-scene embedded>
         <a-camera></a-camera>
         <a-light type="ambient" color="#FFFFFF" intensity="0.8"></a-light>
         
         <a-entity position="0 0 -2">
-            <!-- Wooden Frame -->
-            <a-box id="wood-frame"
-                   width="2.0" height="1.4" depth="0.08"
-                   position="0 0.8 0"
-                   rotation="-10 0 0"
-                   color="#8B7355" roughness="0.7"
-                   visible="false">
+            <a-box id="frame" width="2.0" height="1.4" depth="0.08"
+                   position="0 0.8 0" rotation="-10 0 0"
+                   color="#8B7355" visible="false">
             </a-box>
             
-            <!-- Video screen -->
-            <a-plane id="video-screen"
-                    width="1.85" height="1.25"
-                    position="0 0.8 0.05"
-                    rotation="-10 0 0"
-                    material="side: double; color: #000000"
-                    visible="false">
-                <a-video id="ar-video"
-                        width="1.85" height="1.25"
-                        position="0 0 0.01">
-                </a-video>
-            </a-plane>
-            
-            <!-- Text Display -->
-            <a-text id="text-display"
-                    value=""
-                    color="#FFFFFF"
-                    align="center"
-                    width="1.8"
-                    position="0 0.8 0.05"
-                    rotation="-10 0 0"
+            <a-text id="text" value="" color="#FFD700" align="center"
+                    width="1.8" position="0 0.8 0.05" rotation="-10 0 0"
                     visible="false">
             </a-text>
-            
-            <!-- Image Display -->
-            <a-image id="image-display"
-                    width="1.85" height="1.25"
-                    position="0 0.8 0.05"
-                    rotation="-10 0 0"
-                    visible="false">
-            </a-image>
         </a-entity>
     </a-scene>
 
     <script>
-        // 🔥 FIREBASE CONFIGURATION
-        const firebaseConfig = {
-            apiKey: "AIzaSyB2KubmablXwpbSpMT8RCba_Na-7XnpuKY",
-            authDomain: "magic-card-business.firebaseapp.com",
-            projectId: "magic-card-business",
-            storageBucket: "magic-card-business.firebasestorage.app",
-            messagingSenderId: "837403328170",
-            appId: "1:837403328170:web:3d768122e4d03b98905ad3"
-        };
-        
-        // Initialize Firebase
-        let db;
-        let isFirebaseConnected = false;
-        
-        try {
-            firebase.initializeApp(firebaseConfig);
-            db = firebase.firestore();
-            isFirebaseConnected = true;
-            console.log("✅ Firebase connected!");
-            document.getElementById('connection-status').textContent = "✅ Connected to magic cloud";
-        } catch (error) {
-            console.error("❌ Firebase error:", error);
-            document.getElementById('connection-status').textContent = "⚠️ No cloud connection";
-            document.getElementById('connection-status').style.color = "#FFD700";
-        }
-        
         document.addEventListener('DOMContentLoaded', function() {
-            const magicBtn = document.getElementById('magic-btn');
-            const woodFrame = document.getElementById('wood-frame');
-            const videoScreen = document.getElementById('video-screen');
-            const textDisplay = document.getElementById('text-display');
-            const imageDisplay = document.getElementById('image-display');
-            const videoControls = document.getElementById('video-controls');
-            const progressBar = document.getElementById('progress-bar');
-            const currentTimeEl = document.getElementById('current-time');
-            const totalTimeEl = document.getElementById('total-time');
-            const playPauseBtn = document.getElementById('play-pause-btn');
-            const stopBtn = document.getElementById('stop-btn');
-            const saveBtn = document.getElementById('save-btn');
-            const timelineContainer = document.getElementById('timeline-container');
-            const instructions = document.getElementById('instructions');
-            const cardMessageDiv = document.getElementById('card-message');
-            const errorMessageDiv = document.getElementById('error-message');
-            const loadingSpinner = document.getElementById('loading-spinner');
-            const cardIdDisplay = document.getElementById('card-id-display');
-            const extraButtons = document.getElementById('extra-buttons');
-            const shareBtn = document.getElementById('share-btn');
-            const uploadBtn = document.getElementById('upload-btn');
-            const connectionStatus = document.getElementById('connection-status');
+            const playBtn = document.getElementById('play-btn');
+            const frame = document.getElementById('frame');
+            const text = document.getElementById('text');
+            const info = document.getElementById('info');
             
-            let video = null;
-            let currentMessageType = null;
-            let currentMessageContent = '';
-            let cardId = '';
-            let isFromFirebase = false;
-            let fallbackData = null;
+            // Get message from URL
+            const hash = window.location.hash.substring(1);
+            let message = "Welcome to Magic Card! ✨";
+            let cardId = "DEMO";
             
-            // Get card ID from URL (supports both old and new formats)
-            function getCardIdFromUrl() {
-                // Try new format: ?card=CARD123
-                const urlParams = new URLSearchParams(window.location.search);
-                const cardIdFromParam = urlParams.get('card');
-                
-                if (cardIdFromParam) {
-                    console.log("📱 New format card ID:", cardIdFromParam);
-                    return {
-                        id: cardIdFromParam,
-                        isNewFormat: true
-                    };
-                }
-                
-                // Try old format: #BASE64_DATA
-                const hash = window.location.hash.substring(1);
-                if (!hash) {
-                    console.log("❌ No card ID found in URL");
-                    return null;
-                }
-                
+            // Try to decode from hash (old format)
+            if (hash) {
                 try {
-                    const decoded = atob(hash);
-                    const data = JSON.parse(decoded);
-                    console.log("📱 Old format data:", data);
-                    return {
-                        id: data.card || 'UNKNOWN',
-                        isNewFormat: false,
-                        data: data
-                    };
-                } catch (error) {
-                    console.error('❌ Failed to decode old format:', error);
-                    return null;
+                    const data = JSON.parse(atob(hash));
+                    message = data.message || message;
+                    cardId = data.card || cardId;
+                } catch (e) {
+                    message = decodeURIComponent(hash);
                 }
             }
             
-            // Load message from Firebase
-            async function loadMessageFromFirebase(cardId) {
-                if (!isFirebaseConnected) {
-                    console.log("⚠️ Firebase not connected, skipping cloud load");
-                    return {
-                        success: false,
-                        message: 'No internet connection'
-                    };
-                }
-                
-                loadingSpinner.style.display = 'block';
-                instructions.textContent = 'Loading from magic cloud...';
-                magicBtn.disabled = true;
-                
-                try {
-                    console.log("☁️ Loading from Firebase for card:", cardId);
-                    const docRef = db.collection('cards').doc(cardId);
-                    const doc = await docRef.get();
-                    
-                    if (doc.exists) {
-                        const data = doc.data();
-                        console.log('✅ Loaded from Firebase:', data);
-                        
-                        // Update view count
-                        try {
-                            await docRef.update({
-                                views: firebase.firestore.FieldValue.increment(1),
-                                lastViewed: new Date().toISOString()
-                            });
-                            console.log("👁️ View count updated");
-                        } catch (viewError) {
-                            console.log("⚠️ Couldn't update view count:", viewError);
-                        }
-                        
-                        return {
-                            success: true,
-                            type: data.type || 'text',
-                            content: data.type === 'text' ? data.message : data.mediaUrl,
-                            cardId: data.cardId || cardId,
-                            fileName: data.fileName,
-                            createdAt: data.createdAt,
-                            isCloud: true
-                        };
-                    } else {
-                        console.log('❌ No message in Firebase for card:', cardId);
-                        return {
-                            success: false,
-                            message: 'No message found in cloud'
-                        };
-                    }
-                } catch (error) {
-                    console.error('❌ Firebase error:', error);
-                    return {
-                        success: false,
-                        message: 'Cloud connection failed'
-                    };
-                } finally {
-                    loadingSpinner.style.display = 'none';
-                    magicBtn.disabled = false;
-                }
-            }
+            // Get from URL params (new format)
+            const params = new URLSearchParams(window.location.search);
+            const urlMessage = params.get('message');
+            const urlCard = params.get('card');
             
-            // Load message on page start
-            async function loadMessage() {
-                console.log("🎴 Starting message load...");
-                const cardInfo = getCardIdFromUrl();
-                
-                if (!cardInfo) {
-                    console.log("❌ No valid card info found");
-                    showError('No magic message found. Please scan a valid Magic Card QR code.');
-                    magicBtn.textContent = 'NO MESSAGE FOUND';
-                    magicBtn.style.background = '#E74C3C';
-                    return;
-                }
-                
-                cardId = cardInfo.id;
-                console.log("🎫 Card ID:", cardId);
-                
-                cardIdDisplay.textContent = `Card: ${cardId}`;
-                cardIdDisplay.style.display = 'block';
-                
-                // If new format (QR codes from generator), load from Firebase
-                if (cardInfo.isNewFormat) {
-                    console.log("🆕 New format - checking Firebase...");
-                    instructions.textContent = 'Checking magic cloud...';
-                    
-                    const result = await loadMessageFromFirebase(cardId);
-                    
-                    if (result.success) {
-                        console.log("✅ Firebase load successful");
-                        isFromFirebase = true;
-                        currentMessageType = result.type;
-                        currentMessageContent = result.content;
-                        
-                        cardMessageDiv.textContent = result.fileName ? `File: ${result.fileName}` : `Card: ${cardId}`;
-                        cardMessageDiv.style.display = 'block';
-                        
-                        instructions.textContent = "Point camera → Tap button for magic message";
-                        magicBtn.textContent = `▶ PLAY ${cardId} MESSAGE`;
-                        magicBtn.style.background = '#27AE60';
-                        extraButtons.style.display = 'flex';
-                        
-                        connectionStatus.textContent = "✅ Cloud message loaded";
-                        
-                        setupMessage();
-                    } else {
-                        console.log("⚠️ No message in Firebase, showing empty state");
-                        showError(result.message || 'This card is empty. You can upload the first message!');
-                        magicBtn.textContent = 'NO MESSAGE YET';
-                        magicBtn.style.background = '#F39C12';
-                        extraButtons.style.display = 'flex';
-                        instructions.textContent = "Scan this card to upload a message";
-                    }
-                } 
-                // Old format (encoded in URL) - use local data
-                else if (cardInfo.data) {
-                    console.log("🕰️ Old format - using local data");
-                    currentMessageType = cardInfo.data.type || 'text';
-                    currentMessageContent = cardInfo.data.message || '';
-                    fallbackData = cardInfo.data;
-                    
-                    cardMessageDiv.textContent = `Card: ${cardId}`;
-                    cardMessageDiv.style.display = 'block';
-                    instructions.textContent = "Point camera → Tap button for magic message";
-                    magicBtn.textContent = `▶ PLAY ${cardId} MESSAGE`;
-                    magicBtn.style.background = '#27AE60';
-                    
-                    connectionStatus.textContent = "✅ Local message loaded";
-                    
-                    setupMessage();
-                }
-            }
+            if (urlMessage) message = decodeURIComponent(urlMessage);
+            if (urlCard) cardId = urlCard;
             
-            function setupMessage() {
-                console.log("🛠️ Setting up message of type:", currentMessageType);
-                
-                if (video) {
-                    video.remove();
-                    video = null;
-                }
-                
-                if (currentMessageType === 'text') {
-                    textDisplay.setAttribute('value', currentMessageContent || 'Hello from Magic Card!');
-                    
-                } else if (currentMessageType === 'video' || currentMessageType === 'audio') {
-                    video = document.createElement('video');
-                    video.id = 'message-video';
-                    video.loop = true;
-                    video.playsInline = true;
-                    video.preload = 'auto';
-                    video.muted = true;
-                    
-                    // Priority: Firebase content > fallback > default
-                    if (currentMessageContent && currentMessageContent.startsWith('http')) {
-                        console.log("📹 Using Firebase media URL:", currentMessageContent);
-                        video.src = currentMessageContent;
-                        video.crossOrigin = 'anonymous';
-                    } else if (fallbackData && fallbackData.message && fallbackData.message.startsWith('http')) {
-                        console.log("📹 Using fallback media URL:", fallbackData.message);
-                        video.src = fallbackData.message;
-                        video.crossOrigin = 'anonymous';
-                    } else if (currentMessageType === 'video') {
-                        console.log("📹 Using default video");
-                        video.src = 'https://res.cloudinary.com/diqa9qyvh/video/upload/v1767377987/20251219_010742000_iOS_xuandm.mp4';
-                        video.crossOrigin = 'anonymous';
-                    } else {
-                        console.log("🎵 Using default audio");
-                        video.src = 'https://assets.mixkit.co/music/preview/mixkit-driving-ambition-32.mp4';
-                        video.crossOrigin = 'anonymous';
-                    }
-                    
-                    document.body.appendChild(video);
-                    
-                    // Connect to A-Frame
-                    const arVideo = document.getElementById('ar-video');
-                    if (arVideo) {
-                        arVideo.setAttribute('src', '#message-video');
-                        console.log("✅ Video connected to A-Frame");
-                    }
-                    
-                } else if (currentMessageType === 'image') {
-                    if (currentMessageContent) {
-                        imageDisplay.setAttribute('src', currentMessageContent);
-                    } else if (fallbackData && fallbackData.message) {
-                        imageDisplay.setAttribute('src', fallbackData.message);
-                    }
-                }
-                
-                console.log("✅ Message setup complete");
-            }
+            // Update display
+            text.setAttribute('value', message);
+            info.textContent = `🎴 Card: ${cardId}`;
+            playBtn.textContent = `🎬 PLAY ${cardId}`;
             
-            function showError(message) {
-                errorMessageDiv.textContent = message;
-                errorMessageDiv.style.display = 'block';
+            // Play button
+            playBtn.addEventListener('click', function() {
+                frame.setAttribute('visible', 'true');
+                text.setAttribute('visible', 'true');
+                playBtn.style.display = 'none';
+                info.textContent = `🎴 ${cardId}: ${message}`;
+            });
+            
+            // Auto-play if we have data
+            if (hash || urlMessage || urlCard) {
                 setTimeout(() => {
-                    errorMessageDiv.style.display = 'none';
-                }, 5000);
-            }
-            
-            function formatTime(seconds) {
-                const mins = Math.floor(seconds / 60);
-                const secs = Math.floor(seconds % 60);
-                return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-            }
-            
-            // Update timeline
-            function updateVideoProgress() {
-                if (video && video.duration) {
-                    const percent = (video.currentTime / video.duration) * 100;
-                    progressBar.style.width = percent + '%';
-                    currentTimeEl.textContent = formatTime(video.currentTime);
-                }
-            }
-            
-            // Video handlers
-            function setupVideoHandlers() {
-                if (!video) return;
-                
-                video.addEventListener('error', function(e) {
-                    console.error("❌ Video error:", e);
-                    showError('Media cannot load. Try again or check connection.');
-                });
-                
-                video.addEventListener('timeupdate', updateVideoProgress);
-                
-                video.addEventListener('loadedmetadata', function() {
-                    if (video.duration) {
-                        totalTimeEl.textContent = formatTime(video.duration);
+                    if (playBtn.style.display !== 'none') {
+                        playBtn.click();
                     }
-                });
-            }
-            
-            // Click timeline to seek
-            timelineContainer.addEventListener('click', function(e) {
-                if (video && video.duration) {
-                    const rect = this.getBoundingClientRect();
-                    const percent = (e.clientX - rect.left) / rect.width;
-                    video.currentTime = percent * video.duration;
-                    updateVideoProgress();
-                }
-            });
-            
-            // Play/Pause button
-            playPauseBtn.addEventListener('click', function() {
-                if (!video) return;
-                
-                if (video.paused) {
-                    video.play().then(() => {
-                        playPauseBtn.innerHTML = '<span>⏸</span> <span>PAUSE</span>';
-                        playPauseBtn.style.background = '#27AE60';
-                        errorMessageDiv.style.display = 'none';
-                    }).catch(error => {
-                        console.error("❌ Play failed:", error);
-                        showError('Cannot play media. Try again.');
-                    });
-                } else {
-                    video.pause();
-                    playPauseBtn.innerHTML = '<span>▶</span> <span>PLAY</span>';
-                    playPauseBtn.style.background = '#3498DB';
-                }
-            });
-            
-            // Stop button
-            stopBtn.addEventListener('click', function() {
-                if (!video) return;
-                
-                video.pause();
-                video.currentTime = 0;
-                playPauseBtn.innerHTML = '<span>▶</span> <span>PLAY</span>';
-                playPauseBtn.style.background = '#3498DB';
-                updateVideoProgress();
-            });
-            
-            // Save button
-            saveBtn.addEventListener('click', function() {
-                if (!video || !video.src) return;
-                
-                const a = document.createElement('a');
-                a.href = video.src;
-                a.download = `Magic-Card-${cardId || 'Message'}.mp4`;
-                
-                const originalHTML = saveBtn.innerHTML;
-                saveBtn.innerHTML = '<span>⏳</span> <span>SAVING...</span>';
-                saveBtn.style.background = '#FF9800';
-                saveBtn.disabled = true;
-                
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                
-                setTimeout(() => {
-                    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-                    
-                    if (isIOS) {
-                        alert('📱 To save to Photos:\n1. Open Files app\n2. Find the video\n3. Tap Share → Save Video');
-                    } else {
-                        alert('✅ Video saved! Check Downloads folder.');
-                    }
-                    
-                    saveBtn.innerHTML = originalHTML;
-                    saveBtn.style.background = '#9B59B6';
-                    saveBtn.disabled = false;
                 }, 1500);
-            });
-            
-            // Share button
-            shareBtn.addEventListener('click', function() {
-                const shareUrl = window.location.href;
-                const shareText = `Check out this Magic Card message from card ${cardId}!`;
-                
-                if (navigator.share) {
-                    navigator.share({
-                        title: 'Magic Card Message',
-                        text: shareText,
-                        url: shareUrl
-                    });
-                } else {
-                    navigator.clipboard.writeText(shareUrl).then(() => {
-                        showError('✅ Link copied to clipboard!');
-                    });
-                }
-            });
-            
-            // Upload button
-            uploadBtn.addEventListener('click', function() {
-                window.location.href = `view.html?card=${encodeURIComponent(cardId)}`;
-            });
-            
-            // MAGIC BUTTON - Main trigger
-            magicBtn.addEventListener('click', function() {
-                console.log("🎯 Magic button clicked");
-                magicBtn.textContent = 'LOADING...';
-                magicBtn.style.background = '#27AE60';
-                errorMessageDiv.style.display = 'none';
-                
-                if (currentMessageType === 'text') {
-                    console.log("📝 Showing text message");
-                    woodFrame.setAttribute('visible', 'true');
-                    textDisplay.setAttribute('visible', 'true');
-                    videoScreen.setAttribute('visible', 'false');
-                    imageDisplay.setAttribute('visible', 'false');
-                    
-                    videoControls.style.display = 'none';
-                    magicBtn.style.display = 'none';
-                    instructions.textContent = `Message from card: ${cardId}`;
-                    
-                } else if (currentMessageType === 'image') {
-                    console.log("🖼️ Showing image");
-                    woodFrame.setAttribute('visible', 'true');
-                    imageDisplay.setAttribute('visible', 'true');
-                    videoScreen.setAttribute('visible', 'false');
-                    textDisplay.setAttribute('visible', 'false');
-                    
-                    videoControls.style.display = 'none';
-                    magicBtn.style.display = 'none';
-                    instructions.textContent = `Image from card: ${cardId}`;
-                    
-                } else if (currentMessageType === 'video' || currentMessageType === 'audio') {
-                    console.log("🎬 Starting video/audio");
-                    woodFrame.setAttribute('visible', 'true');
-                    videoScreen.setAttribute('visible', 'true');
-                    textDisplay.setAttribute('visible', 'false');
-                    imageDisplay.setAttribute('visible', 'false');
-                    
-                    if (video) {
-                        setupVideoHandlers();
-                        
-                        setTimeout(function() {
-                            video.muted = false;
-                            
-                            video.play().then(function() {
-                                console.log("✅ Video playing successfully");
-                                magicBtn.style.display = 'none';
-                                videoControls.style.display = 'block';
-                                instructions.textContent = `Message from card: ${cardId}`;
-                                
-                                if (video.duration && totalTimeEl.textContent === '0:00') {
-                                    totalTimeEl.textContent = formatTime(video.duration);
-                                }
-                                
-                            }).catch(function(error) {
-                                console.error("❌ Video play failed:", error);
-                                showError('Cannot play media. Tap to try again.');
-                                magicBtn.textContent = `▶ PLAY ${cardId}`;
-                                magicBtn.style.background = '#E74C3C';
-                                magicBtn.style.display = 'block';
-                            });
-                        }, 800);
-                    }
-                } else {
-                    console.log("❓ Unknown message type:", currentMessageType);
-                    showError('No valid message to display');
-                    magicBtn.textContent = `▶ PLAY ${cardId}`;
-                    magicBtn.style.display = 'block';
-                }
-            });
-            
-            // Auto-load message on start
-            console.log("🚀 Initializing Magic Card...");
-            setTimeout(function() {
-                loadMessage();
-                
-                // Auto-play if message exists (after 2 seconds)
-                setTimeout(() => {
-                    if (magicBtn.textContent.includes('PLAY') && currentMessageType) {
-                        console.log("⚡ Auto-playing message...");
-                        magicBtn.click();
-                    }
-                }, 2000);
-            }, 1000);
+            }
         });
     </script>
 </body>
