@@ -4,12 +4,14 @@
     <title>Magic Card QR Generator</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     
-    <!-- 🔥 FIREBASE MAGIC (ADDED) -->
+    <!-- 🔥 FIREBASE MAGIC -->
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-storage.js"></script>
     
-    <script src="https://unpkg.com/qrcode-generator@1.4.4/qrcode.js"></script>
+    <!-- 🆕 BETTER QR CODE LIBRARY -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    
     <style>
         * {
             margin: 0;
@@ -19,7 +21,8 @@
         
         body {
             font-family: Arial, sans-serif;
-            background: #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
             padding: 20px;
         }
         
@@ -27,83 +30,121 @@
             max-width: 800px;
             margin: 0 auto;
             background: white;
-            border-radius: 10px;
-            padding: 20px;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         }
         
-        h1 {
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
             text-align: center;
-            color: #333;
-            margin-bottom: 20px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        
+        .content {
+            padding: 30px;
         }
         
         .form-section {
             background: #f8f9fa;
-            padding: 20px;
+            padding: 25px;
             border-radius: 10px;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
         }
         
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
         
         label {
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
             font-weight: bold;
+            color: #333;
         }
         
         input, textarea, select {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             border: 2px solid #ddd;
-            border-radius: 5px;
+            border-radius: 8px;
             font-size: 16px;
+            transition: border-color 0.3s;
         }
         
         textarea {
-            height: 100px;
+            height: 120px;
             resize: vertical;
         }
         
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
         .file-upload {
-            border: 2px dashed #667eea;
-            border-radius: 5px;
-            padding: 20px;
+            border: 3px dashed #667eea;
+            border-radius: 8px;
+            padding: 30px;
             text-align: center;
             background: #f0f4ff;
             cursor: pointer;
-            margin-top: 10px;
+            transition: all 0.3s;
+        }
+        
+        .file-upload:hover {
+            background: #e6ebff;
+            border-color: #5a67d8;
         }
         
         .preview {
-            margin-top: 10px;
+            margin-top: 15px;
             text-align: center;
         }
         
         .preview video, .preview img, .preview audio {
             max-width: 100%;
-            max-height: 150px;
-            border-radius: 5px;
+            max-height: 200px;
+            border-radius: 8px;
         }
         
         .generate-btn {
-            background: #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            padding: 15px;
+            padding: 18px;
             font-size: 18px;
             font-weight: bold;
-            border-radius: 5px;
+            border-radius: 10px;
             width: 100%;
             cursor: pointer;
+            transition: transform 0.2s;
             margin-top: 10px;
+        }
+        
+        .generate-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .generate-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
         
         .result-section {
             background: #f8f9fa;
-            padding: 20px;
+            padding: 25px;
             border-radius: 10px;
             text-align: center;
         }
@@ -119,35 +160,39 @@
             justify-content: center;
         }
         
-        #qrcode canvas {
-            border: 10px solid white;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            max-width: 100%;
-        }
-        
         .url-box {
             background: white;
-            padding: 10px;
-            border-radius: 5px;
-            margin: 10px 0;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
             word-break: break-all;
             font-size: 14px;
             border: 1px solid #ddd;
+            font-family: monospace;
         }
         
         .action-buttons {
             display: flex;
-            gap: 10px;
-            margin-top: 15px;
+            gap: 15px;
+            margin-top: 20px;
         }
         
         .action-btn {
             flex: 1;
-            padding: 10px;
+            padding: 12px;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: pointer;
             font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: transform 0.2s;
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-2px);
         }
         
         .copy-btn { background: #28a745; color: white; }
@@ -155,16 +200,17 @@
         .download-btn { background: #6f42c1; color: white; }
         
         .status {
-            padding: 10px;
-            border-radius: 5px;
-            margin: 10px 0;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 15px 0;
             text-align: center;
             font-weight: bold;
+            display: none;
         }
         
-        .success { background: #d4edda; color: #155724; }
-        .error { background: #f8d7da; color: #721c24; }
-        .warning { background: #fff3cd; color: #856404; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
         
         .instructions {
             background: #e8f4fd;
@@ -173,101 +219,142 @@
             border-radius: 8px;
             margin-top: 20px;
             font-size: 14px;
+            line-height: 1.5;
         }
         
         .card-info {
             background: #fff3cd;
-            padding: 10px;
-            border-radius: 5px;
-            margin-top: 10px;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 15px;
             font-size: 14px;
+            text-align: left;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                border-radius: 10px;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Magic Card QR Generator</h1>
+        <div class="header">
+            <h1>Magic Card QR Generator</h1>
+            <p>Create magical QR codes for your greeting cards</p>
+        </div>
         
-        <div class="form-section">
-            <div class="form-group">
-                <label>Card ID (Required):</label>
-                <input type="text" id="cardId" placeholder="e.g., BIRTHDAY001, THANKYOU123">
-                <small style="color: #666;">Make this UNIQUE for each card you print</small>
-            </div>
-            
-            <div class="form-group">
-                <label>Optional: Add a default message now?</label>
-                <select id="addNow">
-                    <option value="no">No, create empty QR code</option>
-                    <option value="yes">Yes, add message now</option>
-                </select>
-            </div>
-            
-            <div id="messageSection" style="display: none;">
+        <div class="content">
+            <div class="form-section">
                 <div class="form-group">
-                    <label>Message Type:</label>
-                    <select id="messageType">
-                        <option value="text">Text Message</option>
-                        <option value="video">Video Message</option>
-                        <option value="image">Image Message</option>
-                        <option value="audio">Audio Message</option>
+                    <label>Card ID (Required):</label>
+                    <input type="text" id="cardId" placeholder="e.g., BIRTHDAY001, THANKYOU123">
+                    <small style="color: #666; display: block; margin-top: 5px;">Make this UNIQUE for each card you print</small>
+                </div>
+                
+                <div class="form-group">
+                    <label>Optional: Add a default message now?</label>
+                    <select id="addNow">
+                        <option value="no">No, create empty QR code</option>
+                        <option value="yes">Yes, add message now</option>
                     </select>
                 </div>
                 
-                <div class="form-group" id="textInput">
-                    <label>Text Message:</label>
-                    <textarea id="messageText" placeholder="Type your message..."></textarea>
+                <div id="messageSection" style="display: none;">
+                    <div class="form-group">
+                        <label>Message Type:</label>
+                        <select id="messageType">
+                            <option value="text">Text Message</option>
+                            <option value="video">Video Message</option>
+                            <option value="image">Image Message</option>
+                            <option value="audio">Audio Message</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group" id="textInput">
+                        <label>Text Message:</label>
+                        <textarea id="messageText" placeholder="Type your message..."></textarea>
+                    </div>
+                    
+                    <div class="form-group" id="mediaSection" style="display: none;">
+                        <label>Upload Media:</label>
+                        <div class="file-upload" onclick="document.getElementById('fileInput').click()">
+                            <div style="font-size: 48px; color: #667eea; margin-bottom: 10px;">📁</div>
+                            <h3>Click to Upload</h3>
+                            <p>Video, Image, or Audio files</p>
+                            <p><small>Max 50MB</small></p>
+                        </div>
+                        <input type="file" id="fileInput" accept="image/*,video/*,audio/*" style="display: none;">
+                        <div class="preview" id="mediaPreview"></div>
+                    </div>
                 </div>
                 
-                <div class="form-group" id="mediaSection" style="display: none;">
-                    <label>Upload Media:</label>
-                    <div class="file-upload" onclick="document.getElementById('fileInput').click()">
-                        📁 Click to upload Video/Image/Audio
-                    </div>
-                    <input type="file" id="fileInput" accept="image/*,video/*,audio/*" style="display: none;">
-                    <div class="preview" id="mediaPreview"></div>
+                <button class="generate-btn" onclick="generateQRCode()" id="generateBtn">
+                    🪄 GENERATE EMPTY QR CODE
+                </button>
+                
+                <div id="status" class="status"></div>
+            </div>
+            
+            <div class="result-section">
+                <h2>Your Card QR Code</h2>
+                
+                <div class="instructions">
+                    <strong>🎯 This is an EMPTY QR code:</strong><br>
+                    1. Print this QR code on a card<br>
+                    2. Sender scans → Uploads their message<br>
+                    3. Receiver scans → Sees the message
                 </div>
-            </div>
-            
-            <button class="generate-btn" onclick="generateQRCode()">
-                🪄 GENERATE EMPTY QR CODE
-            </button>
-            
-            <div id="status" class="status"></div>
-        </div>
-        
-        <div class="result-section">
-            <h2>Your Card QR Code</h2>
-            
-            <div class="instructions">
-                <strong>🎯 This is an EMPTY QR code:</strong><br>
-                1. Print this QR code on a card<br>
-                2. Sender scans → Uploads their message<br>
-                3. Receiver scans → Sees the message
-            </div>
-            
-            <div id="qrcode">
-                QR code will appear here
-            </div>
-            
-            <div class="card-info">
-                <strong>Card ID:</strong> <span id="displayCardId">-</span><br>
-                <strong>URL:</strong> <span id="displayCardUrl">-</span>
-            </div>
-            
-            <div class="action-buttons">
-                <button class="action-btn copy-btn" onclick="copyURL()" id="copyBtn" disabled>📋 Copy URL</button>
-                <button class="action-btn test-btn" onclick="testQR()" id="testBtn" disabled>🔗 Test Card</button>
-                <button class="action-btn download-btn" onclick="downloadQR()" id="downloadBtn" disabled>⬇ Download QR</button>
-            </div>
-            
-            <div class="instructions" style="margin-top: 20px;">
-                <strong>📝 How to use:</strong><br>
-                1. Generate QR with unique Card ID<br>
-                2. Print QR on physical card<br>
-                3. Sell the card to customer<br>
-                4. Customer scans → uploads message<br>
-                5. Receiver scans → sees magic!
+                
+                <div id="qrcode">
+                    <div class="loading">
+                        <div style="font-size: 48px; margin-bottom: 10px;">🔮</div>
+                        <p>QR code will appear here</p>
+                    </div>
+                </div>
+                
+                <div class="card-info">
+                    <strong>Card ID:</strong> <span id="displayCardId">-</span><br>
+                    <strong>URL:</strong> <span id="displayCardUrl">-</span>
+                </div>
+                
+                <div class="action-buttons">
+                    <button class="action-btn copy-btn" onclick="copyURL()" id="copyBtn" disabled>📋 Copy URL</button>
+                    <button class="action-btn test-btn" onclick="testQR()" id="testBtn" disabled>🔗 Test Card</button>
+                    <button class="action-btn download-btn" onclick="downloadQR()" id="downloadBtn" disabled>⬇ Download QR</button>
+                </div>
+                
+                <div class="instructions" style="margin-top: 20px;">
+                    <strong>📝 How to use:</strong><br>
+                    1. Generate QR with unique Card ID<br>
+                    2. Print QR on physical card<br>
+                    3. Sell the card to customer<br>
+                    4. Customer scans → uploads message<br>
+                    5. Receiver scans → sees magic!
+                </div>
             </div>
         </div>
     </div>
@@ -284,15 +371,17 @@
         };
         
         // Initialize Firebase
+        let db, storage;
         try {
             firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+            storage = firebase.storage();
             console.log("✅ Firebase connected!");
+            showStatus('✅ Connected to Firebase', 'success');
         } catch (error) {
             console.error("❌ Firebase error:", error);
+            showStatus('⚠️ Firebase connection failed', 'warning');
         }
-        
-        const db = firebase.firestore();
-        const storage = firebase.storage();
         
         // Elements
         const addNowSelect = document.getElementById('addNow');
@@ -302,9 +391,10 @@
         const mediaSection = document.getElementById('mediaSection');
         const fileInput = document.getElementById('fileInput');
         const mediaPreview = document.getElementById('mediaPreview');
+        const generateBtn = document.getElementById('generateBtn');
         
         let uploadedFile = null;
-        let currentQRCodeCanvas = null;
+        let currentQRCodeUrl = null;
         let currentCardId = '';
         let currentCardUrl = '';
         
@@ -340,13 +430,13 @@
             if (file.type.startsWith('image/')) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    mediaPreview.innerHTML = `<img src="${e.target.result}" style="max-width: 100%; max-height: 150px;">`;
+                    mediaPreview.innerHTML = `<img src="${e.target.result}" style="max-width: 100%; max-height: 200px; border-radius: 8px;">`;
                 };
                 reader.readAsDataURL(file);
             } else if (file.type.startsWith('video/')) {
                 const url = URL.createObjectURL(file);
                 mediaPreview.innerHTML = `
-                    <video controls style="max-width: 100%; max-height: 150px;">
+                    <video controls style="max-width: 100%; max-height: 200px; border-radius: 8px;">
                         <source src="${url}" type="${file.type}">
                     </video>
                 `;
@@ -378,74 +468,69 @@
             console.log("Generating EMPTY QR for:", currentCardUrl);
             
             // Show loading
-            document.getElementById('qrcode').innerHTML = 'Generating QR code...';
+            document.getElementById('qrcode').innerHTML = '<div class="loading">Generating QR code...</div>';
+            generateBtn.disabled = true;
+            generateBtn.textContent = 'Generating...';
             showStatus('⏳ Generating empty QR code...', 'success');
             
-            // Generate QR code
+            // Generate QR code using the NEW library
             try {
-                const qr = qrcode(0, 'M');
-                qr.addData(currentCardUrl);
-                qr.make();
-                
-                // Create canvas
-                const canvas = document.createElement('canvas');
-                const size = 300;
-                const cellSize = size / qr.getModuleCount();
-                const margin = 10;
-                const fullSize = size + margin * 2;
-                
-                canvas.width = fullSize;
-                canvas.height = fullSize;
-                const ctx = canvas.getContext('2d');
-                
-                // White background
-                ctx.fillStyle = '#FFFFFF';
-                ctx.fillRect(0, 0, fullSize, fullSize);
-                
-                // Draw QR code
-                ctx.fillStyle = '#000000';
-                const count = qr.getModuleCount();
-                
-                for (let row = 0; row < count; row++) {
-                    for (let col = 0; col < count; col++) {
-                        if (qr.isDark(row, col)) {
-                            ctx.fillRect(
-                                margin + col * cellSize,
-                                margin + row * cellSize,
-                                cellSize,
-                                cellSize
-                            );
-                        }
-                    }
-                }
-                
-                // Add to page
+                // Clear previous QR code
                 document.getElementById('qrcode').innerHTML = '';
-                document.getElementById('qrcode').appendChild(canvas);
                 
-                // Show card info
-                document.getElementById('displayCardId').textContent = cardId;
-                document.getElementById('displayCardUrl').textContent = currentCardUrl;
-                
-                // Store for download
-                currentQRCodeCanvas = canvas;
-                
-                // Enable buttons
-                document.getElementById('copyBtn').disabled = false;
-                document.getElementById('testBtn').disabled = false;
-                document.getElementById('downloadBtn').disabled = false;
-                
-                // 🔥 OPTIONAL: Save default message to Firebase
-                if (addNowSelect.value === 'yes') {
-                    await saveMessageToFirebase(cardId);
-                }
-                
-                showStatus('✅ Empty QR code generated! Ready to print.', 'success');
+                // Generate QR code using the new library
+                QRCode.toCanvas(document.getElementById('qrcode'), currentCardUrl, {
+                    width: 256,
+                    margin: 2,
+                    color: {
+                        dark: '#000000',
+                        light: '#FFFFFF'
+                    }
+                }, function (error, canvas) {
+                    if (error) {
+                        console.error("QR generation error:", error);
+                        document.getElementById('qrcode').innerHTML = 'Error generating QR code';
+                        showStatus('❌ Error generating QR: ' + error.message, 'error');
+                        generateBtn.disabled = false;
+                        generateBtn.textContent = '🪄 GENERATE EMPTY QR CODE';
+                        return;
+                    }
+                    
+                    // Style the canvas
+                    canvas.style.maxWidth = '100%';
+                    canvas.style.height = 'auto';
+                    canvas.style.borderRadius = '8px';
+                    canvas.style.boxShadow = '0 5px 15px rgba(0,0,0,0.1)';
+                    
+                    // Store for download
+                    currentQRCodeUrl = canvas.toDataURL('image/png');
+                    
+                    // Show card info
+                    document.getElementById('displayCardId').textContent = cardId;
+                    document.getElementById('displayCardUrl').textContent = currentCardUrl;
+                    
+                    // Enable buttons
+                    document.getElementById('copyBtn').disabled = false;
+                    document.getElementById('testBtn').disabled = false;
+                    document.getElementById('downloadBtn').disabled = false;
+                    
+                    generateBtn.disabled = false;
+                    generateBtn.textContent = '🪄 GENERATE EMPTY QR CODE';
+                    
+                    // 🔥 OPTIONAL: Save default message to Firebase
+                    if (addNowSelect.value === 'yes') {
+                        saveMessageToFirebase(cardId);
+                    } else {
+                        showStatus('✅ Empty QR code generated! Ready to print.', 'success');
+                    }
+                });
                 
             } catch (error) {
                 console.error("QR generation error:", error);
                 document.getElementById('qrcode').innerHTML = 'Error generating QR';
                 showStatus('❌ Error: ' + error.message, 'error');
+                generateBtn.disabled = false;
+                generateBtn.textContent = '🪄 GENERATE EMPTY QR CODE';
             }
         }
         
@@ -476,7 +561,8 @@
                 try {
                     // Create storage reference
                     const storageRef = storage.ref();
-                    const fileRef = storageRef.child(`cards/${cardId}/${uploadedFile.name}`);
+                    const fileName = `${Date.now()}_${uploadedFile.name}`;
+                    const fileRef = storageRef.child(`cards/${cardId}/${fileName}`);
                     
                     // Upload file
                     const snapshot = await fileRef.put(uploadedFile);
@@ -488,6 +574,7 @@
                         mediaUrl: downloadURL,
                         fileName: uploadedFile.name,
                         fileSize: uploadedFile.size,
+                        fileType: uploadedFile.type,
                         createdAt: new Date().toISOString(),
                         status: 'ready'
                     };
@@ -505,10 +592,10 @@
             // Save to Firestore
             try {
                 await db.collection('cards').doc(cardId).set(messageData);
-                showStatus('✅ Message saved to Firebase!', 'success');
+                showStatus('✅ QR code generated and message saved to Firebase!', 'success');
             } catch (error) {
                 console.error("Firestore error:", error);
-                showStatus('❌ Failed to save to database', 'error');
+                showStatus('⚠ QR generated, but failed to save message', 'warning');
             }
         }
         
@@ -525,11 +612,13 @@
         }
         
         function downloadQR() {
-            if (!currentQRCodeCanvas) return;
+            if (!currentQRCodeUrl) return;
             const link = document.createElement('a');
             link.download = `magic-card-${currentCardId}-qr.png`;
-            link.href = currentQRCodeCanvas.toDataURL('image/png');
+            link.href = currentQRCodeUrl;
+            document.body.appendChild(link);
             link.click();
+            document.body.removeChild(link);
             showStatus('✅ QR code downloaded!', 'success');
         }
         
@@ -541,14 +630,14 @@
             setTimeout(() => { statusDiv.style.display = 'none'; }, 5000);
         }
         
-        // Auto-generate random card ID
+        // Auto-generate random card ID on load
         window.onload = function() {
             const randomId = 'CARD' + Math.floor(1000 + Math.random() * 9000);
             document.getElementById('cardId').value = randomId;
             
-            if (typeof qrcode === 'undefined') {
-                document.getElementById('qrcode').innerHTML = 'Error: QRCode library failed to load';
-                showStatus('❌ Library failed to load', 'error');
+            // Test QRCode library
+            if (typeof QRCode === 'undefined') {
+                showStatus('❌ QRCode library failed to load. Please refresh.', 'error');
             } else {
                 showStatus('✅ Ready! Enter Card ID and click GENERATE', 'success');
             }
