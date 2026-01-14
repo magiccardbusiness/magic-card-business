@@ -1,363 +1,72 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Magic Card - View/Upload Message</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    
-    <!-- 🔥 FIREBASE -->
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-storage.js"></script>
-    
+    <title>Magic Card - Upload</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
         body {
-            font-family: Arial, sans-serif;
+            font-family: Arial;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
             padding: 20px;
+            text-align: center;
         }
-        
         .container {
-            max-width: 800px;
-            margin: 0 auto;
             background: white;
             border-radius: 15px;
-            overflow: hidden;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-        }
-        
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
             padding: 30px;
-            text-align: center;
+            max-width: 600px;
+            margin: 0 auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
-        
-        .header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-        }
-        
+        h1 { color: #333; }
         .card-id {
-            background: rgba(255,255,255,0.2);
-            padding: 10px 20px;
-            border-radius: 50px;
-            display: inline-block;
-            margin-top: 10px;
-            font-weight: bold;
-        }
-        
-        .content {
-            padding: 30px;
-        }
-        
-        .message-container, .upload-container {
-            background: #f8f9fa;
-            padding: 25px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-        }
-        
-        .loading, .error, .success, .empty {
-            text-align: center;
-            padding: 40px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-        }
-        
-        .loading {
-            background: #e3f2fd;
-            color: #1565c0;
-        }
-        
-        .error {
-            background: #ffebee;
-            color: #c62828;
-        }
-        
-        .success {
-            background: #e8f5e9;
-            color: #2e7d32;
-        }
-        
-        .empty {
-            background: #fff3e0;
-            color: #ef6c00;
-        }
-        
-        .message-display {
-            text-align: center;
-        }
-        
-        .message-type {
-            display: inline-block;
             background: #667eea;
             color: white;
-            padding: 5px 15px;
+            padding: 10px 20px;
             border-radius: 20px;
-            margin-bottom: 20px;
+            display: inline-block;
+            margin: 20px 0;
         }
-        
-        .text-message {
-            font-size: 1.2em;
-            line-height: 1.6;
+        .message-box {
+            background: #f8f9fa;
             padding: 20px;
-            background: white;
             border-radius: 10px;
             margin: 20px 0;
+            min-height: 100px;
+            border: 2px dashed #667eea;
         }
-        
-        .media-message {
-            max-width: 100%;
+        textarea {
+            width: 100%;
+            height: 150px;
+            padding: 15px;
+            border: 2px solid #667eea;
             border-radius: 10px;
-            margin: 20px 0;
-        }
-        
-        .upload-form {
-            margin-top: 20px;
-        }
-        
-        .form-group {
+            font-size: 16px;
             margin-bottom: 20px;
         }
-        
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
-            color: #333;
-        }
-        
-        select, textarea {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 16px;
-        }
-        
-        textarea {
-            height: 150px;
-            resize: vertical;
-        }
-        
-        .file-upload {
-            border: 3px dashed #667eea;
-            border-radius: 8px;
-            padding: 30px;
-            text-align: center;
-            background: #f0f4ff;
-            cursor: pointer;
-        }
-        
-        .file-preview {
-            margin-top: 15px;
-            text-align: center;
-        }
-        
-        .buttons {
-            display: flex;
-            gap: 15px;
-            margin-top: 20px;
-        }
-        
-        .btn {
-            flex: 1;
-            padding: 15px;
+        button {
+            background: #667eea;
+            color: white;
             border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: bold;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 10px;
             cursor: pointer;
-            transition: transform 0.2s;
+            margin: 10px;
         }
-        
-        .btn:hover {
-            transform: translateY(-2px);
-        }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        .success { background: #28a745; }
+        .error { 
+            background: #dc3545; 
             color: white;
-        }
-        
-        .btn-success {
-            background: #28a745;
-            color: white;
-        }
-        
-        .btn-secondary {
-            background: #6c757d;
-            color: white;
-        }
-        
-        .btn-warning {
-            background: #ffc107;
-            color: #000;
-        }
-        
-        .status {
-            padding: 12px;
-            border-radius: 8px;
-            margin: 15px 0;
-            text-align: center;
-            font-weight: bold;
-            display: none;
-        }
-        
-        .status-success {
-            background: #d4edda;
-            color: #155724;
-        }
-        
-        .status-error {
-            background: #f8d7da;
-            color: #721c24;
-        }
-        
-        @media (max-width: 768px) {
-            .container {
-                border-radius: 10px;
-            }
-            
-            .header {
-                padding: 20px;
-            }
-            
-            .header h1 {
-                font-size: 2em;
-            }
-            
-            .content {
-                padding: 20px;
-            }
-            
-            .buttons {
-                flex-direction: column;
-            }
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
         }
     </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>🎴 Magic Card</h1>
-            <p>View or upload a magical message</p>
-            <div class="card-id" id="cardIdDisplay">Loading...</div>
-        </div>
-        
-        <div class="content">
-            <!-- Loading State -->
-            <div class="loading" id="loadingState">
-                <h2>Loading magic...</h2>
-                <p>Checking for messages...</p>
-            </div>
-            
-            <!-- Error State -->
-            <div class="error" id="errorState" style="display: none;">
-                <h2>❌ Error</h2>
-                <p id="errorMessage">Failed to load message</p>
-                <button class="btn btn-warning" onclick="location.reload()" style="margin-top: 15px;">
-                    Try Again
-                </button>
-            </div>
-            
-            <!-- Empty State -->
-            <div class="empty" id="emptyState" style="display: none;">
-                <h2>✨ No Message Yet!</h2>
-                <p>This card is waiting for its first magical message.</p>
-                <p>Be the first to leave a message!</p>
-                <button class="btn btn-primary" onclick="showUploadForm()" style="margin-top: 15px;">
-                    📝 Upload First Message
-                </button>
-            </div>
-            
-            <!-- Message Display -->
-            <div class="message-container" id="messageDisplay" style="display: none;">
-                <div class="message-display">
-                    <div class="message-type" id="messageTypeBadge">Text</div>
-                    <div id="messageContent">
-                        <!-- Message will appear here -->
-                    </div>
-                    <div class="buttons">
-                        <button class="btn btn-success" onclick="shareMessage()">
-                            📤 Share
-                        </button>
-                        <button class="btn btn-warning" onclick="showUploadForm()">
-                            ✏️ New Message
-                        </button>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Upload Form -->
-            <div class="upload-container" id="uploadForm" style="display: none;">
-                <h2>📝 Upload New Message</h2>
-                <div class="upload-form">
-                    <div class="form-group">
-                        <label>Message Type:</label>
-                        <select id="messageTypeSelect">
-                            <option value="text">Text Message</option>
-                            <option value="video">Video Message</option>
-                            <option value="image">Image Message</option>
-                            <option value="audio">Audio Message</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group" id="textInputGroup">
-                        <label>Your Message:</label>
-                        <textarea id="messageText" placeholder="Type your magical message here..."></textarea>
-                    </div>
-                    
-                    <div class="form-group" id="mediaInputGroup" style="display: none;">
-                        <label>Upload Media:</label>
-                        <div class="file-upload" onclick="document.getElementById('fileInput').click()">
-                            <h3>📁 Click to Upload</h3>
-                            <p>Video, Image, or Audio files</p>
-                            <p><small>Max 50MB</small></p>
-                        </div>
-                        <input type="file" id="fileInput" accept="image/*,video/*,audio/*" style="display: none;">
-                        <div class="file-preview" id="filePreview"></div>
-                    </div>
-                    
-                    <div class="status" id="uploadStatus"></div>
-                    
-                    <div class="buttons">
-                        <button class="btn btn-success" onclick="uploadMessage()">
-                            🚀 Upload Message
-                        </button>
-                        <button class="btn btn-secondary" onclick="hideUploadForm()">
-                            ↩️ Back
-                        </button>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Success State -->
-            <div class="success" id="successState" style="display: none;">
-                <h2>✅ Message Saved!</h2>
-                <p>Your magical message has been saved to the cloud!</p>
-                <p>The receiver can now scan the QR code to see it.</p>
-                <div class="buttons">
-                    <button class="btn btn-primary" onclick="viewInAR()">
-                        🔮 View in AR
-                    </button>
-                    <button class="btn btn-success" onclick="shareMessage()">
-                        📤 Share
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
+    
+    <!-- FIREBASE -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js"></script>
     <script>
-        // 🔥 FIREBASE CONFIGURATION
         const firebaseConfig = {
             apiKey: "AIzaSyB2KubmablXwpbSpMT8RCba_Na-7XnpuKY",
             authDomain: "magic-card-business.firebaseapp.com",
@@ -368,245 +77,169 @@
         };
         
         // Initialize Firebase
-        let db, storage;
+        let db;
         try {
             firebase.initializeApp(firebaseConfig);
             db = firebase.firestore();
-            storage = firebase.storage();
             console.log("✅ Firebase connected!");
         } catch (error) {
-            console.error("❌ Firebase error:", error);
-            showError("Firebase connection failed. Please refresh.");
+            console.log("❌ Firebase error:", error);
         }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>🎴 MAGIC CARD</h1>
+        <div class="card-id" id="cardIdDisplay">Loading...</div>
         
+        <div id="loading">
+            <h2>Loading...</h2>
+            <p>Checking for messages...</p>
+        </div>
+        
+        <div id="noMessage" style="display:none;">
+            <h2>✨ No Message Yet!</h2>
+            <p>This card is waiting for its first magical message!</p>
+            <div class="message-box">
+                <textarea id="messageText" placeholder="Type your magical message here...">Happy Birthday! 🎂✨</textarea>
+                <button onclick="saveMessage()" class="success">🚀 SAVE MESSAGE</button>
+            </div>
+        </div>
+        
+        <div id="hasMessage" style="display:none;">
+            <h2>📜 Current Message:</h2>
+            <div class="message-box" id="currentMessage">
+                Loading message...
+            </div>
+            <button onclick="showUploadForm()">📝 NEW MESSAGE</button>
+            <button onclick="viewInAR()" class="success">🔮 VIEW IN AR</button>
+        </div>
+        
+        <div id="uploadForm" style="display:none;">
+            <h2>📝 New Message</h2>
+            <div class="message-box">
+                <textarea id="newMessageText" placeholder="Type new message..."></textarea>
+                <button onclick="saveNewMessage()" class="success">💾 SAVE NEW MESSAGE</button>
+                <button onclick="cancelUpload()">↩️ CANCEL</button>
+            </div>
+        </div>
+        
+        <div id="status" style="display:none;"></div>
+        
+        <div style="margin-top: 30px; padding: 20px; background: #e8f4fd; border-radius: 10px;">
+            <h3>🎯 How This Works:</h3>
+            <p>1. Upload message here</p>
+            <p>2. Receiver scans QR code</p>
+            <p>3. Message appears in AR! ✨</p>
+        </div>
+    </div>
+
+    <script>
         // Get card ID from URL
-        function getCardIdFromUrl() {
+        function getCardId() {
             const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get('card');
+            return urlParams.get('card') || 'TEST123';
         }
         
-        // State management
-        function showState(state) {
-            const states = ['loadingState', 'errorState', 'emptyState', 'messageDisplay', 'uploadForm', 'successState'];
-            states.forEach(s => document.getElementById(s).style.display = 'none');
-            document.getElementById(state).style.display = 'block';
-        }
-        
-        function showError(message) {
-            document.getElementById('errorMessage').textContent = message;
-            showState('errorState');
-        }
-        
-        function showUploadStatus(message, type) {
-            const statusDiv = document.getElementById('uploadStatus');
-            statusDiv.textContent = message;
-            statusDiv.className = 'status status-' + type;
+        // Show status message
+        function showStatus(message, isError = false) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = message;
+            statusDiv.className = isError ? 'error' : '';
             statusDiv.style.display = 'block';
-            setTimeout(() => { statusDiv.style.display = 'none'; }, 3000);
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 3000);
         }
         
         // Load message from Firebase
         async function loadMessage() {
-            const cardId = getCardIdFromUrl();
+            const cardId = getCardId();
+            document.getElementById('cardIdDisplay').textContent = `Card: ${cardId}`;
             
-            if (!cardId) {
-                showError("No card ID found in URL. Please scan a valid QR code.");
+            if (!db) {
+                showStatus("⚠️ No internet connection", true);
+                document.getElementById('noMessage').style.display = 'block';
+                document.getElementById('loading').style.display = 'none';
                 return;
             }
             
-            document.getElementById('cardIdDisplay').textContent = `Card: ${cardId}`;
-            showState('loadingState');
-            
             try {
-                const docRef = db.collection('cards').doc(cardId);
-                const doc = await docRef.get();
+                const doc = await db.collection('cards').doc(cardId).get();
                 
                 if (doc.exists) {
                     const data = doc.data();
-                    displayMessage(data);
-                    showState('messageDisplay');
+                    document.getElementById('currentMessage').textContent = data.message || data.type || 'Message loaded';
+                    document.getElementById('hasMessage').style.display = 'block';
                 } else {
-                    showState('emptyState');
+                    document.getElementById('noMessage').style.display = 'block';
                 }
+                
+                document.getElementById('loading').style.display = 'none';
                 
             } catch (error) {
                 console.error("Load error:", error);
-                showError("Failed to load message. Check your connection.");
+                showStatus("⚠️ Connection error. Trying offline mode...", true);
+                document.getElementById('noMessage').style.display = 'block';
+                document.getElementById('loading').style.display = 'none';
             }
         }
         
-        // Display message
-        function displayMessage(message) {
-            const type = message.type || 'text';
-            document.getElementById('messageTypeBadge').textContent = type.toUpperCase();
+        // Save message to Firebase
+        async function saveMessage() {
+            const cardId = getCardId();
+            const message = document.getElementById('messageText').value.trim();
             
-            const contentDiv = document.getElementById('messageContent');
-            contentDiv.innerHTML = '';
-            
-            if (type === 'text') {
-                contentDiv.innerHTML = `
-                    <div class="text-message">
-                        ${message.message || 'No text content'}
-                    </div>
-                `;
-            } else if (type === 'image' && message.mediaUrl) {
-                contentDiv.innerHTML = `
-                    <img src="${message.mediaUrl}" class="media-message" alt="Image">
-                    <p>${message.fileName || ''}</p>
-                `;
-            } else if (type === 'video' && message.mediaUrl) {
-                contentDiv.innerHTML = `
-                    <video controls class="media-message">
-                        <source src="${message.mediaUrl}" type="video/mp4">
-                    </video>
-                    <p>${message.fileName || ''}</p>
-                `;
-            } else if (type === 'audio' && message.mediaUrl) {
-                contentDiv.innerHTML = `
-                    <audio controls class="media-message" style="width: 100%;">
-                        <source src="${message.mediaUrl}" type="audio/mpeg">
-                    </audio>
-                    <p>${message.fileName || ''}</p>
-                `;
-            }
-        }
-        
-        // Upload form handlers
-        document.getElementById('messageTypeSelect').addEventListener('change', function() {
-            const type = this.value;
-            if (type === 'text') {
-                document.getElementById('textInputGroup').style.display = 'block';
-                document.getElementById('mediaInputGroup').style.display = 'none';
-            } else {
-                document.getElementById('textInputGroup').style.display = 'none';
-                document.getElementById('mediaInputGroup').style.display = 'block';
-            }
-        });
-        
-        let uploadedFile = null;
-        document.getElementById('fileInput').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            
-            uploadedFile = file;
-            const previewDiv = document.getElementById('filePreview');
-            previewDiv.innerHTML = '';
-            
-            if (file.type.startsWith('image/')) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    previewDiv.innerHTML = `<img src="${e.target.result}" style="max-width: 200px; border-radius: 8px;">`;
-                };
-                reader.readAsDataURL(file);
-            } else if (file.type.startsWith('video/')) {
-                const url = URL.createObjectURL(file);
-                previewDiv.innerHTML = `<video src="${url}" controls style="max-width: 200px; border-radius: 8px;"></video>`;
-            }
-            
-            showUploadStatus(`✅ ${file.name} ready`, 'success');
-        });
-        
-        // Upload message
-        async function uploadMessage() {
-            const cardId = getCardIdFromUrl();
-            const type = document.getElementById('messageTypeSelect').value;
-            
-            if (!cardId) {
-                showUploadStatus('No card ID found', 'error');
+            if (!message) {
+                showStatus("Please type a message!", true);
                 return;
             }
             
-            let messageData = {};
-            
-            if (type === 'text') {
-                const text = document.getElementById('messageText').value.trim();
-                if (!text) {
-                    showUploadStatus('Please enter a message', 'error');
-                    return;
-                }
-                
-                messageData = {
-                    cardId: cardId,
-                    type: 'text',
-                    message: text,
-                    createdAt: new Date().toISOString()
-                };
-                
-            } else {
-                if (!uploadedFile) {
-                    showUploadStatus('Please select a file', 'error');
-                    return;
-                }
-                
-                showUploadStatus('Uploading file...', 'success');
-                
-                try {
-                    const storageRef = storage.ref();
-                    const fileName = `${Date.now()}_${uploadedFile.name}`;
-                    const fileRef = storageRef.child(`cards/${cardId}/${fileName}`);
-                    
-                    const snapshot = await fileRef.put(uploadedFile);
-                    const downloadURL = await snapshot.ref.getDownloadURL();
-                    
-                    messageData = {
-                        cardId: cardId,
-                        type: type,
-                        mediaUrl: downloadURL,
-                        fileName: uploadedFile.name,
-                        fileSize: uploadedFile.size,
-                        fileType: uploadedFile.type,
-                        createdAt: new Date().toISOString()
-                    };
-                    
-                } catch (error) {
-                    console.error("Upload error:", error);
-                    showUploadStatus('Upload failed', 'error');
-                    return;
-                }
+            if (!db) {
+                showStatus("⚠️ No internet - can't save", true);
+                return;
             }
             
-            // Save to Firestore
             try {
-                await db.collection('cards').doc(cardId).set(messageData);
-                showState('successState');
+                await db.collection('cards').doc(cardId).set({
+                    cardId: cardId,
+                    type: 'text',
+                    message: message,
+                    createdAt: new Date().toISOString()
+                });
+                
+                showStatus("✅ Message saved to cloud! ✨");
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+                
             } catch (error) {
                 console.error("Save error:", error);
-                showUploadStatus('Save failed', 'error');
+                showStatus("❌ Save failed. Try again.", true);
             }
         }
         
         // UI functions
         function showUploadForm() {
-            showState('uploadForm');
+            document.getElementById('hasMessage').style.display = 'none';
+            document.getElementById('uploadForm').style.display = 'block';
         }
         
-        function hideUploadForm() {
-            loadMessage();
+        function cancelUpload() {
+            location.reload();
         }
         
-        function shareMessage() {
-            const url = window.location.href.replace('view.html', 'index.html');
-            if (navigator.share) {
-                navigator.share({
-                    title: 'Magic Card',
-                    text: 'Check out this magical message!',
-                    url: url
-                });
-            } else {
-                navigator.clipboard.writeText(url);
-                showUploadStatus('Link copied to clipboard!', 'success');
-            }
+        async function saveNewMessage() {
+            await saveMessage();
         }
         
         function viewInAR() {
-            const cardId = getCardIdFromUrl();
+            const cardId = getCardId();
             window.location.href = `index.html?card=${encodeURIComponent(cardId)}`;
         }
         
-        // Initialize
-        window.onload = function() {
-            loadMessage();
-        };
+        // Start on load
+        window.onload = loadMessage;
     </script>
 </body>
 </html>
