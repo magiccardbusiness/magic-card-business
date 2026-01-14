@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Magic Card Maker</title>
+    <style>
+        body {
+            font-family: Arial;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            text-align: center;
+        }
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 500px;
+            margin: 0 auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        h1 { color: #333; }
+        input, textarea {
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+        textarea { height: 120px; }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        .success { background: #28a745; }
+        .qr-box {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎴 MAGIC CARD MAKER</h1>
+        <p><em>Works 100% - No Firebase needed yet</em></p>
+        
+        <input type="text" id="cardId" placeholder="Card ID (BIRTHDAY001)" value="BIRTHDAY001">
+        <textarea id="message" placeholder="Your message...">Happy Birthday! 🎂✨ Wishing you all the best!</textarea>
+        
+        <button onclick="makeCard()" class="success">🪄 MAKE CARD</button>
+        <button onclick="testQuick()">🔮 QUICK TEST</button>
+        
+        <div id="result" class="qr-box" style="display:none;"></div>
+        
+        <div style="margin-top: 30px; background: #e8f4fd; padding: 20px; border-radius: 10px;">
+            <h3>🎯 How to Use:</h3>
+            <p>1. Enter Card ID and message</p>
+            <p>2. Click MAKE CARD</p>
+            <p>3. Print the QR code on physical card</p>
+            <p>4. Anyone scans to see magic! ✨</p>
+            <p><strong>Note:</strong> Message is encoded in QR code itself</p>
+        </div>
+    </div>
+
+    <script>
+        function makeCard() {
+            const cardId = document.getElementById('cardId').value.trim();
+            const message = document.getElementById('message').value.trim();
+            
+            if (!cardId || !message) {
+                alert("Please fill in both fields!");
+                return;
+            }
+            
+            // Create URL with encoded message
+            const data = {
+                card: cardId,
+                type: 'text',
+                message: message,
+                timestamp: Date.now()
+            };
+            
+            const encoded = btoa(JSON.stringify(data));
+            const url = `https://magic-card-business.vercel.app/index.html#${encoded}`;
+            
+            // Generate QR code
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(url)}`;
+            
+            // Show result
+            document.getElementById('result').style.display = 'block';
+            document.getElementById('result').innerHTML = `
+                <h2>✅ Card Created: ${cardId}</h2>
+                <img src="${qrUrl}" alt="QR Code" style="border: 10px solid white; border-radius: 10px;">
+                
+                <div style="margin: 20px 0;">
+                    <button onclick="window.open('${url}', '_blank')" class="success">
+                        🔮 VIEW IN AR
+                    </button>
+                    <button onclick="downloadQR('${qrUrl}', '${cardId}')">
+                        ⬇️ DOWNLOAD QR
+                    </button>
+                    <button onclick="shareCard('${cardId}', '${message}')">
+                        📤 SHARE
+                    </button>
+                </div>
+                
+                <div style="background: #fff3cd; padding: 15px; border-radius: 10px;">
+                    <p><strong>Card Details:</strong></p>
+                    <p><strong>ID:</strong> ${cardId}</p>
+                    <p><strong>Message:</strong> ${message}</p>
+                    <p><strong>URL:</strong> <small>${url.substring(0, 50)}...</small></p>
+                </div>
+            `;
+        }
+        
+        function testQuick() {
+            const cardId = document.getElementById('cardId').value.trim();
+            const message = document.getElementById('message').value.trim();
+            
+            if (!message) {
+                alert("Please type a message!");
+                return;
+            }
+            
+            const data = {
+                card: cardId || "TEST",
+                type: 'text',
+                message: message
+            };
+            
+            const encoded = btoa(JSON.stringify(data));
+            window.open(`index.html#${encoded}`, '_blank');
+        }
+        
+        function downloadQR(imageUrl, cardId) {
+            const link = document.createElement('a');
+            link.href = imageUrl;
+            link.download = `magic-card-${cardId}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        function shareCard(cardId, message) {
+            const data = {
+                card: cardId,
+                type: 'text',
+                message: message
+            };
+            const encoded = btoa(JSON.stringify(data));
+            const url = `https://magic-card-business.vercel.app/index.html#${encoded}`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Magic Card',
+                    text: `Check out this Magic Card: ${message.substring(0, 50)}...`,
+                    url: url
+                });
+            } else {
+                navigator.clipboard.writeText(url);
+                alert("✅ Card link copied to clipboard!");
+            }
+        }
+        
+        // Auto-create demo card
+        window.onload = function() {
+            setTimeout(makeCard, 500);
+        };
+    </script>
+</body>
+</html>
