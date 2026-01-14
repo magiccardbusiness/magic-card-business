@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Magic Card QR - WORKING</title>
+    <style>
+        body {
+            font-family: Arial;
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 500px;
+            margin: 0 auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        input, button {
+            padding: 15px;
+            font-size: 18px;
+            margin: 10px;
+            border-radius: 10px;
+        }
+        input {
+            width: 80%;
+            border: 2px solid #667eea;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎴 MAGIC CARD QR MAKER</h1>
+        <p>This one ALWAYS works!</p>
+        
+        <input type="text" id="cardId" value="BIRTHDAY1">
+        <button onclick="makeQR()">🪄 MAKE QR CODE</button>
+        
+        <div id="result" style="margin-top: 30px;"></div>
+    </div>
+
+    <script>
+        function makeQR() {
+            const cardId = document.getElementById('cardId').value;
+            
+            // Create URL
+            const url = `https://magic-card-business.vercel.app/view.html?card=${cardId}`;
+            
+            // Use QRServer.com - ALWAYS WORKS!
+            const qrImage = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(url)}`;
+            
+            document.getElementById('result').innerHTML = `
+                <h3>Card: ${cardId}</h3>
+                <img src="${qrImage}" alt="QR Code" style="border: 10px solid white; border-radius: 10px;">
+                <br><br>
+                <div style="background: #f0f0f0; padding: 15px; border-radius: 10px;">
+                    <strong>URL:</strong><br>
+                    <code>${url}</code>
+                </div>
+                <br>
+                <button onclick="window.open('${url}', '_blank')" style="background: #28a745;">
+                    🔗 TEST UPLOAD PAGE
+                </button>
+                <button onclick="window.open('https://magic-card-business.vercel.app/index.html?card=${cardId}', '_blank')" style="background: #9b59b6;">
+                    🔮 TEST AR VIEWER
+                </button>
+                <button onclick="downloadQR('${qrImage}', '${cardId}')" style="background: #007bff;">
+                    ⬇️ DOWNLOAD QR
+                </button>
+            `;
+        }
+        
+        function downloadQR(imageUrl, cardId) {
+            const link = document.createElement('a');
+            link.href = imageUrl;
+            link.download = `magic-card-${cardId}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        // Auto-make on load
+        window.onload = makeQR;
+    </script>
+</body>
+</html>
