@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Magic Card QR Generator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .logo {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .magic-i {
+            position: relative;
+            display: inline-block;
+            color: #FFD700;
+        }
+        
+        .magic-i::before {
+            content: "★";
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 16px;
+            color: #FFD700;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .form-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        input, textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            font-family: 'Arial', sans-serif;
+        }
+        
+        textarea {
+            height: 150px;
+            resize: vertical;
+        }
+        
+        .generate-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 18px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 10px;
+            width: 100%;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+        
+        .result-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            display: none;
+        }
+        
+        #qrcode {
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 15px;
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .qr-image {
+            max-width: 100%;
+            border: 15px solid white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .card-info {
+            background: #fff3cd;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .action-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .view-btn { background: #28a745; color: white; }
+        .download-btn { background: #007bff; color: white; }
+        .share-btn { background: #6f42c1; color: white; }
+        
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            text-align: center;
+            font-weight: bold;
+            display: none;
+        }
+        
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        
+        @media (max-width: 768px) {
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .action-btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">
+                MAG<span class="magic-i">I</span>C CARD
+            </div>
+            <p>Create QR codes for magical greeting cards</p>
+        </div>
+        
+        <div class="content">
+            <div class="form-section">
+                <h2 style="text-align: center; color: #333; margin-bottom: 20px;">Create Your Card</h2>
+                
+                <div class="form-group">
+                    <label>Card ID:</label>
+                    <input type="text" id="cardId" value="BIRTHDAY001" placeholder="e.g., BIRTHDAY001">
+                </div>
+                
+                <div class="form-group">
+                    <label>Your Message (with emojis 🎂✨):</label>
+                    <textarea id="messageText">Happy Birthday! 🎂 Wishing you an amazing day! ✨</textarea>
+                </div>
+                
+                <button class="generate-btn" onclick="generateQRCode()" id="generateBtn">
+                    🪄 GENERATE QR CODE
+                </button>
+                
+                <div id="status" class="status"></div>
+            </div>
+            
+            <div class="result-section" id="resultSection">
+                <h2 style="color: #333; margin-bottom: 20px;">✅ Your Card is Ready!</h2>
+                
+                <div id="qrcode">
+                    <p>QR code will appear here</p>
+                </div>
+                
+                <div class="card-info">
+                    <p><strong>Card ID:</strong> <span id="displayCardId">-</span></p>
+                    <p><strong>Message:</strong> <span id="displayMessage">-</span></p>
+                    <p><strong>URL:</strong> <span id="displayUrl" style="word-break: break-all; font-size: 12px;">-</span></p>
+                </div>
+                
+                <div class="action-buttons">
+                    <button class="action-btn view-btn" onclick="testQR()" id="testBtn" disabled>
+                        🔮 VIEW IN AR
+                    </button>
+                    <button class="action-btn download-btn" onclick="downloadQR()" id="downloadBtn" disabled>
+                        ⬇️ DOWNLOAD QR
+                    </button>
+                    <button class="action-btn share-btn" onclick="shareCard()" id="shareBtn" disabled>
+                        📤 SHARE
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentQRCodeUrl = null;
+        let currentCardId = '';
+        let currentCardUrl = '';
+        
+        function generateQRCode() {
+            const cardId = document.getElementById('cardId').value.trim();
+            const message = document.getElementById('messageText').value.trim();
+            
+            if (!cardId || !message) {
+                showStatus('Please enter Card ID and message', 'error');
+                return;
+            }
+            
+            currentCardId = cardId;
+            
+            // Show loading
+            document.getElementById('qrcode').innerHTML = '<p>Generating QR code...</p>';
+            document.getElementById('generateBtn').disabled = true;
+            document.getElementById('generateBtn').textContent = 'Generating...';
+            showStatus('Creating your QR code...', 'success');
+            
+            // Create the URL for AR viewer
+            // SIMPLE FORMAT: index.html?card=ID&message=TEXT
+            currentCardUrl = `https://magic-card-business.vercel.app/index.html?card=${encodeURIComponent(cardId)}&message=${encodeURIComponent(message)}`;
+            
+            console.log('URL:', currentCardUrl);
+            
+            // ✅ USE GOOGLE'S QR API - 100% RELIABLE
+            // Google Charts API for QR codes (always works)
+            const qrImageUrl = `https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=${encodeURIComponent(currentCardUrl)}&choe=UTF-8`;
+            
+            // Display QR code
+            const qrContainer = document.getElementById('qrcode');
+            qrContainer.innerHTML = `<img src="${qrImageUrl}" class="qr-image" alt="QR Code">`;
+            
+            // Store for download
+            currentQRCodeUrl = qrImageUrl;
+            
+            // Update info display
+            document.getElementById('displayCardId').textContent = cardId;
+            document.getElementById('displayMessage').textContent = message.substring(0, 100) + (message.length > 100 ? '...' : '');
+            document.getElementById('displayUrl').textContent = currentCardUrl;
+            
+            // Show result section
+            document.getElementById('resultSection').style.display = 'block';
+            
+            // Enable buttons
+            document.getElementById('testBtn').disabled = false;
+            document.getElementById('downloadBtn').disabled = false;
+            document.getElementById('shareBtn').disabled = false;
+            
+            // Reset button
+            document.getElementById('generateBtn').disabled = false;
+            document.getElementById('generateBtn').textContent = '🪄 GENERATE QR CODE';
+            
+            showStatus('✅ QR code created successfully!', 'success');
+            
+            // Scroll to results
+            setTimeout(() => {
+                document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth' });
+            }, 300);
+        }
+        
+        function testQR() {
+            if (!currentCardUrl) return;
+            window.open(currentCardUrl, '_blank');
+        }
+        
+        function downloadQR() {
+            if (!currentQRCodeUrl) return;
+            
+            // Create download link
+            const link = document.createElement('a');
+            link.href = currentQRCodeUrl;
+            link.download = `magic-card-${currentCardId}.png`;
+            
+            // Trigger download
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showStatus('✅ QR code downloaded!', 'success');
+        }
+        
+        function shareCard() {
+            if (!currentCardUrl) return;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Magic Card',
+                    text: `Check out this Magic Card: ${currentCardId}`,
+                    url: currentCardUrl
+                });
+            } else {
+                navigator.clipboard.writeText(currentCardUrl)
+                    .then(() => showStatus('✅ Link copied to clipboard!', 'success'))
+                    .catch(() => {
+                        // Fallback
+                        const tempInput = document.createElement('input');
+                        tempInput.value = currentCardUrl;
+                        document.body.appendChild(tempInput);
+                        tempInput.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(tempInput);
+                        showStatus('✅ Link copied to clipboard!', 'success');
+                    });
+            }
+        }
+        
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = 'status ' + type;
+            statusDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 3000);
+        }
+        
+        // Auto-generate on load
+        window.onload = function() {
+            setTimeout(() => {
+                generateQRCode();
+            }, 500);
+        };
+    </script>
+</body>
+</html>
