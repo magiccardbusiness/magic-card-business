@@ -4,139 +4,71 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Magic Card Maker</title>
-    <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
         body {
-            font-family: 'Arial Rounded MT Bold', 'Arial', sans-serif;
+            font-family: Arial, sans-serif;
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            min-height: 100vh;
             color: white;
             padding: 20px;
+            margin: 0;
+            min-height: 100vh;
         }
         
         .container {
-            max-width: 800px;
+            max-width: 600px;
             margin: 0 auto;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 20px;
-            padding: 40px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-        }
-        
-        .header {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-        
-        .logo {
-            font-size: 42px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            background: linear-gradient(45deg, #FF6B6B, #FF8E53, #FFD166, #06D6A0, #118AB2);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        
-        .back-btn {
-            position: absolute;
-            top: 20px;
-            left: 20px;
             background: rgba(255, 255, 255, 0.1);
-            border: none;
+            padding: 30px;
+            border-radius: 15px;
+        }
+        
+        h1 {
+            text-align: center;
             color: white;
-            padding: 10px 20px;
-            border-radius: 10px;
-            cursor: pointer;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            margin-bottom: 30px;
         }
         
         .form-group {
-            margin-bottom: 25px;
+            margin-bottom: 20px;
         }
         
         label {
             display: block;
             margin-bottom: 8px;
-            color: #a0aec0;
-            font-size: 16px;
+            color: #ccc;
         }
         
         input, textarea, select {
             width: 100%;
-            padding: 15px;
-            background: rgba(255, 255, 255, 0.07);
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            color: white;
-            font-size: 16px;
-            font-family: inherit;
-        }
-        
-        input:focus, textarea:focus, select:focus {
-            outline: none;
-            border-color: #667eea;
-            background: rgba(102, 126, 234, 0.1);
-        }
-        
-        textarea {
-            min-height: 120px;
-            resize: vertical;
-        }
-        
-        .btn-group {
-            display: flex;
-            gap: 15px;
-            margin-top: 30px;
-        }
-        
-        .btn {
-            flex: 1;
-            padding: 18px;
-            border: none;
-            border-radius: 10px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, #06D6A0 0%, #118AB2 100%);
-            color: white;
-        }
-        
-        .btn-secondary {
+            padding: 12px;
+            border: 1px solid #444;
+            border-radius: 8px;
             background: rgba(255, 255, 255, 0.1);
             color: white;
+            font-size: 16px;
         }
         
-        .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-        }
-        
-        .status {
-            margin-top: 20px;
-            padding: 15px;
-            border-radius: 10px;
-            text-align: center;
+        button {
+            background: #06D6A0;
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 8px;
+            font-size: 16px;
             font-weight: bold;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        
+        button:hover {
+            background: #05b587;
+        }
+        
+        #status {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 8px;
             display: none;
         }
         
@@ -152,53 +84,35 @@
             color: #FF6B6B;
         }
         
-        .preview {
-            margin-top: 30px;
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 15px;
-            border: 1px dashed rgba(255, 255, 255, 0.2);
-        }
-        
-        .preview-title {
-            color: #a0aec0;
-            margin-bottom: 10px;
-            font-size: 18px;
-        }
-        
-        #cardPreview {
-            font-size: 18px;
-            line-height: 1.6;
+        .back-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.1);
             color: white;
-            min-height: 60px;
-            padding: 15px;
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 10px;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
         }
     </style>
 </head>
 <body>
-    <a href="index.html" class="back-btn">← Back to Home</a>
+    <a href="index.html" class="back-btn">← Back</a>
     
     <div class="container">
-        <div class="header">
-            <h1 class="logo">🎴 Create Magic Card</h1>
-            <p>Design a magical AR card that appears when scanned</p>
-        </div>
+        <h1>🎴 Create Magic Card</h1>
         
         <div class="form-group">
-            <label for="cardId">🎴 Card ID (Required):</label>
+            <label>Card ID:</label>
             <div style="display: flex; gap: 10px;">
-                <input type="text" id="cardId" placeholder="CARD6841" value="CARD6841">
-                <button id="generateBtn" class="btn-secondary" style="white-space: nowrap;">🎲 Generate</button>
+                <input type="text" id="cardId" value="CARD6841">
+                <button id="generateBtn">🎲 Generate New</button>
             </div>
-            <small style="color: #777; font-size: 14px; display: block; margin-top: 5px;">
-                Make this UNIQUE for each card. Format: CARD followed by numbers.
-            </small>
+            <small style="color: #aaa;">Format: CARD followed by numbers</small>
         </div>
         
         <div class="form-group">
-            <label for="cardType">📝 Content Type:</label>
+            <label>Content Type:</label>
             <select id="cardType">
                 <option value="text">📄 Text Message</option>
                 <option value="image">🖼️ Image Card</option>
@@ -208,71 +122,64 @@
         
         <div id="textFields">
             <div class="form-group">
-                <label for="message">💌 Your Message:</label>
-                <textarea id="message" placeholder="Enter your magical message here...">Happy Birthday! 🎉 Wishing you an amazing day filled with joy and laughter! ✨❤️</textarea>
+                <label>Your Message:</label>
+                <textarea id="message" rows="4">Happy Birthday! 🎉</textarea>
             </div>
         </div>
         
         <div id="mediaFields" style="display: none;">
             <div class="form-group">
                 <label id="fileLabel">Select File:</label>
-                <input type="file" id="mediaFile" style="padding: 12px;">
-                <small id="fileHint" style="color: #777; font-size: 14px; display: block; margin-top: 5px;">
-                    Max 5MB for images, 10MB for videos
-                </small>
+                <input type="file" id="mediaFile">
             </div>
         </div>
         
-        <div class="preview">
-            <div class="preview-title">Preview:</div>
-            <div id="cardPreview">Your card will appear here...</div>
+        <div style="text-align: center; margin-top: 30px;">
+            <button id="saveBtn">💾 Save Card</button>
+            <button id="testBtn" style="background: #667eea;">🔍 Test Card</button>
         </div>
         
-        <div class="btn-group">
-            <button id="saveBtn" class="btn btn-primary">💾 Save to Cloud</button>
-            <button id="testBtn" class="btn btn-secondary">🔍 Test Card</button>
-        </div>
-        
-        <div id="statusMessage" class="status"></div>
+        <div id="status"></div>
     </div>
 
     <script>
-        // =================== SUPABASE SETUP ===================
-        const SUPABASE_URL = 'https://elmhkhvryjzljxskbfps.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVsbWhraHZyeWp6bGp4c2tiZnBzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0NDc3NjMsImV4cCI6MjA4NDAyMzc2M30.Orrh2Pejnt3KPJMTUTmRRkhCwtZVfjUreKvX546bOcw';
+        // DEBUG: Log when script loads
+        console.log("✅ Script loaded successfully");
         
-        // Initialize Supabase ONLY ONCE
-        if (!window.supabaseClient) {
-            window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        }
-        const supabase = window.supabaseClient;
-        
-        // =================== DOM ELEMENTS ===================
+        // Get elements
         const cardIdInput = document.getElementById('cardId');
+        const generateBtn = document.getElementById('generateBtn');
         const cardTypeSelect = document.getElementById('cardType');
         const messageTextarea = document.getElementById('message');
         const mediaFileInput = document.getElementById('mediaFile');
-        const generateBtn = document.getElementById('generateBtn');
         const saveBtn = document.getElementById('saveBtn');
         const testBtn = document.getElementById('testBtn');
         const textFields = document.getElementById('textFields');
         const mediaFields = document.getElementById('mediaFields');
-        const fileLabel = document.getElementById('fileLabel');
-        const fileHint = document.getElementById('fileHint');
-        const cardPreview = document.getElementById('cardPreview');
-        const statusMessage = document.getElementById('statusMessage');
+        const statusDiv = document.getElementById('status');
         
-        // =================== FUNCTIONS ===================
+        // DEBUG: Check if elements exist
+        console.log("Elements found:", {
+            cardIdInput: !!cardIdInput,
+            generateBtn: !!generateBtn,
+            cardTypeSelect: !!cardTypeSelect,
+            saveBtn: !!saveBtn
+        });
+        
+        // Function to generate card ID
         function generateCardId() {
+            console.log("Generate button clicked");
             const randomNum = Math.floor(1000 + Math.random() * 9000);
             const newId = `CARD${randomNum}`;
             cardIdInput.value = newId;
-            updatePreview();
+            showStatus(`Generated: ${newId}`, 'success');
             return newId;
         }
         
+        // Function to toggle fields based on content type
         function toggleContentFields() {
             const type = cardTypeSelect.value;
+            console.log("Content type changed to:", type);
             
             if (type === 'text') {
                 textFields.style.display = 'block';
@@ -280,168 +187,86 @@
             } else {
                 textFields.style.display = 'none';
                 mediaFields.style.display = 'block';
-                
-                if (type === 'image') {
-                    fileLabel.innerHTML = '🖼️ Select Image:';
-                    fileHint.textContent = 'JPG, PNG, GIF, WEBP (Max 5MB)';
-                    mediaFileInput.accept = 'image/*';
-                } else {
-                    fileLabel.innerHTML = '🎬 Select Video:';
-                    fileHint.textContent = 'MP4, WEBM, MOV (Max 10MB)';
-                    mediaFileInput.accept = 'video/*';
-                }
-            }
-            updatePreview();
-        }
-        
-        function updatePreview() {
-            const cardId = cardIdInput.value || 'CARD0000';
-            const type = cardTypeSelect.value;
-            
-            if (type === 'text') {
-                const message = messageTextarea.value || 'No message';
-                cardPreview.innerHTML = `
-                    <strong>Card ID:</strong> ${cardId}<br>
-                    <strong>Type:</strong> Text Card<br>
-                    <strong>Message:</strong> ${message.substring(0, 100)}${message.length > 100 ? '...' : ''}
-                `;
-            } else {
-                if (mediaFileInput.files.length > 0) {
-                    const file = mediaFileInput.files[0];
-                    cardPreview.innerHTML = `
-                        <strong>Card ID:</strong> ${cardId}<br>
-                        <strong>Type:</strong> ${type === 'image' ? 'Image' : 'Video'} Card<br>
-                        <strong>File:</strong> ${file.name}<br>
-                        <strong>Size:</strong> ${(file.size / 1024 / 1024).toFixed(2)} MB
-                    `;
-                } else {
-                    cardPreview.innerHTML = `
-                        <strong>Card ID:</strong> ${cardId}<br>
-                        <strong>Type:</strong> ${type === 'image' ? 'Image' : 'Video'} Card<br>
-                        <em>No file selected</em>
-                    `;
-                }
             }
         }
         
+        // Function to save card
         async function saveCard() {
+            console.log("Save button clicked");
             const cardId = cardIdInput.value.trim();
-            const type = cardTypeSelect.value;
             
-            if (!cardId || !cardId.match(/^CARD\d+$/)) {
-                showStatus('Please enter a valid Card ID (CARD followed by numbers)', 'error');
-                return;
-            }
-            
-            showStatus('Saving to Supabase...', 'info');
-            
-            try {
-                let cardData = {
-                    card_id: cardId,
-                    message_type: type,
-                    status: 'active',
-                    created_at: new Date().toISOString()
-                };
-                
-                if (type === 'text') {
-                    const message = messageTextarea.value.trim();
-                    if (!message) {
-                        showStatus('Please enter a message', 'error');
-                        return;
-                    }
-                    cardData.message_text = message;
-                } else {
-                    if (!mediaFileInput.files.length) {
-                        showStatus(`Please select a ${type} file`, 'error');
-                        return;
-                    }
-                    
-                    const file = mediaFileInput.files[0];
-                    cardData.file_name = file.name;
-                    cardData.file_size = file.size;
-                    cardData.file_type = file.type;
-                    // Note: For actual file upload, you'd need to upload to Supabase Storage
-                }
-                
-                // Save to Supabase
-                const { data, error } = await supabase
-                    .from('cards')
-                    .upsert(cardData, { onConflict: 'card_id' });
-                
-                if (error) throw error;
-                
-                // Also save to localStorage as backup
-                localStorage.setItem(`card_${cardId}`, JSON.stringify(cardData));
-                
-                showStatus(`✅ Card "${cardId}" saved successfully!`, 'success');
-                
-                // Clear file input
-                mediaFileInput.value = '';
-                
-            } catch (error) {
-                console.error('Save error:', error);
-                showStatus('⚠️ Saved locally (offline mode)', 'warning');
-                
-                // Fallback to localStorage
-                const cardId = cardIdInput.value;
-                const cardData = {
-                    card_id: cardId,
-                    message_type: type,
-                    message_text: messageTextarea.value,
-                    status: 'active',
-                    created_at: new Date().toISOString()
-                };
-                localStorage.setItem(`card_${cardId}`, JSON.stringify(cardData));
-            }
-        }
-        
-        function testCard() {
-            const cardId = cardIdInput.value;
             if (!cardId) {
-                showStatus('Please enter a Card ID first', 'error');
+                showStatus("Please enter a Card ID", 'error');
                 return;
             }
             
-            // Get card from localStorage first, then Supabase
-            const localCard = localStorage.getItem(`card_${cardId}`);
-            if (localCard) {
-                showStatus(`✅ Found card "${cardId}" in local storage`, 'success');
+            showStatus("Saving...", 'info');
+            
+            // For now, just save to localStorage
+            const cardData = {
+                card_id: cardId,
+                message_type: cardTypeSelect.value,
+                message_text: messageTextarea.value,
+                created_at: new Date().toISOString()
+            };
+            
+            localStorage.setItem(`magic_card_${cardId}`, JSON.stringify(cardData));
+            showStatus(`✅ Card "${cardId}" saved locally!`, 'success');
+        }
+        
+        // Function to test card
+        function testCard() {
+            console.log("Test button clicked");
+            const cardId = cardIdInput.value.trim();
+            
+            if (!cardId) {
+                showStatus("Please enter a Card ID", 'error');
+                return;
+            }
+            
+            const cardData = localStorage.getItem(`magic_card_${cardId}`);
+            if (cardData) {
+                showStatus(`✅ Found card "${cardId}" in storage`, 'success');
             } else {
-                showStatus(`Card "${cardId}" not found locally. Save it first.`, 'error');
+                showStatus(`❌ Card "${cardId}" not found`, 'error');
             }
         }
         
+        // Function to show status messages
         function showStatus(message, type) {
-            statusMessage.textContent = message;
-            statusMessage.className = 'status ' + type;
-            statusMessage.style.display = 'block';
+            console.log(`Status: ${message}`);
+            statusDiv.textContent = message;
+            statusDiv.className = type;
+            statusDiv.style.display = 'block';
             
             if (type === 'success') {
                 setTimeout(() => {
-                    statusMessage.style.display = 'none';
+                    statusDiv.style.display = 'none';
                 }, 3000);
             }
         }
         
-        // =================== EVENT LISTENERS ===================
-        function setupEventListeners() {
-            generateBtn.addEventListener('click', generateCardId);
-            cardTypeSelect.addEventListener('change', toggleContentFields);
-            saveBtn.addEventListener('click', saveCard);
-            testBtn.addEventListener('click', testCard);
-            
-            // Update preview on input
-            cardIdInput.addEventListener('input', updatePreview);
-            messageTextarea.addEventListener('input', updatePreview);
-            mediaFileInput.addEventListener('change', updatePreview);
-        }
+        // Add event listeners
+        generateBtn.addEventListener('click', generateCardId);
+        cardTypeSelect.addEventListener('change', toggleContentFields);
+        saveBtn.addEventListener('click', saveCard);
+        testBtn.addEventListener('click', testCard);
         
-        // =================== INITIALIZATION ===================
-        document.addEventListener('DOMContentLoaded', function() {
-            setupEventListeners();
-            generateCardId();
-            toggleContentFields();
-        });
+        // Initialize
+        toggleContentFields();
+        console.log("✅ Maker page initialized successfully");
+        
+        // Test generate button immediately
+        generateBtn.style.background = '#FF6B6B'; // Visual feedback
+        setTimeout(() => {
+            generateBtn.style.background = '#06D6A0';
+        }, 100);
+        
+        // Make sure we can see debug logs
+        setTimeout(() => {
+            console.log("Page fully loaded - all functions available");
+            console.log("Try clicking Generate button!");
+        }, 500);
     </script>
 </body>
 </html>
