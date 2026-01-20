@@ -190,7 +190,7 @@
             <label for="cardId">🎴 Card ID (Required):</label>
             <div style="display: flex; gap: 10px;">
                 <input type="text" id="cardId" placeholder="CARD6841" value="CARD6841">
-                <button onclick="generateId()" class="btn-secondary" style="white-space: nowrap;">🎲 Generate</button>
+                <button id="generateBtn" class="btn-secondary" style="white-space: nowrap;">🎲 Generate</button>
             </div>
             <small style="color: #777; font-size: 14px; display: block; margin-top: 5px;">
                 Make this UNIQUE for each card. Format: CARD followed by numbers.
@@ -199,7 +199,7 @@
         
         <div class="form-group">
             <label for="cardType">📝 Content Type:</label>
-            <select id="cardType" onchange="toggleFields()">
+            <select id="cardType">
                 <option value="text">📄 Text Message</option>
                 <option value="image">🖼️ Image Card</option>
                 <option value="video">🎬 Video Card</option>
@@ -229,8 +229,8 @@
         </div>
         
         <div class="btn-group">
-            <button onclick="saveCard()" class="btn btn-primary">💾 Save to Cloud</button>
-            <button onclick="testCard()" class="btn btn-secondary">🔍 Test Card</button>
+            <button id="saveBtn" class="btn btn-primary">💾 Save to Cloud</button>
+            <button id="testBtn" class="btn btn-secondary">🔍 Test Card</button>
         </div>
         
         <div id="statusMessage" class="status"></div>
@@ -241,21 +241,38 @@
         const SUPABASE_URL = 'https://elmhkhvryjzljxskbfps.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVsbWhraHZyeWp6bGp4c2tiZnBzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0NDc3NjMsImV4cCI6MjA4NDAyMzc2M30.Orrh2Pejnt3KPJMTUTmRRkhCwtZVfjUreKvX546bOcw';
         
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        // Initialize Supabase ONLY ONCE
+        if (!window.supabaseClient) {
+            window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        }
+        const supabase = window.supabaseClient;
+        
+        // =================== DOM ELEMENTS ===================
+        const cardIdInput = document.getElementById('cardId');
+        const cardTypeSelect = document.getElementById('cardType');
+        const messageTextarea = document.getElementById('message');
+        const mediaFileInput = document.getElementById('mediaFile');
+        const generateBtn = document.getElementById('generateBtn');
+        const saveBtn = document.getElementById('saveBtn');
+        const testBtn = document.getElementById('testBtn');
+        const textFields = document.getElementById('textFields');
+        const mediaFields = document.getElementById('mediaFields');
+        const fileLabel = document.getElementById('fileLabel');
+        const fileHint = document.getElementById('fileHint');
+        const cardPreview = document.getElementById('cardPreview');
+        const statusMessage = document.getElementById('statusMessage');
         
         // =================== FUNCTIONS ===================
-        function generateId() {
+        function generateCardId() {
             const randomNum = Math.floor(1000 + Math.random() * 9000);
-            document.getElementById('cardId').value = `CARD${randomNum}`;
+            const newId = `CARD${randomNum}`;
+            cardIdInput.value = newId;
             updatePreview();
+            return newId;
         }
         
-        function toggleFields() {
-            const type = document.getElementById('cardType').value;
-            const textFields = document.getElementById('textFields');
-            const mediaFields = document.getElementById('mediaFields');
-            const fileLabel = document.getElementById('fileLabel');
-            const fileHint = document.getElementById('fileHint');
+        function toggleContentFields() {
+            const type = cardTypeSelect.value;
             
             if (type === 'text') {
                 textFields.style.display = 'block';
@@ -267,40 +284,38 @@
                 if (type === 'image') {
                     fileLabel.innerHTML = '🖼️ Select Image:';
                     fileHint.textContent = 'JPG, PNG, GIF, WEBP (Max 5MB)';
-                    document.getElementById('mediaFile').accept = 'image/*';
+                    mediaFileInput.accept = 'image/*';
                 } else {
                     fileLabel.innerHTML = '🎬 Select Video:';
                     fileHint.textContent = 'MP4, WEBM, MOV (Max 10MB)';
-                    document.getElementById('mediaFile').accept = 'video/*';
+                    mediaFileInput.accept = 'video/*';
                 }
             }
             updatePreview();
         }
         
         function updatePreview() {
-            const preview = document.getElementById('cardPreview');
-            const cardId = document.getElementById('cardId').value || 'CARD0000';
-            const type = document.getElementById('cardType').value;
+            const cardId = cardIdInput.value || 'CARD0000';
+            const type = cardTypeSelect.value;
             
             if (type === 'text') {
-                const message = document.getElementById('message').value || 'No message';
-                preview.innerHTML = `
+                const message = messageTextarea.value || 'No message';
+                cardPreview.innerHTML = `
                     <strong>Card ID:</strong> ${cardId}<br>
                     <strong>Type:</strong> Text Card<br>
                     <strong>Message:</strong> ${message.substring(0, 100)}${message.length > 100 ? '...' : ''}
                 `;
             } else {
-                const fileInput = document.getElementById('mediaFile');
-                if (fileInput.files.length > 0) {
-                    const file = fileInput.files[0];
-                    preview.innerHTML = `
+                if (mediaFileInput.files.length > 0) {
+                    const file = mediaFileInput.files[0];
+                    cardPreview.innerHTML = `
                         <strong>Card ID:</strong> ${cardId}<br>
                         <strong>Type:</strong> ${type === 'image' ? 'Image' : 'Video'} Card<br>
                         <strong>File:</strong> ${file.name}<br>
                         <strong>Size:</strong> ${(file.size / 1024 / 1024).toFixed(2)} MB
                     `;
                 } else {
-                    preview.innerHTML = `
+                    cardPreview.innerHTML = `
                         <strong>Card ID:</strong> ${cardId}<br>
                         <strong>Type:</strong> ${type === 'image' ? 'Image' : 'Video'} Card<br>
                         <em>No file selected</em>
@@ -310,8 +325,8 @@
         }
         
         async function saveCard() {
-            const cardId = document.getElementById('cardId').value.trim();
-            const type = document.getElementById('cardType').value;
+            const cardId = cardIdInput.value.trim();
+            const type = cardTypeSelect.value;
             
             if (!cardId || !cardId.match(/^CARD\d+$/)) {
                 showStatus('Please enter a valid Card ID (CARD followed by numbers)', 'error');
@@ -329,21 +344,19 @@
                 };
                 
                 if (type === 'text') {
-                    const message = document.getElementById('message').value.trim();
+                    const message = messageTextarea.value.trim();
                     if (!message) {
                         showStatus('Please enter a message', 'error');
                         return;
                     }
                     cardData.message_text = message;
                 } else {
-                    const fileInput = document.getElementById('mediaFile');
-                    if (!fileInput.files.length) {
+                    if (!mediaFileInput.files.length) {
                         showStatus(`Please select a ${type} file`, 'error');
                         return;
                     }
                     
-                    // For simplicity, we'll just store file info
-                    const file = fileInput.files[0];
+                    const file = mediaFileInput.files[0];
                     cardData.file_name = file.name;
                     cardData.file_size = file.size;
                     cardData.file_type = file.type;
@@ -363,18 +376,18 @@
                 showStatus(`✅ Card "${cardId}" saved successfully!`, 'success');
                 
                 // Clear file input
-                document.getElementById('mediaFile').value = '';
+                mediaFileInput.value = '';
                 
             } catch (error) {
                 console.error('Save error:', error);
                 showStatus('⚠️ Saved locally (offline mode)', 'warning');
                 
                 // Fallback to localStorage
-                const cardId = document.getElementById('cardId').value;
+                const cardId = cardIdInput.value;
                 const cardData = {
                     card_id: cardId,
                     message_type: type,
-                    message_text: document.getElementById('message').value,
+                    message_text: messageTextarea.value,
                     status: 'active',
                     created_at: new Date().toISOString()
                 };
@@ -383,7 +396,7 @@
         }
         
         function testCard() {
-            const cardId = document.getElementById('cardId').value;
+            const cardId = cardIdInput.value;
             if (!cardId) {
                 showStatus('Please enter a Card ID first', 'error');
                 return;
@@ -399,28 +412,35 @@
         }
         
         function showStatus(message, type) {
-            const status = document.getElementById('statusMessage');
-            status.textContent = message;
-            status.className = 'status ' + type;
-            status.style.display = 'block';
+            statusMessage.textContent = message;
+            statusMessage.className = 'status ' + type;
+            statusMessage.style.display = 'block';
             
             if (type === 'success') {
                 setTimeout(() => {
-                    status.style.display = 'none';
+                    statusMessage.style.display = 'none';
                 }, 3000);
             }
         }
         
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            generateId();
-            toggleFields();
+        // =================== EVENT LISTENERS ===================
+        function setupEventListeners() {
+            generateBtn.addEventListener('click', generateCardId);
+            cardTypeSelect.addEventListener('change', toggleContentFields);
+            saveBtn.addEventListener('click', saveCard);
+            testBtn.addEventListener('click', testCard);
             
             // Update preview on input
-            document.getElementById('cardId').addEventListener('input', updatePreview);
-            document.getElementById('message').addEventListener('input', updatePreview);
-            document.getElementById('mediaFile').addEventListener('change', updatePreview);
-            document.getElementById('cardType').addEventListener('change', updatePreview);
+            cardIdInput.addEventListener('input', updatePreview);
+            messageTextarea.addEventListener('input', updatePreview);
+            mediaFileInput.addEventListener('change', updatePreview);
+        }
+        
+        // =================== INITIALIZATION ===================
+        document.addEventListener('DOMContentLoaded', function() {
+            setupEventListeners();
+            generateCardId();
+            toggleContentFields();
         });
     </script>
 </body>
