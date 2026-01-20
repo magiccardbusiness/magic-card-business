@@ -3,72 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Magic Card Maker</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <title>AR Magic Card Generator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         
         body {
-            font-family: 'Arial Rounded MT Bold', 'Arial', sans-serif;
-            background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
-            color: #e2e8f0;
-            padding: 20px;
-            margin: 0;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
             min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
         }
         
         .container {
+            max-width: 1200px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+        
+        header {
+            text-align: center;
+            color: white;
+            padding: 20px;
+        }
+        
+        header h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
             max-width: 700px;
             margin: 0 auto;
-            background: rgba(45, 55, 72, 0.8);
+            line-height: 1.5;
+        }
+        
+        .card-creator {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            justify-content: center;
+        }
+        
+        .form-section {
+            background: white;
+            border-radius: 15px;
             padding: 30px;
-            border-radius: 20px;
-            border: 1px solid rgba(226, 232, 240, 0.1);
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
-            backdrop-filter: blur(10px);
+            flex: 1;
+            min-width: 300px;
+            max-width: 550px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
         }
         
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
+        .preview-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            flex: 1;
+            min-width: 300px;
+            max-width: 550px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
         }
         
-        .logo {
-            font-size: 36px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            background: linear-gradient(45deg, #ff6b6b, #ff8e53, #ffd166, #06d6a0, #118ab2, #667eea);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+        .section-title {
+            font-size: 1.5rem;
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         
-        .subtitle {
-            color: #a0aec0;
-            font-size: 16px;
-        }
-        
-        .back-btn {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            background: rgba(74, 85, 104, 0.7);
-            color: #e2e8f0;
-            padding: 10px 20px;
-            border-radius: 10px;
-            text-decoration: none;
-            border: 1px solid rgba(226, 232, 240, 0.2);
-            transition: all 0.3s;
-            font-weight: bold;
-        }
-        
-        .back-btn:hover {
-            background: rgba(102, 126, 234, 0.7);
-            transform: translateY(-2px);
+        .section-title i {
+            color: #6a11cb;
         }
         
         .form-group {
@@ -78,603 +101,713 @@
         label {
             display: block;
             margin-bottom: 8px;
-            color: #cbd5e0;
-            font-size: 16px;
-            font-weight: bold;
+            font-weight: 600;
+            color: #444;
         }
         
-        input, textarea, select {
-            width: 100%;
-            padding: 15px;
-            border: 2px solid rgba(226, 232, 240, 0.2);
-            border-radius: 10px;
-            background: rgba(26, 32, 44, 0.7);
-            color: #e2e8f0;
-            font-size: 16px;
-            transition: all 0.3s;
-        }
-        
-        input:focus, textarea:focus, select:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-            background: rgba(26, 32, 44, 0.9);
-        }
-        
-        textarea {
-            min-height: 120px;
-            resize: vertical;
-        }
-        
-        .input-group {
+        .card-id-container {
             display: flex;
-            gap: 15px;
-            align-items: center;
-        }
-        
-        .input-group input {
-            flex: 1;
-        }
-        
-        .btn {
-            background: linear-gradient(135deg, #06d6a0 0%, #118ab2 100%);
-            color: white;
-            border: none;
-            padding: 15px 25px;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: inline-flex;
-            align-items: center;
             gap: 10px;
         }
         
-        .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 20px rgba(6, 214, 160, 0.3);
+        .card-id-prefix {
+            background: #f0f0f0;
+            padding: 12px 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            color: #555;
+            border: 1px solid #ddd;
         }
         
-        .btn-secondary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        #cardId {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
         }
         
-        .btn-secondary:hover {
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        #cardId:focus {
+            border-color: #6a11cb;
+            outline: none;
         }
         
-        .btn-generate {
-            background: rgba(255, 209, 102, 0.9);
-            color: #2d3748;
+        .content-type-selector {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .type-option {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .type-option:hover {
+            background-color: #f9f9f9;
+        }
+        
+        .type-option.active {
+            border-color: #6a11cb;
+            background-color: #f0e6ff;
+        }
+        
+        .type-option input {
+            margin-right: 12px;
+            transform: scale(1.2);
+        }
+        
+        .message-input textarea {
+            width: 100%;
             padding: 15px;
-            white-space: nowrap;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            resize: vertical;
+            min-height: 120px;
+            transition: border-color 0.3s;
         }
         
-        .btn-generate:hover {
-            background: rgba(255, 209, 102, 1);
-            box-shadow: 0 10px 20px rgba(255, 209, 102, 0.3);
+        .message-input textarea:focus {
+            border-color: #6a11cb;
+            outline: none;
         }
         
-        .button-group {
+        .button-container {
             display: flex;
             gap: 15px;
             margin-top: 30px;
-            justify-content: center;
             flex-wrap: wrap;
         }
         
-        #status {
-            margin-top: 25px;
-            padding: 15px;
-            border-radius: 10px;
-            text-align: center;
-            font-weight: bold;
-            display: none;
-            border: 2px solid transparent;
-        }
-        
-        .status-success {
-            background: rgba(6, 214, 160, 0.15);
-            border-color: rgba(6, 214, 160, 0.3);
-            color: #06d6a0;
-        }
-        
-        .status-error {
-            background: rgba(255, 107, 107, 0.15);
-            border-color: rgba(255, 107, 107, 0.3);
-            color: #ff6b6b;
-        }
-        
-        .status-info {
-            background: rgba(102, 126, 234, 0.15);
-            border-color: rgba(102, 126, 234, 0.3);
-            color: #667eea;
-        }
-        
-        .preview-box {
-            margin-top: 25px;
-            padding: 20px;
-            background: rgba(26, 32, 44, 0.7);
-            border-radius: 15px;
-            border: 2px dashed rgba(226, 232, 240, 0.2);
-        }
-        
-        .preview-title {
-            color: #a0aec0;
-            margin-bottom: 10px;
-            font-size: 18px;
-            font-weight: bold;
+        .btn {
+            padding: 14px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 10px;
+            transition: all 0.3s;
+            flex: 1;
+            min-width: 150px;
         }
         
-        #cardPreview {
-            font-size: 16px;
-            line-height: 1.6;
-            color: #e2e8f0;
-            min-height: 80px;
+        .btn-primary {
+            background: linear-gradient(to right, #6a11cb, #2575fc);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(106, 17, 203, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        
+        .btn-secondary:hover {
+            background: #e0e0e0;
+            transform: translateY(-3px);
+        }
+        
+        .btn-success {
+            background: linear-gradient(to right, #00b09b, #96c93d);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 176, 155, 0.4);
+        }
+        
+        .preview-card {
+            border: 2px dashed #ccc;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 25px;
+            background-color: #f9f9f9;
+            min-height: 300px;
+        }
+        
+        .card-content {
+            max-width: 100%;
+        }
+        
+        .text-content {
+            font-size: 2rem;
+            color: #333;
+            font-weight: 600;
+            margin: 20px 0;
+        }
+        
+        .card-id-display {
+            font-size: 1.2rem;
+            color: #666;
+            background: #f0f0f0;
+            padding: 8px 15px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+        
+        .content-type-display {
+            display: inline-block;
+            background: #e0e6ff;
+            color: #2d4cc7;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+        
+        .empty-preview {
+            color: #999;
+            font-size: 1.1rem;
+        }
+        
+        .preview-instructions {
+            background-color: #f0f8ff;
             padding: 15px;
-            background: rgba(45, 55, 72, 0.5);
-            border-radius: 10px;
-            border: 1px solid rgba(226, 232, 240, 0.1);
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: #555;
+            line-height: 1.5;
         }
         
-        .file-info {
-            color: #a0aec0;
-            font-size: 14px;
-            margin-top: 5px;
+        .card-list {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
         }
         
-        .instructions {
-            color: #a0aec0;
-            font-size: 14px;
-            margin-top: 5px;
-            font-style: italic;
+        .cards-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        .cards-table th {
+            background-color: #f5f5f5;
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 2px solid #eee;
+            color: #555;
+        }
+        
+        .cards-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .empty-row {
+            text-align: center;
+            color: #999;
+            padding: 30px !important;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .action-btn {
+            padding: 6px 12px;
+            border-radius: 5px;
+            border: none;
+            background: #f0f0f0;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+        
+        .action-btn:hover {
+            background: #e0e0e0;
+        }
+        
+        .action-btn.view {
+            background: #e0e6ff;
+            color: #2d4cc7;
+        }
+        
+        .action-btn.delete {
+            background: #ffe0e0;
+            color: #c72d2d;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            opacity: 0;
+            transform: translateX(100px);
+            transition: all 0.5s;
+        }
+        
+        .notification.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        
+        .notification.success {
+            background: linear-gradient(to right, #00b09b, #96c93d);
+        }
+        
+        .notification.error {
+            background: linear-gradient(to right, #ff416c, #ff4b2b);
+        }
+        
+        @media (max-width: 768px) {
+            .card-creator {
+                flex-direction: column;
+            }
+            
+            .form-section, .preview-section {
+                max-width: 100%;
+            }
+            
+            .button-container {
+                flex-direction: column;
+            }
+            
+            .btn {
+                min-width: 100%;
+            }
+            
+            header h1 {
+                font-size: 2.2rem;
+            }
         }
     </style>
 </head>
 <body>
-    <a href="index.html" class="back-btn">← Back to Home</a>
-    
     <div class="container">
-        <div class="header">
-            <h1 class="logo">🎴 Create Magic Card</h1>
-            <p class="subtitle">Design magical AR cards with text, images, videos, or audio</p>
-        </div>
+        <header>
+            <h1><i class="fas fa-magic"></i> Create Magic Card</h1>
+            <p>Design magical AR cards with text, images, videos, or audio. Create your card, preview it, and save it to your collection.</p>
+        </header>
         
-        <div class="form-group">
-            <label>🎴 Card ID (Required):</label>
-            <div class="input-group">
-                <input type="text" id="cardId" value="CARD6841" placeholder="e.g., CARD1234">
-                <button id="generateBtn" class="btn-generate">🎲 Generate</button>
-            </div>
-            <div class="instructions">Format: CARD followed by numbers. Must be unique for each card.</div>
-        </div>
-        
-        <div class="form-group">
-            <label>📝 Content Type:</label>
-            <select id="cardType">
-                <option value="text">📄 Text Message</option>
-                <option value="image">🖼️ Image Card</option>
-                <option value="video">🎬 Video Card</option>
-                <option value="audio">🎵 Audio/Voice Card</option>
-            </select>
-        </div>
-        
-        <div id="textFields">
-            <div class="form-group">
-                <label>💌 Your Message:</label>
-                <textarea id="message" placeholder="Enter your magical message here...">Happy Birthday! 🎉 Wishing you an amazing day filled with joy and laughter! ✨❤️</textarea>
-            </div>
-        </div>
-        
-        <div id="mediaFields" style="display: none;">
-            <div class="form-group">
-                <label id="fileLabel">📁 Select Media File:</label>
-                <input type="file" id="mediaFile">
-                <div class="file-info" id="fileInfo">No file selected</div>
-            </div>
-        </div>
-        
-        <div class="preview-box">
-            <div class="preview-title">👁️ Preview:</div>
-            <div id="cardPreview">Your card content will appear here...</div>
-        </div>
-        
-        <div class="button-group">
-            <button id="saveBtn" class="btn">💾 Save to Cloud</button>
-            <button id="testBtn" class="btn btn-secondary">🔍 Test Card</button>
-        </div>
-        
-        <div id="status"></div>
-    </div>
-
-    <script>
-        // Debug logging
-        console.log("✅ Magic Card Maker loaded");
-        
-        // Get DOM elements
-        const elements = {
-            cardId: document.getElementById('cardId'),
-            generateBtn: document.getElementById('generateBtn'),
-            cardType: document.getElementById('cardType'),
-            message: document.getElementById('message'),
-            mediaFile: document.getElementById('mediaFile'),
-            saveBtn: document.getElementById('saveBtn'),
-            testBtn: document.getElementById('testBtn'),
-            textFields: document.getElementById('textFields'),
-            mediaFields: document.getElementById('mediaFields'),
-            fileLabel: document.getElementById('fileLabel'),
-            fileInfo: document.getElementById('fileInfo'),
-            cardPreview: document.getElementById('cardPreview'),
-            status: document.getElementById('status')
-        };
-        
-        // Initialize Supabase
-        const SUPABASE_URL = 'https://elmhkhvryjzljxskbfps.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVsbWhraHZyeWp6bGp4c2tiZnBzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0NDc3NjMsImV4cCI6MjA4NDAyMzc2M30.Orrh2Pejnt3KPJMTUTmRRkhCwtZVfjUreKvX546bOcw';
-        
-        let supabase;
-        try {
-            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-            console.log("✅ Supabase initialized");
-        } catch (error) {
-            console.log("⚠️ Supabase offline mode");
-        }
-        
-        // Generate new Card ID
-        function generateCardId() {
-            console.log("🎲 Generating new Card ID");
-            const randomNum = Math.floor(1000 + Math.random() * 9000);
-            const newId = `CARD${randomNum}`;
-            elements.cardId.value = newId;
-            updatePreview();
-            showStatus(`✅ Generated new ID: ${newId}`, 'success');
-            return newId;
-        }
-        
-        // Toggle between text and media fields
-        function toggleContentFields() {
-            const type = elements.cardType.value;
-            console.log(`📝 Content type changed to: ${type}`);
-            
-            if (type === 'text') {
-                elements.textFields.style.display = 'block';
-                elements.mediaFields.style.display = 'none';
-            } else {
-                elements.textFields.style.display = 'none';
-                elements.mediaFields.style.display = 'block';
+        <div class="card-creator">
+            <!-- Form Section -->
+            <div class="form-section">
+                <div class="section-title">
+                    <i class="fas fa-edit"></i> Card Details
+                </div>
                 
-                // Update labels based on type
-                switch(type) {
-                    case 'image':
-                        elements.fileLabel.innerHTML = '🖼️ Select Image:';
-                        elements.fileInfo.textContent = 'JPG, PNG, GIF, WEBP (Max 5MB)';
-                        elements.mediaFile.accept = 'image/*';
-                        break;
-                    case 'video':
-                        elements.fileLabel.innerHTML = '🎬 Select Video:';
-                        elements.fileInfo.textContent = 'MP4, WEBM, MOV (Max 10MB)';
-                        elements.mediaFile.accept = 'video/*';
-                        break;
-                    case 'audio':
-                        elements.fileLabel.innerHTML = '🎵 Select Audio:';
-                        elements.fileInfo.textContent = 'MP3, WAV, OGG (Max 5MB)';
-                        elements.mediaFile.accept = 'audio/*';
-                        break;
-                }
+                <div class="form-group">
+                    <label for="cardId">Card ID (Required):</label>
+                    <div class="card-id-container">
+                        <div class="card-id-prefix">CARD</div>
+                        <input type="text" id="cardId" placeholder="6842" value="6842">
+                    </div>
+                    <div style="font-size: 0.85rem; color: #666; margin-top: 5px;">
+                        Format: CARD followed by numbers. Must be unique for each card.
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Content Type:</label>
+                    <div class="content-type-selector">
+                        <div class="type-option active">
+                            <input type="radio" id="typeText" name="contentType" value="text" checked>
+                            <label for="typeText">Text Message</label>
+                        </div>
+                        <div class="type-option">
+                            <input type="radio" id="typeImage" name="contentType" value="image">
+                            <label for="typeImage">Image</label>
+                        </div>
+                        <div class="type-option">
+                            <input type="radio" id="typeVideo" name="contentType" value="video">
+                            <label for="typeVideo">Video</label>
+                        </div>
+                        <div class="type-option">
+                            <input type="radio" id="typeAudio" name="contentType" value="audio">
+                            <label for="typeAudio">Audio</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="message">Your Message:</label>
+                    <div class="message-input">
+                        <textarea id="message" placeholder="Enter your message here...">Happy Birthday 😊</textarea>
+                    </div>
+                </div>
+                
+                <div class="button-container">
+                    <button class="btn btn-primary" id="generateBtn">
+                        <i class="fas fa-bolt"></i> Generate Card
+                    </button>
+                    <button class="btn btn-success" id="saveBtn">
+                        <i class="fas fa-save"></i> Save Card
+                    </button>
+                    <button class="btn btn-secondary" id="testBtn">
+                        <i class="fas fa-play"></i> Test Card
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Preview Section -->
+            <div class="preview-section">
+                <div class="section-title">
+                    <i class="fas fa-eye"></i> Preview
+                </div>
+                
+                <div class="preview-card">
+                    <div class="card-content" id="cardPreview">
+                        <div class="card-id-display">CARD6842</div>
+                        <div class="text-content">Happy Birthday 😊</div>
+                        <div class="content-type-display">Text Message</div>
+                    </div>
+                </div>
+                
+                <div class="preview-instructions">
+                    <i class="fas fa-info-circle"></i> This is how your AR card will appear. The card ID and content type will be visible when the card is scanned in AR mode.
+                </div>
+            </div>
+        </div>
+        
+        <!-- Card List Section -->
+        <div class="card-list">
+            <div class="section-title">
+                <i class="fas fa-list"></i> Saved Cards
+            </div>
+            <p>Here are all the cards you've created. You can view or delete them.</p>
+            
+            <table class="cards-table">
+                <thead>
+                    <tr>
+                        <th>Card ID</th>
+                        <th>Content Type</th>
+                        <th>Preview</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="cardsTableBody">
+                    <tr class="empty-row">
+                        <td colspan="4">No cards saved yet. Create your first card above!</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Notification Element -->
+    <div class="notification" id="notification"></div>
+    
+    <script>
+        // DOM Elements
+        const cardIdInput = document.getElementById('cardId');
+        const contentTypeRadios = document.querySelectorAll('input[name="contentType"]');
+        const messageInput = document.getElementById('message');
+        const generateBtn = document.getElementById('generateBtn');
+        const saveBtn = document.getElementById('saveBtn');
+        const testBtn = document.getElementById('testBtn');
+        const cardPreview = document.getElementById('cardPreview');
+        const cardsTableBody = document.getElementById('cardsTableBody');
+        const notification = document.getElementById('notification');
+        
+        // Card storage
+        let savedCards = JSON.parse(localStorage.getItem('magicCards')) || [];
+        
+        // Initialize the saved cards table
+        function initSavedCards() {
+            if (savedCards.length === 0) {
+                cardsTableBody.innerHTML = '<tr class="empty-row"><td colspan="4">No cards saved yet. Create your first card above!</td></tr>';
+                return;
             }
-            updatePreview();
+            
+            let tableHTML = '';
+            savedCards.forEach((card, index) => {
+                tableHTML += `
+                <tr>
+                    <td>${card.id}</td>
+                    <td>${card.type}</td>
+                    <td>${card.preview}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="action-btn view" onclick="viewCard(${index})">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                            <button class="action-btn delete" onclick="deleteCard(${index})">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                `;
+            });
+            
+            cardsTableBody.innerHTML = tableHTML;
         }
         
-        // Update preview display
-        function updatePreview() {
-            const cardId = elements.cardId.value || 'CARD0000';
-            const type = elements.cardType.value;
+        // Show notification
+        function showNotification(message, type = 'success') {
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.classList.add('show');
             
-            let previewHTML = `<strong>Card ID:</strong> ${cardId}<br>`;
-            previewHTML += `<strong>Type:</strong> `;
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+        
+        // Generate card preview
+        function generatePreview() {
+            const cardId = cardIdInput.value.trim();
+            const contentType = document.querySelector('input[name="contentType"]:checked').value;
+            const message = messageInput.value.trim();
             
-            switch(type) {
+            // Validate card ID
+            if (!cardId) {
+                showNotification('Please enter a card ID', 'error');
+                return;
+            }
+            
+            if (!/^\d+$/.test(cardId)) {
+                showNotification('Card ID must contain only numbers', 'error');
+                return;
+            }
+            
+            const fullCardId = `CARD${cardId}`;
+            
+            // Generate preview based on content type
+            let previewHTML = '';
+            let typeDisplay = '';
+            
+            switch(contentType) {
                 case 'text':
-                    previewHTML += `📄 Text Card<br>`;
-                    const message = elements.message.value || 'No message';
-                    previewHTML += `<strong>Message:</strong> ${message.substring(0, 80)}`;
-                    if (message.length > 80) previewHTML += '...';
+                    previewHTML = `
+                        <div class="card-id-display">${fullCardId}</div>
+                        <div class="text-content">${message || 'Your text message will appear here'}</div>
+                    `;
+                    typeDisplay = 'Text Message';
                     break;
                     
                 case 'image':
-                    previewHTML += `🖼️ Image Card<br>`;
-                    if (elements.mediaFile.files.length > 0) {
-                        const file = elements.mediaFile.files[0];
-                        previewHTML += `<strong>File:</strong> ${file.name}<br>`;
-                        previewHTML += `<strong>Size:</strong> ${(file.size / 1024 / 1024).toFixed(2)} MB`;
-                    } else {
-                        previewHTML += `<em>No image selected</em>`;
-                    }
+                    previewHTML = `
+                        <div class="card-id-display">${fullCardId}</div>
+                        <div style="font-size: 3rem; margin: 20px 0;">
+                            <i class="fas fa-image"></i>
+                        </div>
+                        <div class="text-content">Image Card</div>
+                        <p style="color: #666; margin-top: 10px;">${message || 'Image description'}</p>
+                    `;
+                    typeDisplay = 'Image';
                     break;
                     
                 case 'video':
-                    previewHTML += `🎬 Video Card<br>`;
-                    if (elements.mediaFile.files.length > 0) {
-                        const file = elements.mediaFile.files[0];
-                        previewHTML += `<strong>File:</strong> ${file.name}<br>`;
-                        previewHTML += `<strong>Size:</strong> ${(file.size / 1024 / 1024).toFixed(2)} MB`;
-                    } else {
-                        previewHTML += `<em>No video selected</em>`;
-                    }
+                    previewHTML = `
+                        <div class="card-id-display">${fullCardId}</div>
+                        <div style="font-size: 3rem; margin: 20px 0;">
+                            <i class="fas fa-video"></i>
+                        </div>
+                        <div class="text-content">Video Card</div>
+                        <p style="color: #666; margin-top: 10px;">${message || 'Video description'}</p>
+                    `;
+                    typeDisplay = 'Video';
                     break;
                     
                 case 'audio':
-                    previewHTML += `🎵 Audio Card<br>`;
-                    if (elements.mediaFile.files.length > 0) {
-                        const file = elements.mediaFile.files[0];
-                        previewHTML += `<strong>File:</strong> ${file.name}<br>`;
-                        previewHTML += `<strong>Size:</strong> ${(file.size / 1024 / 1024).toFixed(2)} MB`;
-                        previewHTML += `<br><small>🎤 Audio cards play voice messages or music</small>`;
-                    } else {
-                        previewHTML += `<em>No audio file selected</em>`;
-                    }
+                    previewHTML = `
+                        <div class="card-id-display">${fullCardId}</div>
+                        <div style="font-size: 3rem; margin: 20px 0;">
+                            <i class="fas fa-music"></i>
+                        </div>
+                        <div class="text-content">Audio Card</div>
+                        <p style="color: #666; margin-top: 10px;">${message || 'Audio description'}</p>
+                    `;
+                    typeDisplay = 'Audio';
                     break;
             }
             
-            elements.cardPreview.innerHTML = previewHTML;
+            previewHTML += `<div class="content-type-display">${typeDisplay}</div>`;
+            
+            // Update the preview
+            cardPreview.innerHTML = previewHTML;
+            
+            // Return card data for saving
+            return {
+                id: fullCardId,
+                type: typeDisplay,
+                message: message,
+                preview: message.substring(0, 30) + (message.length > 30 ? '...' : '')
+            };
         }
         
-        // Save card to Supabase
-        async function saveCard() {
-            console.log("💾 Saving card...");
-            const cardId = elements.cardId.value.trim();
+        // Save card to storage
+        function saveCard(cardData) {
+            // Check if card with same ID already exists
+            const existingIndex = savedCards.findIndex(card => card.id === cardData.id);
             
-            if (!cardId || !cardId.match(/^CARD\d+$/)) {
-                showStatus("❌ Please enter a valid Card ID (CARD followed by numbers)", 'error');
-                return;
+            if (existingIndex !== -1) {
+                // Update existing card
+                savedCards[existingIndex] = cardData;
+            } else {
+                // Add new card
+                savedCards.push(cardData);
             }
             
-            showStatus("⏳ Saving to cloud...", 'info');
+            // Save to localStorage
+            localStorage.setItem('magicCards', JSON.stringify(savedCards));
             
-            // Disable save button to prevent double clicks
-            elements.saveBtn.disabled = true;
-            elements.saveBtn.innerHTML = '⏳ Saving...';
+            // Update the table
+            initSavedCards();
             
-            try {
-                const cardData = {
-                    card_id: cardId,
-                    message_type: elements.cardType.value,
-                    status: 'active',
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString()
-                };
+            return existingIndex === -1 ? 'created' : 'updated';
+        }
+        
+        // View a saved card
+        function viewCard(index) {
+            const card = savedCards[index];
+            
+            // Extract numeric ID from CARD prefix
+            const numericId = card.id.replace('CARD', '');
+            
+            // Populate form with card data
+            cardIdInput.value = numericId;
+            
+            // Set content type
+            document.querySelectorAll('input[name="contentType"]').forEach(radio => {
+                radio.checked = false;
+                radio.parentElement.classList.remove('active');
+            });
+            
+            let typeValue = 'text';
+            if (card.type === 'Image') typeValue = 'image';
+            else if (card.type === 'Video') typeValue = 'video';
+            else if (card.type === 'Audio') typeValue = 'audio';
+            
+            const typeRadio = document.getElementById(`type${typeValue.charAt(0).toUpperCase() + typeValue.slice(1)}`);
+            typeRadio.checked = true;
+            typeRadio.parentElement.classList.add('active');
+            
+            // Set message
+            messageInput.value = card.message || '';
+            
+            // Generate preview
+            generatePreview();
+            
+            showNotification(`Loaded card: ${card.id}`, 'success');
+        }
+        
+        // Delete a saved card
+        function deleteCard(index) {
+            const cardId = savedCards[index].id;
+            
+            if (confirm(`Are you sure you want to delete card ${cardId}?`)) {
+                savedCards.splice(index, 1);
+                localStorage.setItem('magicCards', JSON.stringify(savedCards));
+                initSavedCards();
+                showNotification(`Card ${cardId} deleted`, 'success');
+            }
+        }
+        
+        // Event Listeners
+        generateBtn.addEventListener('click', function() {
+            const cardData = generatePreview();
+            if (cardData) {
+                showNotification(`Card ${cardData.id} generated successfully!`, 'success');
+            }
+        });
+        
+        saveBtn.addEventListener('click', function() {
+            const cardData = generatePreview();
+            if (cardData) {
+                const action = saveCard(cardData);
+                showNotification(`Card ${cardData.id} ${action} successfully!`, 'success');
+            }
+        });
+        
+        testBtn.addEventListener('click', function() {
+            const cardData = generatePreview();
+            if (cardData) {
+                // In a real app, this would launch AR mode
+                // For demo, we'll simulate testing
+                showNotification(`Testing card ${cardData.id} in AR mode...`, 'success');
                 
-                // Add content based on type
-                if (elements.cardType.value === 'text') {
-                    const message = elements.message.value.trim();
-                    if (!message) {
-                        showStatus("❌ Please enter a message", 'error');
-                        elements.saveBtn.disabled = false;
-                        elements.saveBtn.innerHTML = '💾 Save to Cloud';
-                        return;
-                    }
-                    cardData.message_text = message;
-                } else {
-                    if (!elements.mediaFile.files.length) {
-                        showStatus(`❌ Please select a ${elements.cardType.value} file`, 'error');
-                        elements.saveBtn.disabled = false;
-                        elements.saveBtn.innerHTML = '💾 Save to Cloud';
-                        return;
-                    }
-                    
-                    const file = elements.mediaFile.files[0];
-                    cardData.file_name = file.name;
-                    cardData.file_size = file.size;
-                    cardData.file_type = file.type;
-                }
-                
-                let supabaseSuccess = false;
-                
-                // Try to save to Supabase if available
-                if (supabase) {
-                    try {
-                        const { data, error } = await supabase
-                            .from('cards')
-                            .upsert(cardData, { onConflict: 'card_id' });
-                        
-                        if (error) {
-                            console.error("Supabase error:", error);
-                            throw error;
-                        }
-                        
-                        supabaseSuccess = true;
-                        console.log("✅ Saved to Supabase");
-                    } catch (supabaseError) {
-                        console.log("⚠️ Supabase save failed, using local storage");
-                    }
-                }
-                
-                // Always save locally as backup
-                localStorage.setItem(`magic_card_${cardId}`, JSON.stringify(cardData));
-                console.log("✅ Saved locally");
-                
-                // Show appropriate success message
-                if (supabaseSuccess) {
-                    showStatus(`✨ Card "${cardId}" saved to cloud successfully!`, 'success');
-                } else {
-                    showStatus(`💾 Card "${cardId}" saved locally (offline mode)`, 'info');
-                }
-                
-                // Clear file input after successful save
-                elements.mediaFile.value = '';
-                updatePreview();
-                
-            } catch (error) {
-                console.error("Save error:", error);
-                showStatus("❌ Failed to save card", 'error');
-                
-                // Fallback to localStorage only as last resort
-                try {
-                    const cardId = elements.cardId.value;
-                    const cardData = {
-                        card_id: cardId,
-                        message_type: elements.cardType.value,
-                        message_text: elements.message.value,
-                        status: 'active',
-                        created_at: new Date().toISOString()
-                    };
-                    localStorage.setItem(`magic_card_${cardId}`, JSON.stringify(cardData));
-                    console.log("✅ Emergency save to localStorage");
-                } catch (localError) {
-                    console.error("Emergency save failed:", localError);
-                }
-            } finally {
-                // Re-enable save button
+                // Simulate AR experience with a modal or new view
                 setTimeout(() => {
-                    elements.saveBtn.disabled = false;
-                    elements.saveBtn.innerHTML = '💾 Save to Cloud';
-                }, 1000);
+                    alert(`AR Mode Activated!\n\nCard: ${cardData.id}\nContent: ${cardData.message}\n\nPoint your device's camera at the card to see the AR experience.`);
+                }, 500);
             }
-        }
+        });
         
-        // Test if card exists
-        function testCard() {
-            console.log("🔍 Testing card...");
-            const cardId = elements.cardId.value.trim();
+        // Update type option styling when selected
+        contentTypeRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                document.querySelectorAll('.type-option').forEach(option => {
+                    option.classList.remove('active');
+                });
+                this.parentElement.classList.add('active');
+                
+                // Update preview when type changes
+                generatePreview();
+            });
+        });
+        
+        // Update preview when message changes
+        messageInput.addEventListener('input', function() {
+            generatePreview();
+        });
+        
+        // Update preview when card ID changes
+        cardIdInput.addEventListener('input', function() {
+            generatePreview();
+        });
+        
+        // Initialize the app
+        function initApp() {
+            // Generate initial preview
+            generatePreview();
             
-            if (!cardId) {
-                showStatus("❌ Please enter a Card ID", 'error');
-                return;
-            }
+            // Load saved cards
+            initSavedCards();
             
-            // Try Supabase first, then localStorage
-            checkCardExists(cardId).then(exists => {
-                if (exists) {
-                    showStatus(`✅ Card "${cardId}" found in database`, 'success');
-                } else {
-                    showStatus(`❌ Card "${cardId}" not found. Save it first.`, 'error');
-                }
+            // Set up type option click handlers
+            document.querySelectorAll('.type-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    const radio = this.querySelector('input');
+                    radio.checked = true;
+                    
+                    document.querySelectorAll('.type-option').forEach(opt => {
+                        opt.classList.remove('active');
+                    });
+                    this.classList.add('active');
+                    
+                    generatePreview();
+                });
             });
         }
         
-        // Check if card exists in Supabase or localStorage
-        async function checkCardExists(cardId) {
-            // Check localStorage first (fastest)
-            const localCard = localStorage.getItem(`magic_card_${cardId}`);
-            if (localCard) {
-                return true;
-            }
-            
-            // Check Supabase if available
-            if (supabase) {
-                try {
-                    const { data, error } = await supabase
-                        .from('cards')
-                        .select('card_id')
-                        .eq('card_id', cardId)
-                        .single();
-                    
-                    return !error && data !== null;
-                } catch (error) {
-                    console.log("Supabase check failed:", error);
-                    return false;
-                }
-            }
-            
-            return false;
-        }
-        
-        // Show status messages with proper emojis
-        function showStatus(message, type) {
-            console.log(`Status [${type}]: ${message}`);
-            
-            // Ensure emojis are correct
-            let displayMessage = message;
-            if (type === 'success' && !message.includes('✅') && !message.includes('✨')) {
-                displayMessage = `✅ ${message}`;
-            } else if (type === 'error' && !message.includes('❌')) {
-                displayMessage = `❌ ${message}`;
-            } else if (type === 'info' && !message.includes('⏳') && !message.includes('💾') && !message.includes('⚠️')) {
-                displayMessage = `⏳ ${message}`;
-            }
-            
-            elements.status.textContent = displayMessage;
-            elements.status.className = `status-${type}`;
-            elements.status.style.display = 'block';
-            
-            // Auto-hide success/info messages after 3 seconds
-            if (type === 'success' || type === 'info') {
-                setTimeout(() => {
-                    if (elements.status.style.display === 'block') {
-                        elements.status.style.display = 'none';
-                    }
-                }, 3000);
-            }
-        }
-        
-        // Setup event listeners
-        function setupEventListeners() {
-            elements.generateBtn.addEventListener('click', generateCardId);
-            elements.cardType.addEventListener('change', toggleContentFields);
-            elements.saveBtn.addEventListener('click', saveCard);
-            elements.testBtn.addEventListener('click', testCard);
-            
-            // Update preview on input changes
-            elements.cardId.addEventListener('input', updatePreview);
-            elements.message.addEventListener('input', updatePreview);
-            elements.mediaFile.addEventListener('change', updatePreview);
-            
-            console.log("✅ Event listeners set up");
-        }
-        
-        // Initialize the page
-        function initialize() {
-            setupEventListeners();
-            generateCardId();
-            toggleContentFields();
-            
-            // Check Supabase connection
-            if (supabase) {
-                checkSupabaseConnection();
-            }
-            
-            console.log("✅ Magic Card Maker initialized");
-        }
-        
-        // Check Supabase connection
-        async function checkSupabaseConnection() {
-            try {
-                const { data, error } = await supabase
-                    .from('cards')
-                    .select('count')
-                    .limit(1);
-                
-                if (error) throw error;
-                console.log("✅ Supabase connection verified");
-                showStatus("✅ Connected to Supabase cloud", 'success');
-            } catch (error) {
-                console.log("⚠️ Supabase connection check failed");
-                showStatus("⚠️ Working offline - Supabase connection failed", 'info');
-            }
-        }
-        
-        // Start when page loads
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initialize);
-        } else {
-            initialize();
-        }
-        
-        // Make functions available globally for debugging
-        window.magicCardMaker = {
-            generateCardId,
-            saveCard,
-            testCard,
-            updatePreview,
-            toggleContentFields,
-            checkCardExists
-        };
-        
-        console.log("🎴 Magic Card Maker ready!");
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>
 </html>
