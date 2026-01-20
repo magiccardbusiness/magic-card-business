@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magic Card AR Viewer</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial Rounded MT Bold', 'Arial', sans-serif;
+            background: #000;
+            color: white;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        #cameraView {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+        
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            pointer-events: none;
+        }
+        
+        .header {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            z-index: 3;
+            pointer-events: none;
+        }
+        
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            background: linear-gradient(45deg, #FF6B6B, #FF8E53, #FFD166);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 5px;
+        }
+        
+        .status {
+            background: rgba(0, 0, 0, 0.7);
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .controls {
+            position: absolute;
+            bottom: 30px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            z-index: 3;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            margin: 0 10px;
+            border-radius: 25px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            pointer-events: auto;
+        }
+        
+        .btn-home {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .card-display {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 30px;
+            border-radius: 20px;
+            border: 3px solid #667eea;
+            max-width: 500px;
+            width: 90%;
+            z-index: 4;
+            display: none;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(102, 126, 234, 0.3);
+        }
+        
+        .card-header {
+            margin-bottom: 20px;
+        }
+        
+        .card-id {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 18px;
+            display: inline-block;
+            margin-top: 10px;
+        }
+        
+        .card-content {
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            font-size: 18px;
+            line-height: 1.6;
+            min-height: 100px;
+        }
+        
+        .close-btn {
+            background: #FF6B6B;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+        
+        .detection-box {
+            position: absolute;
+            border: 3px solid #06D6A0;
+            border-radius: 10px;
+            box-shadow: 0 0 20px #06D6A0;
+            z-index: 2;
+            display: none;
+        }
+        
+        #manualInput {
+            position: absolute;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 20px;
+            border-radius: 15px;
+            z-index: 5;
+            display: none;
+        }
+        
+        #cardIdInput {
+            padding: 15px;
+            font-size: 18px;
+            border-radius: 10px;
+            border: 2px solid #667eea;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <video id="cameraView" autoplay playsinline></video>
+    
+    <div class="overlay">
+        <div class="header">
+            <div class="logo">🔍 MAGIC CARD AR VIEWER</div>
+            <div class="status" id="statusText">Point camera at a Magic Card...</div>
+        </div>
+        
+        <div id="detectionArea" class="detection-box"></div>
+        
+        <div id="manualInput">
+            <input type="text" id="cardIdInput" placeholder="Enter Card ID (e.g., CARD6841)">
+            <button class="btn" onclick="manualLookup()">🔍 Lookup</button>
+            <button class="btn btn-home" onclick="hideManual()">✖️ Close</button>
+        </div>
+        
+        <div class="card-display" id="cardDisplay">
+            <div class="card-header">
+                <h2>✨ MAGIC CARD FOUND! ✨</h2>
+                <div class="card-id" id="displayCardId">CARD0000</div>
+            </div>
+            <div class="card-content" id="displayContent">
+                Loading content...
+            </div>
+            <button class="close-btn" onclick="hideCard()">Close</button>
+        </div>
+        
+        <div class="controls">
+            <button class="btn" onclick="toggleManualInput()">⌨️ Manual Input</button>
+            <a href="index.html" class="btn btn-home">🏠 Home</a>
+            <button class="btn" onclick="testDetection()">🎴 Test Card</button>
+        </div>
+    </div>
+
+    <script>
+        // =================== SUPABASE SETUP ===================
+        const SUPABASE_URL = 'https://elmhkhvryjzljxskbfps.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVsbWhraHZyeWp6bGp4c2tiZnBzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0NDc3NjMsImV4cCI6MjA4NDAyMzc2M30.Orrh2Pejnt3KPJMTUTmRRkhCwtZVfjUreKvX546bOcw';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        // =================== VARIABLES ===================
+        let currentStream = null;
+        let detectedCard = null;
+        
+        // =================== INITIALIZATION ===================
+        async function initCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: 'environment',
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    }
+                });
+                
+                const video = document.getElementById('cameraView');
+                video.srcObject = stream;
+                currentStream = stream;
+                
+                updateStatus('✅ Camera ready - Scan a Magic Card');
+                
+                // Start simulated detection for testing
+                startSimulatedDetection();
+                
+            } catch (error) {
+                console.error('Camera error:', error);
+                updateStatus('❌ Camera access required');
+            }
+        }
+        
+        // =================== CARD MANAGEMENT ===================
+        async function lookupCard(cardId) {
+            if (!cardId || cardId === detectedCard) return null;
+            
+            updateStatus(`🔍 Looking up: ${cardId}`);
+            
+            try {
+                // Try Supabase first
+                const { data, error } = await supabase
+                    .from('cards')
+                    .select('*')
+                    .eq('card_id', cardId)
+                    .eq('status', 'active')
+                    .single();
+                
+                if (!error && data) {
+                    detectedCard = cardId;
+                    displayCard(data);
+                    return data;
+                }
+                
+                // Try localStorage
+                const localData = localStorage.getItem(`card_${cardId}`);
+                if (localData) {
+                    const card = JSON.parse(localData);
+                    detectedCard = cardId;
+                    displayCard(card);
+                    return card;
+                }
+                
+                updateStatus(`❌ Card "${cardId}" not found`);
+                return null;
+                
+            } catch (error) {
+                console.error('Lookup error:', error);
+                updateStatus('⚠️ Network error - trying local storage');
+                return null;
+            }
+        }
+        
+        function displayCard(cardData) {
+            const cardIdElem = document.getElementById('displayCardId');
+            const contentElem = document.getElementById('displayContent');
+            const displayElem = document.getElementById('cardDisplay');
+            
+            cardIdElem.textContent = cardData.card_id;
+            
+            if (cardData.message_type === 'text') {
+                contentElem.innerHTML = `
+                    <div style="font-size: 20px; margin-bottom: 15px;">📄 Text Card</div>
+                    <div style="font-size: 24px; color: #FFD166;">${cardData.message_text || 'No message'}</div>
+                `;
+            } else if (cardData.message_type === 'image') {
+                contentElem.innerHTML = `
+                    <div style="font-size: 20px; margin-bottom: 15px;">🖼️ Image Card</div>
+                    <div style="color: #a0aec0;">Image: ${cardData.file_name || 'No file'}</div>
+                    <div style="margin-top: 10px; font-style: italic;">(Image display requires file upload to Supabase Storage)</div>
+                `;
+            } else if (cardData.message_type === 'video') {
+                contentElem.innerHTML = `
+                    <div style="font-size: 20px; margin-bottom: 15px;">🎬 Video Card</div>
+                    <div style="color: #a0aec0;">Video: ${cardData.file_name || 'No file'}</div>
+                    <div style="margin-top: 10px; font-style: italic;">(Video playback requires file upload to Supabase Storage)</div>
+                `;
+            } else {
+                contentElem.innerHTML = `
+                    <div style="color: #FF6B6B;">Unknown card type</div>
+                `;
+            }
+            
+            displayElem.style.display = 'block';
+            updateStatus(`✅ Found: ${cardData.card_id}`);
+            
+            // Show detection box (simulated)
+            showDetectionBox();
+        }
+        
+        function hideCard() {
+            document.getElementById('cardDisplay').style.display = 'none';
+            detectedCard = null;
+            updateStatus('Ready for next card...');
+        }
+        
+        // =================== UI FUNCTIONS ===================
+        function updateStatus(message) {
+            document.getElementById('statusText').textContent = message;
+        }
+        
+        function showDetectionBox() {
+            const box = document.getElementById('detectionArea');
+            box.style.display = 'block';
+            
+            // Position in center (simulated)
+            const centerX = window.innerWidth / 2 - 150;
+            const centerY = window.innerHeight / 2 - 100;
+            box.style.left = centerX + 'px';
+            box.style.top = centerY + 'px';
+            box.style.width = '300px';
+            box.style.height = '200px';
+            
+            // Hide after 3 seconds
+            setTimeout(() => {
+                box.style.display = 'none';
+            }, 3000);
+        }
+        
+        function toggleManualInput() {
+            const inputDiv = document.getElementById('manualInput');
+            inputDiv.style.display = inputDiv.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        function hideManual() {
+            document.getElementById('manualInput').style.display = 'none';
+        }
+        
+        async function manualLookup() {
+            const cardId = document.getElementById('cardIdInput').value.trim();
+            if (!cardId) return;
+            
+            await lookupCard(cardId);
+            hideManual();
+            document.getElementById('cardIdInput').value = '';
+        }
+        
+        function testDetection() {
+            // Test with a random card ID
+            const testCards = ['CARD6841', 'CARD1234', 'CARD9999'];
+            const randomCard = testCards[Math.floor(Math.random() * testCards.length)];
+            
+            // Check if card exists locally
+            const localCard = localStorage.getItem(`card_${randomCard}`);
+            if (localCard) {
+                lookupCard(randomCard);
+            } else {
+                // Create a test card
+                const testCard = {
+                    card_id: randomCard,
+                    message_type: 'text',
+                    message_text: '✨ This is a test Magic Card! ✨\n\nScan real cards with your camera to see magical AR content!',
+                    status: 'active',
+                    created_at: new Date().toISOString()
+                };
+                
+                detectedCard = randomCard;
+                displayCard(testCard);
+                updateStatus(`🎯 Test card: ${randomCard}`);
+            }
+        }
+        
+        // =================== SIMULATED DETECTION ===================
+        // This simulates AR marker detection for testing
+        // In a real app, you'd use TensorFlow.js or MediaPipe here
+        function startSimulatedDetection() {
+            // Simulate detecting cards when certain keys are pressed
+            document.addEventListener('keydown', (e) => {
+                if (e.key === '1') lookupCard('CARD6841');
+                if (e.key === '2') lookupCard('CARD1234');
+                if (e.key === '3') lookupCard('CARD9999');
+            });
+            
+            // Also simulate occasional "detections" for demo
+            setInterval(() => {
+                if (Math.random() > 0.98 && !detectedCard) { // 2% chance
+                    testDetection();
+                }
+            }, 5000);
+        }
+        
+        // =================== INITIALIZE ===================
+        document.addEventListener('DOMContentLoaded', function() {
+            initCamera();
+            
+            // Allow Enter key in manual input
+            document.getElementById('cardIdInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') manualLookup();
+            });
+            
+            // Hide card when clicking outside
+            document.addEventListener('click', (e) => {
+                const cardDisplay = document.getElementById('cardDisplay');
+                if (cardDisplay.style.display === 'block' && 
+                    !cardDisplay.contains(e.target) &&
+                    !e.target.classList.contains('btn')) {
+                    hideCard();
+                }
+            });
+        });
+        
+        // Cleanup on exit
+        window.addEventListener('beforeunload', () => {
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+            }
+        });
+    </script>
+</body>
+</html>

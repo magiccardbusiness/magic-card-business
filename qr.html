@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Generator - Magic Card</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <style>
+        body {
+            font-family: 'Arial Rounded MT Bold', 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo {
+            font-size: 36px;
+            font-weight: bold;
+            background: linear-gradient(45deg, #FFD166, #FF9E6D);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .back-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        
+        .input-group {
+            margin-bottom: 25px;
+        }
+        
+        input {
+            width: 100%;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.07);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: white;
+            font-size: 18px;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #FFD166 0%, #FF9E6D 100%);
+            color: #333;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        #qrcode {
+            margin: 30px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 15px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-btn">← Back</a>
+    
+    <div class="container">
+        <div class="header">
+            <h1 class="logo">📱 QR Code Generator</h1>
+            <p>Generate QR codes for your Magic Cards</p>
+        </div>
+        
+        <div class="input-group">
+            <label>Enter Card ID or URL:</label>
+            <input type="text" id="qrInput" placeholder="CARD6841 or https://..." value="CARD6841">
+        </div>
+        
+        <button class="btn" onclick="generateQR()">✨ Generate QR Code</button>
+        
+        <div style="text-align: center; margin-top: 30px;">
+            <div id="qrcode"></div>
+            <p style="color: #a0aec0; margin-top: 20px;">
+                Print this QR code and scan it with the AR Viewer!
+            </p>
+        </div>
+    </div>
+
+    <script>
+        function generateQR() {
+            const input = document.getElementById('qrInput').value.trim();
+            if (!input) return;
+            
+            // Create URL for Magic Card
+            let qrContent = input;
+            if (input.startsWith('CARD')) {
+                qrContent = `https://your-vercel-url.vercel.app/viewer.html?card=${input}`;
+            }
+            
+            // Clear previous QR
+            document.getElementById('qrcode').innerHTML = '';
+            
+            // Generate new QR
+            QRCode.toCanvas(document.getElementById('qrcode'), qrContent, {
+                width: 256,
+                margin: 2,
+                color: {
+                    dark: '#000000',
+                    light: '#FFFFFF'
+                }
+            }, function(error) {
+                if (error) console.error(error);
+            });
+        }
+        
+        // Generate on load
+        document.addEventListener('DOMContentLoaded', generateQR);
+    </script>
+</body>
+</html>
