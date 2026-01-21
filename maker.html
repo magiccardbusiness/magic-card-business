@@ -486,27 +486,13 @@
             100% { transform: rotate(360deg); }
         }
     </style>
-    <script>
-        // Supabase configuration - USE YOUR CREDENTIALS
-        const SUPABASE_URL = 'https://elmhkhvryjzljxskbfps.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVsbWhraHZyeWp6bGp4c2tiZnBzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0NDc3NjMsImV4cCI6MjA4NDAyMzc2M30.Orrh2Pejnt3KPJMTUTmRRkhCwtZVfjUreKvX546bOcw';
-        
-        // Initialize Supabase
-        let supabase;
-        try {
-            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-            console.log('Supabase initialized successfully');
-        } catch (error) {
-            console.error('Error initializing Supabase:', error);
-        }
-    </script>
 </head>
 <body>
     <div class="container">
         <!-- Navigation & Status -->
-        <div class="sync-status online" id="syncStatus">
-            <i class="fas fa-cloud"></i>
-            <span>Connected to Cloud</span>
+        <div class="sync-status offline" id="syncStatus">
+            <i class="fas fa-cloud-slash"></i>
+            <span>Offline Mode</span>
         </div>
         
         <a href="viewer.html" class="scanner-nav-button">
@@ -631,6 +617,31 @@
     <div class="notification" id="notification"></div>
     
     <script>
+        // Supabase configuration - USE YOUR CREDENTIALS
+        const SUPABASE_URL = 'https://elmhkhvryjzljxskbfps.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVsbWhraHZyeWp6bGp4c2tiZnBzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0NDc3NjMsImV4cCI6MjA4NDAyMzc2M30.Orrh2Pejnt3KPJMTUTmRRkhCwtZVfjUreKvX546bOcw';
+        
+        // Initialize Supabase
+        let supabase;
+        
+        // Initialize Supabase client
+        function initSupabase() {
+            try {
+                // Check if supabase is available
+                if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
+                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                    console.log('Supabase initialized successfully');
+                    return true;
+                } else {
+                    console.error('Supabase library not loaded properly');
+                    return false;
+                }
+            } catch (error) {
+                console.error('Error initializing Supabase:', error);
+                return false;
+            }
+        }
+        
         // DOM Elements
         const cardIdInput = document.getElementById('cardId');
         const contentTypeRadios = document.querySelectorAll('input[name="contentType"]');
@@ -756,7 +767,12 @@
         async function saveCardToSupabase(cardData) {
             try {
                 if (!supabase) {
-                    throw new Error('Supabase not initialized');
+                    throw new Error('Supabase client not initialized');
+                }
+                
+                // Check if supabase.from exists
+                if (typeof supabase.from !== 'function') {
+                    throw new Error('Supabase client methods not available. Check if Supabase library loaded properly.');
                 }
                 
                 // Check if card already exists
@@ -823,7 +839,7 @@
         async function loadCardsFromSupabase() {
             try {
                 if (!supabase) {
-                    throw new Error('Supabase not initialized');
+                    throw new Error('Supabase client not initialized');
                 }
                 
                 cardsTableBody.innerHTML = `
@@ -942,7 +958,7 @@
             if (confirm(`Are you sure you want to delete card ${cardId} from the cloud?`)) {
                 try {
                     if (!supabase) {
-                        throw new Error('Supabase not initialized');
+                        throw new Error('Supabase client not initialized');
                     }
                     
                     const { error } = await supabase
@@ -1027,11 +1043,27 @@
         
         // Initialize the app
         async function initApp() {
+            // Initialize Supabase first
+            const supabaseInitialized = initSupabase();
+            
+            if (!supabaseInitialized) {
+                showNotification('Failed to initialize Supabase. Check console for errors.', 'error');
+                updateSyncStatus(false);
+            }
+            
             // Generate initial preview
             generatePreview();
             
             // Load saved cards from Supabase
-            await loadCardsFromSupabase();
+            if (supabaseInitialized) {
+                await loadCardsFromSupabase();
+            } else {
+                cardsTableBody.innerHTML = `
+                    <tr class="empty-row">
+                        <td colspan="5">Supabase not initialized. Check if Supabase library loaded properly.</td>
+                    </tr>
+                `;
+            }
             
             // Set up type option click handlers
             document.querySelectorAll('.type-option').forEach(option => {
@@ -1049,7 +1081,7 @@
             });
             
             // Test Supabase connection
-            if (supabase) {
+            if (supabase && typeof supabase.from === 'function') {
                 try {
                     const { data, error } = await supabase
                         .from('cards')
@@ -1057,9 +1089,11 @@
                     
                     if (error) {
                         console.error('Supabase connection test failed:', error);
-                        updateSyncStatus(false);
+                        showNotification('Connected to Supabase but table might not exist', 'info');
+                        updateSyncStatus(true); // Still connected to Supabase
                     } else {
                         console.log('Supabase connection successful');
+                        showNotification('Connected to Supabase database', 'success');
                         updateSyncStatus(true);
                     }
                 } catch (error) {
