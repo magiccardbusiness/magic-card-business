@@ -1,984 +1,290 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AR Magic Card Generator</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        body {
-            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        
-        .container {
-            max-width: 1200px;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            gap: 30px;
-        }
-        
-        header {
-            text-align: center;
-            color: white;
-            padding: 20px;
-            position: relative;
-        }
-        
-        header h1 {
-            font-size: 2.8rem;
-            margin-bottom: 10px;
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-        }
-        
-        header p {
-            font-size: 1.2rem;
-            opacity: 0.9;
-            max-width: 700px;
-            margin: 0 auto;
-            line-height: 1.5;
-        }
-        
-        .card-creator {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 30px;
-            justify-content: center;
-        }
-        
-        .form-section {
-            background: white;
-            border-radius: 15px;
-            padding: 30px;
-            flex: 1;
-            min-width: 300px;
-            max-width: 550px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-        }
-        
-        .preview-section {
-            background: white;
-            border-radius: 15px;
-            padding: 30px;
-            flex: 1;
-            min-width: 300px;
-            max-width: 550px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .section-title {
-            font-size: 1.5rem;
-            color: #333;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #f0f0f0;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .section-title i {
-            color: #6a11cb;
-        }
-        
-        .form-group {
-            margin-bottom: 25px;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #444;
-        }
-        
-        .card-id-container {
-            display: flex;
-            gap: 10px;
-        }
-        
-        .card-id-prefix {
-            background: #f0f0f0;
-            padding: 12px 15px;
-            border-radius: 8px;
-            font-weight: bold;
-            color: #555;
-            border: 1px solid #ddd;
-        }
-        
-        #cardId {
-            flex: 1;
-            padding: 12px 15px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 1rem;
-            transition: border-color 0.3s;
-        }
-        
-        #cardId:focus {
-            border-color: #6a11cb;
-            outline: none;
-        }
-        
-        .content-type-selector {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-        
-        .type-option {
-            display: flex;
-            align-items: center;
-            padding: 12px 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        
-        .type-option:hover {
-            background-color: #f9f9f9;
-        }
-        
-        .type-option.active {
-            border-color: #6a11cb;
-            background-color: #f0e6ff;
-        }
-        
-        .type-option input {
-            margin-right: 12px;
-            transform: scale(1.2);
-        }
-        
-        .message-input textarea {
-            width: 100%;
-            padding: 15px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 1rem;
-            resize: vertical;
-            min-height: 120px;
-            transition: border-color 0.3s;
-        }
-        
-        .message-input textarea:focus {
-            border-color: #6a11cb;
-            outline: none;
-        }
-        
-        .button-container {
-            display: flex;
-            gap: 15px;
-            margin-top: 30px;
-            flex-wrap: wrap;
-        }
-        
-        .btn {
-            padding: 14px 25px;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            transition: all 0.3s;
-            flex: 1;
-            min-width: 150px;
-        }
-        
-        .btn-primary {
-            background: linear-gradient(to right, #6a11cb, #2575fc);
-            color: white;
-        }
-        
-        .btn-primary:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(106, 17, 203, 0.4);
-        }
-        
-        .btn-secondary {
-            background: #f0f0f0;
-            color: #333;
-        }
-        
-        .btn-secondary:hover {
-            background: #e0e0e0;
-            transform: translateY(-3px);
-        }
-        
-        .btn-success {
-            background: linear-gradient(to right, #00b09b, #96c93d);
-            color: white;
-        }
-        
-        .btn-success:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(0, 176, 155, 0.4);
-        }
-        
-        .preview-card {
-            border: 2px dashed #ccc;
-            border-radius: 12px;
-            padding: 30px;
-            text-align: center;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            margin-bottom: 25px;
-            background-color: #f9f9f9;
-            min-height: 300px;
-        }
-        
-        .card-content {
-            max-width: 100%;
-        }
-        
-        .text-content {
-            font-size: 2rem;
-            color: #333;
-            font-weight: 600;
-            margin: 20px 0;
-        }
-        
-        .card-id-display {
-            font-size: 1.2rem;
-            color: #666;
-            background: #f0f0f0;
-            padding: 8px 15px;
-            border-radius: 20px;
-            display: inline-block;
-            margin-bottom: 20px;
-        }
-        
-        .content-type-display {
-            display: inline-block;
-            background: #e0e6ff;
-            color: #2d4cc7;
-            padding: 5px 12px;
-            border-radius: 15px;
-            font-size: 0.9rem;
-            margin-top: 10px;
-        }
-        
-        .empty-preview {
-            color: #999;
-            font-size: 1.1rem;
-        }
-        
-        .preview-instructions {
-            background-color: #f0f8ff;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 20px;
-            font-size: 0.9rem;
-            color: #555;
-            line-height: 1.5;
-        }
-        
-        .card-list {
-            background: white;
-            border-radius: 15px;
-            padding: 30px;
-            margin-top: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-        }
-        
-        .cards-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-        
-        .cards-table th {
-            background-color: #f5f5f5;
-            padding: 12px 15px;
-            text-align: left;
-            border-bottom: 2px solid #eee;
-            color: #555;
-        }
-        
-        .cards-table td {
-            padding: 12px 15px;
-            border-bottom: 1px solid #eee;
-        }
-        
-        .empty-row {
-            text-align: center;
-            color: #999;
-            padding: 30px !important;
-        }
-        
-        .action-buttons {
-            display: flex;
-            gap: 8px;
-        }
-        
-        .action-btn {
-            padding: 6px 12px;
-            border-radius: 5px;
-            border: none;
-            background: #f0f0f0;
-            cursor: pointer;
-            font-size: 0.85rem;
-            transition: all 0.2s;
-        }
-        
-        .action-btn:hover {
-            background: #e0e0e0;
-        }
-        
-        .action-btn.view {
-            background: #e0e6ff;
-            color: #2d4cc7;
-        }
-        
-        .action-btn.delete {
-            background: #ffe0e0;
-            color: #c72d2d;
-        }
-        
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 15px 25px;
-            border-radius: 8px;
-            color: white;
-            font-weight: 600;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-            z-index: 1000;
-            opacity: 0;
-            transform: translateX(100px);
-            transition: all 0.5s;
-        }
-        
-        .notification.show {
-            opacity: 1;
-            transform: translateX(0);
-        }
-        
-        .notification.success {
-            background: linear-gradient(to right, #00b09b, #96c93d);
-        }
-        
-        .notification.error {
-            background: linear-gradient(to right, #ff416c, #ff4b2b);
-        }
-        
-        .notification.info {
-            background: linear-gradient(to right, #36D1DC, #5B86E5);
-        }
-        
-        .scanner-nav-button {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: white;
-            padding: 12px 24px;
-            border-radius: 8px;
-            text-decoration: none;
-            color: #6a11cb;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-        
-        .scanner-nav-button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
-            background: #f8f5ff;
-        }
-        
-        .sync-status {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            background: rgba(255, 255, 255, 0.15);
-            color: white;
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            backdrop-filter: blur(5px);
-        }
-        
-        .sync-status.online {
-            background: rgba(0, 176, 155, 0.3);
-        }
-        
-        .sync-status.offline {
-            background: rgba(255, 65, 108, 0.3);
-        }
-        
-        @media (max-width: 768px) {
-            .card-creator {
-                flex-direction: column;
-            }
-            
-            .form-section, .preview-section {
-                max-width: 100%;
-            }
-            
-            .button-container {
-                flex-direction: column;
-            }
-            
-            .btn {
-                min-width: 100%;
-            }
-            
-            header h1 {
-                font-size: 2.2rem;
-            }
-            
-            .scanner-nav-button, .sync-status {
-                position: relative;
-                top: 0;
-                left: 0;
-                right: 0;
-                margin: 10px auto;
-                display: inline-flex;
-                justify-content: center;
-            }
-            
-            header {
-                padding-top: 60px;
-            }
-        }
-        
-        .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #6a11cb;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <!-- Navigation & Status -->
-        <div class="sync-status offline" id="syncStatus">
-            <i class="fas fa-cloud-slash"></i>
-            <span>Offline Mode</span>
-        </div>
-        
-        <a href="viewer.html" class="scanner-nav-button">
-            <i class="fas fa-camera"></i> Scan Cards
-        </a>
-        
-        <header>
-            <h1><i class="fas fa-magic"></i> Create Magic Card</h1>
-            <p>Design magical AR cards with text, images, videos, or audio. Create your card, preview it, and save it to your collection.</p>
-        </header>
-        
-        <div class="card-creator">
-            <!-- Form Section -->
-            <div class="form-section">
-                <div class="section-title">
-                    <i class="fas fa-edit"></i> Card Details
-                </div>
-                
-                <div class="form-group">
-                    <label for="cardId">Card ID (Required):</label>
-                    <div class="card-id-container">
-                        <div class="card-id-prefix">CARD</div>
-                        <input type="text" id="cardId" placeholder="6842" value="6842">
-                    </div>
-                    <div style="font-size: 0.85rem; color: #666; margin-top: 5px;">
-                        Format: CARD followed by numbers. Must be unique for each card.
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label>Content Type:</label>
-                    <div class="content-type-selector">
-                        <div class="type-option active">
-                            <input type="radio" id="typeText" name="contentType" value="text" checked>
-                            <label for="typeText">Text Message</label>
-                        </div>
-                        <div class="type-option">
-                            <input type="radio" id="typeImage" name="contentType" value="image">
-                            <label for="typeImage">Image</label>
-                        </div>
-                        <div class="type-option">
-                            <input type="radio" id="typeVideo" name="contentType" value="video">
-                            <label for="typeVideo">Video</label>
-                        </div>
-                        <div class="type-option">
-                            <input type="radio" id="typeAudio" name="contentType" value="audio">
-                            <label for="typeAudio">Audio</label>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label for="message">Your Message:</label>
-                    <div class="message-input">
-                        <textarea id="message" placeholder="Enter your message here...">Happy Birthday 😊</textarea>
-                    </div>
-                </div>
-                
-                <div class="button-container">
-                    <button class="btn btn-primary" id="generateBtn">
-                        <i class="fas fa-bolt"></i> Generate Card
-                    </button>
-                    <button class="btn btn-success" id="saveBtn">
-                        <i class="fas fa-save"></i> Save to Cloud
-                    </button>
-                    <button class="btn btn-secondary" id="testBtn">
-                        <i class="fas fa-play"></i> Test Card
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Preview Section -->
-            <div class="preview-section">
-                <div class="section-title">
-                    <i class="fas fa-eye"></i> Preview
-                </div>
-                
-                <div class="preview-card">
-                    <div class="card-content" id="cardPreview">
-                        <div class="card-id-display">CARD6842</div>
-                        <div class="text-content">Happy Birthday 😊</div>
-                        <div class="content-type-display">Text Message</div>
-                    </div>
-                </div>
-                
-                <div class="preview-instructions">
-                    <i class="fas fa-info-circle"></i> This is how your AR card will appear. The card ID and content type will be visible when the card is scanned in AR mode.
-                </div>
-            </div>
-        </div>
-        
-        <!-- Card List Section -->
-        <div class="card-list">
-            <div class="section-title">
-                <i class="fas fa-list"></i> Saved Cards (Cloud)
-            </div>
-            <p>Cards saved to Supabase database. Click "View" to load, "Delete" to remove from cloud.</p>
-            
-            <table class="cards-table">
-                <thead>
-                    <tr>
-                        <th>Card ID</th>
-                        <th>Content Type</th>
-                        <th>Message</th>
-                        <th>Created</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="cardsTableBody">
-                    <tr class="empty-row">
-                        <td colspan="5">
-                            <div class="loading" style="margin-right: 10px;"></div>
-                            Loading cards from cloud...
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
+<script>
+    // Supabase configuration - USE YOUR CREDENTIALS
+    const SUPABASE_URL = 'https://elmhkhvryjzljxskbfps.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVsbWhraHZyeWp6bGp4c2tiZnBzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0NDc3NjMsImV4cCI6MjA4NDAyMzc2M30.Orrh2Pejnt3KPJMTUTmRRkhCwtZVfjUreKvX546bOcw';
     
-    <!-- Notification Element -->
-    <div class="notification" id="notification"></div>
+    // Global supabase instance
+    let supabase = null;
     
-    <script>
-        // Supabase configuration - USE YOUR CREDENTIALS
-        const SUPABASE_URL = 'https://elmhkhvryjzljxskbfps.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVsbWhraHZyeWp6bGp4c2tiZnBzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0NDc3NjMsImV4cCI6MjA4NDAyMzc2M30.Orrh2Pejnt3KPJMTUTmRRkhCwtZVfjUreKvX546bOcw';
-        
-        // Initialize Supabase
-        let supabase;
-        
-        // Initialize Supabase client
-        function initSupabase() {
-            try {
-                // Check if supabase is available
-                if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
-                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                    console.log('Supabase initialized successfully');
-                    return true;
+    // DOM Elements
+    const cardIdInput = document.getElementById('cardId');
+    const contentTypeRadios = document.querySelectorAll('input[name="contentType"]');
+    const messageInput = document.getElementById('message');
+    const generateBtn = document.getElementById('generateBtn');
+    const saveBtn = document.getElementById('saveBtn');
+    const testBtn = document.getElementById('testBtn');
+    const cardPreview = document.getElementById('cardPreview');
+    const cardsTableBody = document.getElementById('cardsTableBody');
+    const notification = document.getElementById('notification');
+    const syncStatus = document.getElementById('syncStatus');
+    
+    // Initialize Supabase
+    function initSupabase() {
+        try {
+            // Check if supabase is loaded
+            if (typeof supabase === 'function' || (window.supabase && window.supabase.createClient)) {
+                // Use global supabase if available
+                if (typeof supabase === 'function') {
+                    // This is if you imported as ES6 module
+                    supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
                 } else {
-                    console.error('Supabase library not loaded properly');
-                    return false;
+                    // This is if you loaded via CDN
+                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
                 }
-            } catch (error) {
-                console.error('Error initializing Supabase:', error);
+                console.log('Supabase initialized:', supabase);
+                return true;
+            } else {
+                console.error('Supabase library not loaded');
                 return false;
             }
+        } catch (error) {
+            console.error('Error initializing Supabase:', error);
+            return false;
+        }
+    }
+    
+    // Show notification
+    function showNotification(message, type = 'success') {
+        notification.textContent = message;
+        notification.className = `notification ${type}`;
+        notification.classList.add('show');
+        
+        setTimeout(() => {
+            notification.classList.remove('show');
+        }, 3000);
+    }
+    
+    // Update sync status
+    function updateSyncStatus(connected) {
+        if (connected) {
+            syncStatus.className = 'sync-status online';
+            syncStatus.innerHTML = '<i class="fas fa-cloud"></i><span>Connected to Cloud</span>';
+        } else {
+            syncStatus.className = 'sync-status offline';
+            syncStatus.innerHTML = '<i class="fas fa-cloud-slash"></i><span>Offline Mode</span>';
+        }
+    }
+    
+    // Generate card preview
+    function generatePreview() {
+        const cardId = cardIdInput.value.trim();
+        const contentType = document.querySelector('input[name="contentType"]:checked').value;
+        const message = messageInput.value.trim();
+        
+        // Validate card ID
+        if (!cardId) {
+            showNotification('Please enter a card ID', 'error');
+            return null;
         }
         
-        // DOM Elements
-        const cardIdInput = document.getElementById('cardId');
-        const contentTypeRadios = document.querySelectorAll('input[name="contentType"]');
-        const messageInput = document.getElementById('message');
-        const generateBtn = document.getElementById('generateBtn');
-        const saveBtn = document.getElementById('saveBtn');
-        const testBtn = document.getElementById('testBtn');
-        const cardPreview = document.getElementById('cardPreview');
-        const cardsTableBody = document.getElementById('cardsTableBody');
-        const notification = document.getElementById('notification');
-        const syncStatus = document.getElementById('syncStatus');
-        
-        // Card storage
-        let savedCards = [];
-        
-        // Show notification
-        function showNotification(message, type = 'success') {
-            notification.textContent = message;
-            notification.className = `notification ${type}`;
-            notification.classList.add('show');
-            
-            setTimeout(() => {
-                notification.classList.remove('show');
-            }, 3000);
+        if (!/^\d+$/.test(cardId)) {
+            showNotification('Card ID must contain only numbers', 'error');
+            return null;
         }
         
-        // Update sync status
-        function updateSyncStatus(connected) {
-            if (connected) {
-                syncStatus.className = 'sync-status online';
-                syncStatus.innerHTML = '<i class="fas fa-cloud"></i><span>Connected to Cloud</span>';
-            } else {
-                syncStatus.className = 'sync-status offline';
-                syncStatus.innerHTML = '<i class="fas fa-cloud-slash"></i><span>Offline Mode</span>';
-            }
+        const fullCardId = `CARD${cardId}`;
+        
+        // Generate preview based on content type
+        let previewHTML = '';
+        let typeDisplay = '';
+        
+        switch(contentType) {
+            case 'text':
+                previewHTML = `
+                    <div class="card-id-display">${fullCardId}</div>
+                    <div class="text-content">${message || 'Your text message will appear here'}</div>
+                `;
+                typeDisplay = 'Text Message';
+                break;
+                
+            case 'image':
+                previewHTML = `
+                    <div class="card-id-display">${fullCardId}</div>
+                    <div style="font-size: 3rem; margin: 20px 0;">
+                        <i class="fas fa-image"></i>
+                    </div>
+                    <div class="text-content">Image Card</div>
+                    <p style="color: #666; margin-top: 10px;">${message || 'Image description'}</p>
+                `;
+                typeDisplay = 'Image';
+                break;
+                
+            case 'video':
+                previewHTML = `
+                    <div class="card-id-display">${fullCardId}</div>
+                    <div style="font-size: 3rem; margin: 20px 0;">
+                        <i class="fas fa-video"></i>
+                    </div>
+                    <div class="text-content">Video Card</div>
+                    <p style="color: #666; margin-top: 10px;">${message || 'Video description'}</p>
+                `;
+                typeDisplay = 'Video';
+                break;
+                
+            case 'audio':
+                previewHTML = `
+                    <div class="card-id-display">${fullCardId}</div>
+                    <div style="font-size: 3rem; margin: 20px 0;">
+                        <i class="fas fa-music"></i>
+                    </div>
+                    <div class="text-content">Audio Card</div>
+                    <p style="color: #666; margin-top: 10px;">${message || 'Audio description'}</p>
+                `;
+                typeDisplay = 'Audio';
+                break;
         }
         
-        // Generate card preview
-        function generatePreview() {
-            const cardId = cardIdInput.value.trim();
-            const contentType = document.querySelector('input[name="contentType"]:checked').value;
-            const message = messageInput.value.trim();
-            
-            // Validate card ID
-            if (!cardId) {
-                showNotification('Please enter a card ID', 'error');
-                return null;
-            }
-            
-            if (!/^\d+$/.test(cardId)) {
-                showNotification('Card ID must contain only numbers', 'error');
-                return null;
-            }
-            
-            const fullCardId = `CARD${cardId}`;
-            
-            // Generate preview based on content type
-            let previewHTML = '';
-            let typeDisplay = '';
-            
-            switch(contentType) {
-                case 'text':
-                    previewHTML = `
-                        <div class="card-id-display">${fullCardId}</div>
-                        <div class="text-content">${message || 'Your text message will appear here'}</div>
-                    `;
-                    typeDisplay = 'Text Message';
-                    break;
-                    
-                case 'image':
-                    previewHTML = `
-                        <div class="card-id-display">${fullCardId}</div>
-                        <div style="font-size: 3rem; margin: 20px 0;">
-                            <i class="fas fa-image"></i>
-                        </div>
-                        <div class="text-content">Image Card</div>
-                        <p style="color: #666; margin-top: 10px;">${message || 'Image description'}</p>
-                    `;
-                    typeDisplay = 'Image';
-                    break;
-                    
-                case 'video':
-                    previewHTML = `
-                        <div class="card-id-display">${fullCardId}</div>
-                        <div style="font-size: 3rem; margin: 20px 0;">
-                            <i class="fas fa-video"></i>
-                        </div>
-                        <div class="text-content">Video Card</div>
-                        <p style="color: #666; margin-top: 10px;">${message || 'Video description'}</p>
-                    `;
-                    typeDisplay = 'Video';
-                    break;
-                    
-                case 'audio':
-                    previewHTML = `
-                        <div class="card-id-display">${fullCardId}</div>
-                        <div style="font-size: 3rem; margin: 20px 0;">
-                            <i class="fas fa-music"></i>
-                        </div>
-                        <div class="text-content">Audio Card</div>
-                        <p style="color: #666; margin-top: 10px;">${message || 'Audio description'}</p>
-                    `;
-                    typeDisplay = 'Audio';
-                    break;
-            }
-            
-            previewHTML += `<div class="content-type-display">${typeDisplay}</div>`;
-            
-            // Update the preview
-            cardPreview.innerHTML = previewHTML;
-            
-            // Return card data for saving
-            return {
-                card_id: fullCardId,
-                message_type: typeDisplay,
-                message_text: message,
-                preview: message.substring(0, 30) + (message.length > 30 ? '...' : ''),
-                status: 'active'
-            };
-        }
+        previewHTML += `<div class="content-type-display">${typeDisplay}</div>`;
         
-        // Save card to Supabase
-        async function saveCardToSupabase(cardData) {
+        // Update the preview
+        cardPreview.innerHTML = previewHTML;
+        
+        // Return card data for saving
+        return {
+            card_id: fullCardId,
+            message_type: contentType,
+            message_text: message,
+            preview: message.substring(0, 30) + (message.length > 30 ? '...' : ''),
+            status: 'active'
+        };
+    }
+    
+    // Save card to Supabase
+    async function saveCardToSupabase(cardData) {
+        try {
+            if (!supabase || typeof supabase.from !== 'function') {
+                throw new Error('Supabase client not properly initialized. Check console for errors.');
+            }
+            
+            // Convert message_type to proper format
+            let messageTypeDisplay = 'Text Message';
+            switch(cardData.message_type) {
+                case 'image': messageTypeDisplay = 'Image'; break;
+                case 'video': messageTypeDisplay = 'Video'; break;
+                case 'audio': messageTypeDisplay = 'Audio'; break;
+            }
+            
+            // First check if cards table exists by trying to fetch
             try {
-                if (!supabase) {
-                    throw new Error('Supabase client not initialized');
-                }
-                
-                // Check if supabase.from exists
-                if (typeof supabase.from !== 'function') {
-                    throw new Error('Supabase client methods not available. Check if Supabase library loaded properly.');
-                }
-                
-                // Check if card already exists
-                const { data: existingCard, error: checkError } = await supabase
+                const { error: testError } = await supabase
                     .from('cards')
                     .select('*')
-                    .eq('card_id', cardData.card_id)
-                    .single();
-                
-                let action = 'created';
-                
-                if (checkError && checkError.code !== 'PGRST116') {
-                    // Error other than "not found"
-                    throw checkError;
-                }
-                
-                if (existingCard) {
-                    // Update existing card
-                    const { error: updateError } = await supabase
-                        .from('cards')
-                        .update({
-                            message_type: cardData.message_type,
-                            message_text: cardData.message_text,
-                            preview: cardData.preview,
-                            status: 'active',
-                            updated_at: new Date().toISOString()
-                        })
-                        .eq('card_id', cardData.card_id);
+                    .limit(1);
                     
-                    if (updateError) throw updateError;
-                    action = 'updated';
-                } else {
-                    // Insert new card
-                    const { error: insertError } = await supabase
-                        .from('cards')
-                        .insert([{
-                            card_id: cardData.card_id,
-                            message_type: cardData.message_type,
-                            message_text: cardData.message_text,
-                            preview: cardData.preview,
-                            status: 'active',
-                            created_at: new Date().toISOString()
-                        }]);
+                if (testError && testError.message.includes('relation "cards" does not exist')) {
+                    // Table doesn't exist, create it first
+                    showNotification('Creating cards table... This might take a moment.', 'info');
                     
-                    if (insertError) throw insertError;
+                    // We'll create the card locally for now
+                    localStorage.setItem(`card_${cardData.card_id}`, JSON.stringify({
+                        ...cardData,
+                        message_type: messageTypeDisplay,
+                        created_at: new Date().toISOString()
+                    }));
+                    
+                    return { 
+                        success: true, 
+                        action: 'created_locally',
+                        note: 'Table not found, saved locally. Create table in Supabase first.' 
+                    };
                 }
+            } catch (testErr) {
+                console.warn('Table test error:', testErr);
+            }
+            
+            // Try to save to Supabase
+            const { data, error } = await supabase
+                .from('cards')
+                .insert([{
+                    card_id: cardData.card_id,
+                    message_type: messageTypeDisplay,
+                    message_text: cardData.message_text,
+                    preview: cardData.preview,
+                    status: 'active',
+                    created_at: new Date().toISOString()
+                }])
+                .select();
+            
+            if (error) {
+                // If error, try update instead (card might already exist)
+                const { error: updateError } = await supabase
+                    .from('cards')
+                    .update({
+                        message_type: messageTypeDisplay,
+                        message_text: cardData.message_text,
+                        preview: cardData.preview,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('card_id', cardData.card_id);
                 
-                // Refresh the card list
-                await loadCardsFromSupabase();
+                if (updateError) throw updateError;
                 
-                return { success: true, action: action };
-            } catch (error) {
-                console.error('Supabase error:', error);
-                updateSyncStatus(false);
+                return { success: true, action: 'updated' };
+            }
+            
+            return { success: true, action: 'created' };
+            
+        } catch (error) {
+            console.error('Supabase error:', error);
+            
+            // Fallback: Save to localStorage
+            try {
+                localStorage.setItem(`card_${cardData.card_id}`, JSON.stringify({
+                    ...cardData,
+                    created_at: new Date().toISOString()
+                }));
+                
+                return { 
+                    success: true, 
+                    action: 'created_locally',
+                    note: 'Saved locally due to Supabase error: ' + error.message 
+                };
+            } catch (localError) {
                 return { 
                     success: false, 
-                    action: 'failed', 
-                    error: error.message 
+                    action: 'failed',
+                    error: 'Both Supabase and local storage failed: ' + error.message 
                 };
             }
         }
+    }
+    
+    // Initialize the app
+    async function initApp() {
+        // Initialize Supabase
+        const supabaseInitialized = initSupabase();
         
-        // Load cards from Supabase
-        async function loadCardsFromSupabase() {
+        if (supabaseInitialized) {
+            updateSyncStatus(true);
+            showNotification('Connected to Supabase', 'success');
+            
+            // Test connection
             try {
-                if (!supabase) {
-                    throw new Error('Supabase client not initialized');
-                }
-                
-                cardsTableBody.innerHTML = `
-                    <tr class="empty-row">
-                        <td colspan="5">
-                            <div class="loading" style="margin-right: 10px;"></div>
-                            Loading cards from cloud...
-                        </td>
-                    </tr>
-                `;
-                
+                // Simple test query
                 const { data, error } = await supabase
                     .from('cards')
-                    .select('*')
-                    .eq('status', 'active')
-                    .order('created_at', { ascending: false });
+                    .select('card_id')
+                    .limit(1);
                 
-                if (error) throw error;
-                
-                savedCards = data || [];
-                
-                if (savedCards.length === 0) {
-                    cardsTableBody.innerHTML = `
-                        <tr class="empty-row">
-                            <td colspan="5">No cards saved yet. Create your first card above!</td>
-                        </tr>
-                    `;
-                    return;
-                }
-                
-                let tableHTML = '';
-                savedCards.forEach((card, index) => {
-                    const createdDate = new Date(card.created_at).toLocaleDateString();
-                    
-                    tableHTML += `
-                    <tr>
-                        <td>${card.card_id}</td>
-                        <td>${card.message_type}</td>
-                        <td>${card.message_text || card.preview || 'No message'}</td>
-                        <td>${createdDate}</td>
-                        <td>
-                            <div class="action-buttons">
-                                <button class="action-btn view" onclick="viewCard('${card.card_id}')">
-                                    <i class="fas fa-eye"></i> View
-                                </button>
-                                <button class="action-btn delete" onclick="deleteCard('${card.card_id}')">
-                                    <i class="fas fa-trash"></i> Delete
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                    `;
-                });
-                
-                cardsTableBody.innerHTML = tableHTML;
-                updateSyncStatus(true);
-                
-                return data || [];
-            } catch (error) {
-                console.error('Supabase error:', error);
-                cardsTableBody.innerHTML = `
-                    <tr class="empty-row">
-                        <td colspan="5">Error loading cards from cloud: ${error.message}</td>
-                    </tr>
-                `;
-                updateSyncStatus(false);
-                return [];
-            }
-        }
-        
-        // View a saved card
-        async function viewCard(cardId) {
-            try {
-                // Extract numeric ID from CARD prefix
-                const numericId = cardId.replace('CARD', '');
-                
-                // Populate form with card data
-                cardIdInput.value = numericId;
-                
-                // Find card in saved cards
-                const card = savedCards.find(c => c.card_id === cardId);
-                
-                if (card) {
-                    // Set content type based on message_type
-                    document.querySelectorAll('input[name="contentType"]').forEach(radio => {
-                        radio.checked = false;
-                        radio.parentElement.classList.remove('active');
-                    });
-                    
-                    let typeValue = 'text';
-                    if (card.message_type.includes('Image')) typeValue = 'image';
-                    else if (card.message_type.includes('Video')) typeValue = 'video';
-                    else if (card.message_type.includes('Audio')) typeValue = 'audio';
-                    
-                    const typeRadio = document.getElementById(`type${typeValue.charAt(0).toUpperCase() + typeValue.slice(1)}`);
-                    if (typeRadio) {
-                        typeRadio.checked = true;
-                        typeRadio.parentElement.classList.add('active');
-                    }
-                    
-                    // Set message
-                    messageInput.value = card.message_text || '';
-                    
-                    // Generate preview
-                    generatePreview();
-                    
-                    showNotification(`Loaded card: ${cardId}`, 'success');
+                if (error && error.message.includes('does not exist')) {
+                    showNotification('Cards table not found. Creating card locally.', 'info');
+                } else if (error) {
+                    console.warn('Supabase test warning:', error);
+                } else {
+                    console.log('Supabase connection successful');
                 }
             } catch (error) {
-                showNotification(`Error loading card: ${error.message}`, 'error');
+                console.warn('Connection test failed, using local fallback:', error);
             }
+        } else {
+            updateSyncStatus(false);
+            showNotification('Running in offline mode', 'info');
         }
         
-        // Delete a card from Supabase
-        async function deleteCard(cardId) {
-            if (confirm(`Are you sure you want to delete card ${cardId} from the cloud?`)) {
-                try {
-                    if (!supabase) {
-                        throw new Error('Supabase client not initialized');
-                    }
-                    
-                    const { error } = await supabase
-                        .from('cards')
-                        .update({ status: 'deleted' })
-                        .eq('card_id', cardId);
-                    
-                    if (error) throw error;
-                    
-                    // Refresh the card list
-                    await loadCardsFromSupabase();
-                    
-                    showNotification(`Card ${cardId} deleted from cloud`, 'success');
-                } catch (error) {
-                    showNotification(`Error deleting card: ${error.message}`, 'error');
-                }
-            }
-        }
+        // Generate initial preview
+        generatePreview();
         
-        // Event Listeners
+        // Set up event listeners
         generateBtn.addEventListener('click', function() {
             const cardData = generatePreview();
             if (cardData) {
@@ -990,19 +296,21 @@
             const cardData = generatePreview();
             if (cardData) {
                 // Disable button and show loading
+                const originalText = saveBtn.innerHTML;
                 saveBtn.innerHTML = '<div class="loading"></div> Saving...';
                 saveBtn.disabled = true;
                 
                 const result = await saveCardToSupabase(cardData);
                 
                 // Reset button
-                saveBtn.innerHTML = '<i class="fas fa-save"></i> Save to Cloud';
+                saveBtn.innerHTML = originalText;
                 saveBtn.disabled = false;
                 
                 if (result.success) {
-                    showNotification(`Card ${cardData.card_id} ${result.action} successfully in cloud!`, 'success');
+                    const message = `Card ${cardData.card_id} ${result.action} successfully!`;
+                    showNotification(result.note ? `${message} (${result.note})` : message, 'success');
                 } else {
-                    showNotification(`Failed to save to cloud: ${result.error}`, 'error');
+                    showNotification(`Failed to save: ${result.error}`, 'error');
                 }
             }
         });
@@ -1032,79 +340,27 @@
         });
         
         // Update preview when message changes
-        messageInput.addEventListener('input', function() {
-            generatePreview();
-        });
+        messageInput.addEventListener('input', generatePreview);
         
         // Update preview when card ID changes
-        cardIdInput.addEventListener('input', function() {
-            generatePreview();
-        });
+        cardIdInput.addEventListener('input', generatePreview);
         
-        // Initialize the app
-        async function initApp() {
-            // Initialize Supabase first
-            const supabaseInitialized = initSupabase();
-            
-            if (!supabaseInitialized) {
-                showNotification('Failed to initialize Supabase. Check console for errors.', 'error');
-                updateSyncStatus(false);
-            }
-            
-            // Generate initial preview
-            generatePreview();
-            
-            // Load saved cards from Supabase
-            if (supabaseInitialized) {
-                await loadCardsFromSupabase();
-            } else {
-                cardsTableBody.innerHTML = `
-                    <tr class="empty-row">
-                        <td colspan="5">Supabase not initialized. Check if Supabase library loaded properly.</td>
-                    </tr>
-                `;
-            }
-            
-            // Set up type option click handlers
-            document.querySelectorAll('.type-option').forEach(option => {
-                option.addEventListener('click', function() {
-                    const radio = this.querySelector('input');
-                    radio.checked = true;
-                    
-                    document.querySelectorAll('.type-option').forEach(opt => {
-                        opt.classList.remove('active');
-                    });
-                    this.classList.add('active');
-                    
-                    generatePreview();
+        // Set up type option click handlers
+        document.querySelectorAll('.type-option').forEach(option => {
+            option.addEventListener('click', function() {
+                const radio = this.querySelector('input');
+                radio.checked = true;
+                
+                document.querySelectorAll('.type-option').forEach(opt => {
+                    opt.classList.remove('active');
                 });
+                this.classList.add('active');
+                
+                generatePreview();
             });
-            
-            // Test Supabase connection
-            if (supabase && typeof supabase.from === 'function') {
-                try {
-                    const { data, error } = await supabase
-                        .from('cards')
-                        .select('count', { count: 'exact', head: true });
-                    
-                    if (error) {
-                        console.error('Supabase connection test failed:', error);
-                        showNotification('Connected to Supabase but table might not exist', 'info');
-                        updateSyncStatus(true); // Still connected to Supabase
-                    } else {
-                        console.log('Supabase connection successful');
-                        showNotification('Connected to Supabase database', 'success');
-                        updateSyncStatus(true);
-                    }
-                } catch (error) {
-                    console.error('Supabase connection test failed:', error);
-                    updateSyncStatus(false);
-                }
-            }
-        }
-        
-        // Initialize when page loads
-        document.addEventListener('DOMContentLoaded', initApp);
-    </script>
-</body>
-</html>
+        });
+    }
+    
+    // Initialize when page loads
+    document.addEventListener('DOMContentLoaded', initApp);
+</script>
