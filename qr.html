@@ -4,13 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QR Code Generator | AR Magic Cards</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- FIXED: Correct QRCode CDN URL -->
+    <!-- Using QRCode.js from a reliable CDN -->
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
-    <!-- FIXED: Correct Supabase CDN URL -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* ALL CSS STAYS EXACTLY THE SAME AS BEFORE */
+        /* KEEP ALL YOUR EXISTING CSS HERE */
         * {
             margin: 0;
             padding: 0;
@@ -642,10 +640,7 @@
                     
                     <div class="card-select-container">
                         <select class="card-select" id="cardSelect">
-                            <option value="" class="card-option">
-                                <div class="loading" style="display: inline-block; margin-right: 10px;"></div>
-                                Loading cards from Supabase...
-                            </option>
+                            <option value="" class="card-option">Select from your cards...</option>
                         </select>
                     </div>
                 </div>
@@ -774,22 +769,6 @@
         </div>
     </div>
     
-    <!-- QR Code Scanner Modal -->
-    <div id="qrScannerModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; justify-content: center; align-items: center;">
-        <div style="background: white; padding: 30px; border-radius: 15px; max-width: 500px; width: 90%; text-align: center;">
-            <h2 style="margin-bottom: 20px; color: #333;">Scan QR Code</h2>
-            <div id="qrReader" style="width: 300px; height: 300px; margin: 0 auto 20px; background: #f0f0f0; display: flex; justify-content: center; align-items: center;">
-                <i class="fas fa-camera" style="font-size: 4rem; color: #ccc;"></i>
-            </div>
-            <p style="color: #666; margin-bottom: 20px;">Point your camera at a QR code to scan it</p>
-            <div style="display: flex; gap: 10px; justify-content: center;">
-                <button class="btn btn-primary" id="closeScannerBtn" style="min-width: 120px;">
-                    <i class="fas fa-times"></i> Close
-                </button>
-            </div>
-        </div>
-    </div>
-    
     <!-- Notification Element -->
     <div class="notification" id="notification"></div>
     
@@ -797,29 +776,9 @@
         // Wait for DOM to be fully loaded
         document.addEventListener('DOMContentLoaded', function() {
             
-            // Supabase configuration
-            const SUPABASE_URL = 'https://elmhkhvryjzljxskbfps.supabase.co';
-            const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVsbWhraHZyeWp6bGp4c2tiZnBzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0NDc3NjMsImV4cCI6MjA4NDAyMzc2M30.Orrh2Pejnt3KPJMTUTmRRkhCwtZVfjUreKvX546bOcw';
-            
-            // Initialize Supabase
-            let supabase = null;
-            
-            // Initialize Supabase client
-            function initSupabase() {
-                try {
-                    if (window.supabase && window.supabase.createClient) {
-                        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                        console.log('Supabase initialized successfully');
-                        return true;
-                    } else {
-                        console.error('Supabase library not loaded properly');
-                        return false;
-                    }
-                } catch (error) {
-                    console.error('Error initializing Supabase:', error);
-                    return false;
-                }
-            }
+            console.log('Testing QRCode library...');
+            console.log('QRCode available:', typeof QRCode !== 'undefined');
+            console.log('QRCode:', QRCode);
             
             // DOM Elements
             const cardIdInput = document.getElementById('cardIdInput');
@@ -840,8 +799,6 @@
             const shareBtn = document.getElementById('shareBtn');
             const recentQrGrid = document.getElementById('recentQrGrid');
             const scanQrBtn = document.getElementById('scanQrBtn');
-            const qrScannerModal = document.getElementById('qrScannerModal');
-            const closeScannerBtn = document.getElementById('closeScannerBtn');
             const notification = document.getElementById('notification');
             const syncStatus = document.getElementById('syncStatus');
             
@@ -849,7 +806,6 @@
             let currentQrData = null;
             let qrColor = '#000000';
             let recentQrCodes = JSON.parse(localStorage.getItem('recentQrCodes')) || [];
-            let savedCards = [];
             
             // Show notification
             function showNotification(message, type = 'info') {
@@ -873,95 +829,27 @@
                 }
             }
             
-            // Test if QRCode library is loaded
-            function testQRCodeLibrary() {
-                console.log('Testing QRCode library...');
-                console.log('window.QRCode:', window.QRCode);
-                console.log('typeof QRCode:', typeof QRCode);
-                console.log('QRCode.toCanvas:', QRCode ? QRCode.toCanvas : 'Not available');
+            // Load sample cards (you can replace this with actual Supabase call)
+            function loadSampleCards() {
+                const sampleCards = [
+                    { card_id: 'CARD6842', message: 'Hello World! Welcome to AR Magic Cards!' },
+                    { card_id: 'CARD1234', message: 'This is a test message from Supabase' },
+                    { card_id: 'CARD5678', message: 'Scan me to see amazing AR content' },
+                    { card_id: 'CARD9999', message: 'Secret message for special friends' }
+                ];
                 
-                if (!QRCode || typeof QRCode.toCanvas !== 'function') {
-                    console.error('QRCode library not loaded properly');
-                    showNotification('QR Code library failed to load. Trying alternative...', 'error');
-                    loadQRCodeLibrary();
-                    return false;
-                }
-                return true;
-            }
-            
-            // Load QRCode library dynamically if not loaded
-            function loadQRCodeLibrary() {
-                return new Promise((resolve) => {
-                    const script = document.createElement('script');
-                    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.3/qrcode.min.js';
-                    script.onload = function() {
-                        console.log('QRCode library loaded dynamically');
-                        resolve(true);
-                    };
-                    script.onerror = function() {
-                        console.error('Failed to load QRCode library');
-                        showNotification('Failed to load QR Code library. Please refresh the page.', 'error');
-                        resolve(false);
-                    };
-                    document.head.appendChild(script);
+                cardSelect.innerHTML = '<option value="" class="card-option">Select from your cards...</option>';
+                
+                sampleCards.forEach(card => {
+                    const option = document.createElement('option');
+                    option.value = card.card_id;
+                    option.textContent = `${card.card_id} - ${card.message.substring(0, 30)}...`;
+                    option.className = 'card-option';
+                    cardSelect.appendChild(option);
                 });
-            }
-            
-            // Load saved cards from Supabase
-            async function loadCardsFromSupabase() {
-                try {
-                    if (!supabase || typeof supabase.from !== 'function') {
-                        throw new Error('Supabase not initialized');
-                    }
-                    
-                    cardSelect.innerHTML = '<option value="" class="card-option"><div class="loading" style="display: inline-block; margin-right: 10px;"></div> Loading cards from Supabase...</option>';
-                    
-                    const { data, error } = await supabase
-                        .from('cards')
-                        .select('*')
-                        .eq('status', 'active')
-                        .order('created_at', { ascending: false });
-                    
-                    if (error) {
-                        // If table doesn't exist, show empty list
-                        if (error.message.includes('does not exist')) {
-                            cardSelect.innerHTML = '<option value="" class="card-option">No cards found. Create cards in Maker first.</option>';
-                            savedCards = [];
-                            updateSyncStatus(false);
-                            return;
-                        }
-                        throw error;
-                    }
-                    
-                    savedCards = data || [];
-                    
-                    if (savedCards.length === 0) {
-                        cardSelect.innerHTML = '<option value="" class="card-option">No cards found in Supabase database</option>';
-                        showNotification('No cards found in Supabase. Create cards in Maker first.', 'info');
-                        updateSyncStatus(true);
-                        return;
-                    }
-                    
-                    cardSelect.innerHTML = '<option value="" class="card-option">Select from your Supabase cards</option>';
-                    
-                    savedCards.forEach(card => {
-                        const option = document.createElement('option');
-                        option.value = card.card_id;
-                        const preview = card.message_text ? 
-                            (card.message_text.substring(0, 30) + (card.message_text.length > 30 ? '...' : '')) : 
-                            'No message';
-                        option.textContent = `${card.card_id} - ${preview}`;
-                        option.className = 'card-option';
-                        cardSelect.appendChild(option);
-                    });
-                    
-                    updateSyncStatus(true);
-                } catch (error) {
-                    console.error('Supabase error:', error);
-                    cardSelect.innerHTML = '<option value="" class="card-option">Error loading cards from Supabase</option>';
-                    updateSyncStatus(false);
-                    showNotification('Error loading cards from Supabase: ' + error.message, 'error');
-                }
+                
+                updateSyncStatus(false); // Offline mode for now
+                showNotification('Loaded sample cards (offline mode)', 'info');
             }
             
             // Update dynamic options based on QR type
@@ -975,7 +863,7 @@
                             <div class="form-group">
                                 <label>AR Card Options:</label>
                                 <div style="background-color: #f0f8ff; padding: 15px; border-radius: 8px;">
-                                    <p style="margin-bottom: 10px; color: #555;">QR code will open the card directly in the AR scanner from Supabase.</p>
+                                    <p style="margin-bottom: 10px; color: #555;">QR code will open the card directly in the AR scanner.</p>
                                     <div style="display: flex; align-items: center; gap: 10px;">
                                         <input type="checkbox" id="autoScan" checked>
                                         <label for="autoScan" style="font-weight: normal;">Auto-scan card when opened</label>
@@ -1047,25 +935,9 @@
                         }
                         
                         // For AR cards, generate a URL that opens in viewer
-                        // Get the current base URL
-                        let baseUrl = window.location.origin;
-                        let path = window.location.pathname;
-                        
-                        // Remove qr.html from path and add viewer.html
-                        if (path.includes('qr.html')) {
-                            path = path.replace('qr.html', 'viewer.html');
-                        } else {
-                            path = '/viewer.html';
-                        }
-                        
-                        qrData = `${baseUrl}${path}?card=${encodeURIComponent(cardId)}`;
+                        qrData = `https://ar-magic-cards.com/viewer.html?card=${encodeURIComponent(cardId)}`;
                         label = cardId;
-                        
-                        // Find card in saved cards for description
-                        const card = savedCards.find(c => c.card_id === cardId);
-                        description = card ? 
-                            `Scan to view: ${(card.message_text || '').substring(0, 50) || card.message_type}` : 
-                            'Scan this QR code with the AR Magic Card Scanner to view the card.';
+                        description = 'Scan this QR code with the AR Magic Card Scanner to view the card.';
                         break;
                         
                     case 'url':
@@ -1143,12 +1015,9 @@
             // Generate and display QR code
             async function generateQrCode() {
                 // First check if QRCode library is available
-                if (!QRCode || typeof QRCode.toCanvas !== 'function') {
-                    const loaded = await loadQRCodeLibrary();
-                    if (!loaded) {
-                        showNotification('QR Code library not available. Cannot generate QR code.', 'error');
-                        return;
-                    }
+                if (typeof QRCode === 'undefined') {
+                    showNotification('QR Code library not loaded. Please refresh the page.', 'error');
+                    return;
                 }
                 
                 const qrData = generateQrData();
@@ -1165,15 +1034,17 @@
                 generateQrBtn.disabled = true;
                 
                 try {
-                    // Generate new QR code
-                    QRCode.toCanvas(qrCodeElement, qrData.data, {
+                    // Generate new QR code using QRCode library
+                    const canvas = document.createElement('canvas');
+                    
+                    QRCode.toCanvas(canvas, qrData.data, {
                         width: 250,
-                        height: 250,
+                        margin: 1,
                         color: {
                             dark: qrData.color,
-                            light: '#ffffff'
+                            light: '#FFFFFF'
                         },
-                        margin: 1
+                        errorCorrectionLevel: 'H'
                     }, function(error) {
                         // Reset button
                         generateQrBtn.innerHTML = originalText;
@@ -1184,6 +1055,10 @@
                             showNotification('Error generating QR code: ' + error.message, 'error');
                             return;
                         }
+                        
+                        // Add canvas to the QR code element
+                        qrCodeElement.innerHTML = '';
+                        qrCodeElement.appendChild(canvas);
                         
                         // Update info display
                         qrCardId.textContent = qrData.label;
@@ -1383,6 +1258,7 @@
                     return;
                 }
                 
+                // Generate SVG
                 QRCode.toString(currentQrData.data, {
                     type: 'svg',
                     color: {
@@ -1419,44 +1295,35 @@
                     return;
                 }
                 
-                canvas.toBlob(function(blob) {
-                    const dataUrl = canvas.toDataURL('image/png');
-                    const tempInput = document.createElement('input');
-                    tempInput.value = dataUrl;
-                    document.body.appendChild(tempInput);
-                    tempInput.select();
-                    tempInput.setSelectionRange(0, 99999);
-                    
-                    try {
-                        document.execCommand('copy');
-                        showNotification('QR code image copied to clipboard!', 'success');
-                    } catch (err) {
-                        showNotification('Failed to copy QR code. Right-click the QR code and select "Save Image As".', 'info');
-                    }
-                    
-                    document.body.removeChild(tempInput);
-                });
+                const dataUrl = canvas.toDataURL('image/png');
+                const tempInput = document.createElement('input');
+                tempInput.value = dataUrl;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                tempInput.setSelectionRange(0, 99999);
+                
+                try {
+                    document.execCommand('copy');
+                    showNotification('QR code image copied to clipboard!', 'success');
+                } catch (err) {
+                    showNotification('Failed to copy QR code. Right-click the QR code and select "Save Image As".', 'info');
+                }
+                
+                document.body.removeChild(tempInput);
             }
             
             // Initialize the page
-            async function initQrPage() {
+            function initQrPage() {
                 console.log('Initializing QR page...');
+                console.log('QRCode library status:', typeof QRCode !== 'undefined' ? 'Loaded' : 'Failed');
                 
-                // Test QRCode library first
-                const qrCodeLoaded = testQRCodeLibrary();
-                if (!qrCodeLoaded) {
-                    await loadQRCodeLibrary();
+                if (typeof QRCode === 'undefined') {
+                    showNotification('QR Code library failed to load. Please check your internet connection.', 'error');
+                    return;
                 }
                 
-                // Initialize Supabase
-                const supabaseInitialized = initSupabase();
-                
-                if (supabaseInitialized) {
-                    // Load saved cards from Supabase
-                    await loadCardsFromSupabase();
-                } else {
-                    showNotification('Supabase not initialized. Using demo mode.', 'info');
-                }
+                // Load sample cards
+                loadSampleCards();
                 
                 // Load recent QR codes
                 recentQrCodes = JSON.parse(localStorage.getItem('recentQrCodes')) || [];
@@ -1523,39 +1390,25 @@
                 downloadSvgBtn.addEventListener('click', downloadQrCodeSvg);
                 shareBtn.addEventListener('click', shareQrCode);
                 
-                // QR scanner button
+                // QR scanner button (demo)
                 scanQrBtn.addEventListener('click', function() {
-                    qrScannerModal.style.display = 'flex';
-                    showNotification('QR scanner activated. Point camera at a QR code.', 'info');
-                });
-                
-                closeScannerBtn.addEventListener('click', function() {
-                    qrScannerModal.style.display = 'none';
-                    // Simulate scanning a QR code (for demo)
+                    // Demo scan - populate with random card ID
                     cardIdInput.value = 'CARD' + Math.floor(1000 + Math.random() * 9000);
-                    showNotification('Demo: QR code scanned and Card ID populated', 'success');
+                    showNotification('Demo: Card ID populated. Generate QR code to see it!', 'info');
                 });
                 
                 // Initialize dynamic options
                 updateDynamicOptions();
                 
-                // Auto-generate demo QR code on page load
+                // Auto-generate a sample QR code on load
                 setTimeout(() => {
-                    if (savedCards.length > 0) {
-                        // Use first card from Supabase
-                        const firstCard = savedCards[0];
-                        cardIdInput.value = firstCard.card_id;
-                        generateQrCode();
-                    } else {
-                        // Use demo card if no cards in database
-                        generateQrCode();
-                    }
+                    generateQrCode();
                 }, 1000);
                 
-                console.log('QR page initialization complete');
+                console.log('QR page initialized successfully');
             }
             
-            // Initialize when page loads
+            // Start the page
             initQrPage();
         });
     </script>
