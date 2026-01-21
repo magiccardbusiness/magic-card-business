@@ -6,6 +6,7 @@
     <title>QR Code Generator | AR Magic Cards</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
             margin: 0;
@@ -77,6 +78,30 @@
         .nav-button:hover {
             background: rgba(255, 255, 255, 0.25);
             transform: translateY(-2px);
+        }
+        
+        .sync-status {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            backdrop-filter: blur(5px);
+        }
+        
+        .sync-status.online {
+            background: rgba(0, 176, 155, 0.3);
+        }
+        
+        .sync-status.offline {
+            background: rgba(255, 65, 108, 0.3);
         }
         
         .content-container {
@@ -500,6 +525,21 @@
             background: linear-gradient(to right, #36D1DC, #5B86E5);
         }
         
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #11998e;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
         @media (max-width: 768px) {
             .content-container {
                 flex-direction: column;
@@ -517,6 +557,16 @@
                 flex-direction: column;
                 gap: 10px;
                 margin-bottom: 20px;
+            }
+            
+            .sync-status {
+                position: relative;
+                top: 0;
+                left: 0;
+                transform: none;
+                margin: 10px auto;
+                display: inline-flex;
+                justify-content: center;
             }
             
             .nav-button {
@@ -548,9 +598,24 @@
             }
         }
     </style>
+    <script>
+        // Supabase configuration - USE YOUR CREDENTIALS
+        const SUPABASE_URL = 'https://elmhkhvryjzljxskbfps.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVsbWhraHZyeWp6bGp4c2tiZnBzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0NDc3NjMsImV4cCI6MjA4NDAyMzc2M30.Orrh2Pejnt3KPJMTUTmRRkhCwtZVfjUreKvX546bOcw';
+        
+        // Initialize Supabase
+        let supabase;
+        try {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            console.log('Supabase initialized successfully');
+        } catch (error) {
+            console.error('Error initializing Supabase:', error);
+        }
+    </script>
 </head>
 <body>
     <div class="container">
+        <!-- Navigation & Status -->
         <div class="nav-buttons">
             <a href="maker.html" class="nav-button">
                 <i class="fas fa-arrow-left"></i> Back to Creator
@@ -560,9 +625,14 @@
             </a>
         </div>
         
+        <div class="sync-status online" id="syncStatus">
+            <i class="fas fa-cloud"></i>
+            <span>Connected to Cloud</span>
+        </div>
+        
         <header>
             <h1><i class="fas fa-qrcode"></i> QR Code Generator</h1>
-            <p>Generate QR codes for your AR Magic Cards. Share them with friends or print them for physical cards.</p>
+            <p>Generate QR codes for your AR Magic Cards from Supabase database. Share them with friends or print them for physical cards.</p>
         </header>
         
         <div class="content-container">
@@ -573,7 +643,7 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="cardIdInput">Card ID or URL:</label>
+                    <label for="cardIdInput">Card ID from Supabase:</label>
                     <div class="input-with-button">
                         <input type="text" id="cardIdInput" placeholder="Enter Card ID (e.g., CARD6842) or URL" value="CARD6842">
                         <button class="btn btn-secondary" id="scanQrBtn" style="min-width: auto; padding: 0 20px;">
@@ -583,8 +653,10 @@
                     
                     <div class="card-select-container">
                         <select class="card-select" id="cardSelect">
-                            <option value="" class="card-option">Select from your saved cards</option>
-                            <!-- Cards will be loaded here -->
+                            <option value="" class="card-option">
+                                <div class="loading" style="display: inline-block; margin-right: 10px;"></div>
+                                Loading cards from Supabase...
+                            </option>
                         </select>
                     </div>
                 </div>
@@ -755,13 +827,14 @@
         const qrScannerModal = document.getElementById('qrScannerModal');
         const closeScannerBtn = document.getElementById('closeScannerBtn');
         const notification = document.getElementById('notification');
+        const syncStatus = document.getElementById('syncStatus');
         
         // State variables
         let currentQrCode = null;
         let currentQrData = null;
         let qrColor = '#000000';
         let recentQrCodes = JSON.parse(localStorage.getItem('recentQrCodes')) || [];
-        let savedCards = JSON.parse(localStorage.getItem('magicCards')) || [];
+        let savedCards = [];
         
         // Show notification
         function showNotification(message, type = 'info') {
@@ -774,22 +847,60 @@
             }, 3000);
         }
         
-        // Load saved cards into dropdown
-        function loadSavedCards() {
-            cardSelect.innerHTML = '<option value="" class="card-option">Select from your saved cards</option>';
-            
-            if (savedCards.length === 0) {
-                cardSelect.innerHTML += '<option value="" disabled class="card-option">No cards saved yet</option>';
-                return;
+        // Update sync status
+        function updateSyncStatus(connected) {
+            if (connected) {
+                syncStatus.className = 'sync-status online';
+                syncStatus.innerHTML = '<i class="fas fa-cloud"></i><span>Connected to Cloud</span>';
+            } else {
+                syncStatus.className = 'sync-status offline';
+                syncStatus.innerHTML = '<i class="fas fa-cloud-slash"></i><span>Offline Mode</span>';
             }
-            
-            savedCards.forEach(card => {
-                const option = document.createElement('option');
-                option.value = card.id;
-                option.textContent = `${card.id} - ${card.preview}`;
-                option.className = 'card-option';
-                cardSelect.appendChild(option);
-            });
+        }
+        
+        // Load saved cards from Supabase
+        async function loadCardsFromSupabase() {
+            try {
+                if (!supabase) {
+                    throw new Error('Supabase not initialized');
+                }
+                
+                cardSelect.innerHTML = '<option value="" class="card-option"><div class="loading" style="display: inline-block; margin-right: 10px;"></div> Loading cards from Supabase...</option>';
+                
+                const { data, error } = await supabase
+                    .from('cards')
+                    .select('*')
+                    .eq('status', 'active')
+                    .order('created_at', { ascending: false });
+                
+                if (error) throw error;
+                
+                savedCards = data || [];
+                
+                if (savedCards.length === 0) {
+                    cardSelect.innerHTML = '<option value="" class="card-option">No cards found in Supabase database</option>';
+                    showNotification('No cards found in Supabase. Create cards in Maker first.', 'info');
+                    updateSyncStatus(true);
+                    return;
+                }
+                
+                cardSelect.innerHTML = '<option value="" class="card-option">Select from your Supabase cards</option>';
+                
+                savedCards.forEach(card => {
+                    const option = document.createElement('option');
+                    option.value = card.card_id;
+                    option.textContent = `${card.card_id} - ${card.preview || card.message_text?.substring(0, 30) + '...'}`;
+                    option.className = 'card-option';
+                    cardSelect.appendChild(option);
+                });
+                
+                updateSyncStatus(true);
+            } catch (error) {
+                console.error('Supabase error:', error);
+                cardSelect.innerHTML = '<option value="" class="card-option">Error loading cards from Supabase</option>';
+                updateSyncStatus(false);
+                showNotification('Error loading cards from Supabase: ' + error.message, 'error');
+            }
         }
         
         // Update dynamic options based on QR type
@@ -803,7 +914,7 @@
                         <div class="form-group">
                             <label>AR Card Options:</label>
                             <div style="background-color: #f0f8ff; padding: 15px; border-radius: 8px;">
-                                <p style="margin-bottom: 10px; color: #555;">QR code will open the card directly in the AR scanner.</p>
+                                <p style="margin-bottom: 10px; color: #555;">QR code will open the card directly in the AR scanner from Supabase.</p>
                                 <div style="display: flex; align-items: center; gap: 10px;">
                                     <input type="checkbox" id="autoScan" checked>
                                     <label for="autoScan" style="font-weight: normal;">Auto-scan card when opened</label>
@@ -877,7 +988,12 @@
                     // For AR cards, generate a URL that opens in viewer
                     qrData = `${window.location.origin}${window.location.pathname.replace('qr.html', 'viewer.html')}?card=${encodeURIComponent(cardId)}`;
                     label = cardId;
-                    description = 'Scan this QR code with the AR Magic Card Scanner to view the card.';
+                    
+                    // Find card in saved cards for description
+                    const card = savedCards.find(c => c.card_id === cardId);
+                    description = card ? 
+                        `Scan to view: ${card.message_text?.substring(0, 50) || card.message_type}` : 
+                        'Scan this QR code with the AR Magic Card Scanner to view the card.';
                     break;
                     
                 case 'url':
@@ -936,7 +1052,7 @@
         }
         
         // Generate and display QR code
-        function generateQrCode() {
+        async function generateQrCode() {
             const qrData = generateQrData();
             if (!qrData) return;
             
@@ -944,6 +1060,10 @@
             
             // Clear previous QR code
             qrCodeElement.innerHTML = '';
+            
+            // Show loading
+            generateQrBtn.innerHTML = '<div class="loading"></div> Generating...';
+            generateQrBtn.disabled = true;
             
             // Generate new QR code
             QRCode.toCanvas(qrCodeElement, qrData.data, {
@@ -955,6 +1075,10 @@
                 },
                 margin: 1
             }, function(error) {
+                // Reset button
+                generateQrBtn.innerHTML = '<i class="fas fa-bolt"></i> Generate QR Code';
+                generateQrBtn.disabled = false;
+                
                 if (error) {
                     showNotification('Error generating QR code: ' + error, 'error');
                     return;
@@ -1234,10 +1358,9 @@
         }
         
         // Initialize the page
-        function initQrPage() {
-            // Load saved cards
-            savedCards = JSON.parse(localStorage.getItem('magicCards')) || [];
-            loadSavedCards();
+        async function initQrPage() {
+            // Load saved cards from Supabase
+            await loadCardsFromSupabase();
             
             // Load recent QR codes
             recentQrCodes = JSON.parse(localStorage.getItem('recentQrCodes')) || [];
@@ -1307,11 +1430,7 @@
             // QR scanner button
             scanQrBtn.addEventListener('click', function() {
                 qrScannerModal.style.display = 'flex';
-                // In a real app, this would activate camera QR scanning
-                // For demo, we'll simulate scanning
-                setTimeout(() => {
-                    showNotification('QR scanner activated. Point camera at a QR code.', 'info');
-                }, 500);
+                showNotification('QR scanner activated. Point camera at a QR code.', 'info');
             });
             
             closeScannerBtn.addEventListener('click', function() {
@@ -1326,8 +1445,36 @@
             
             // Auto-generate demo QR code
             setTimeout(() => {
-                generateQrCode();
+                if (savedCards.length > 0) {
+                    // Use first card from Supabase
+                    const firstCard = savedCards[0];
+                    cardIdInput.value = firstCard.card_id;
+                    generateQrCode();
+                } else {
+                    // Use demo card
+                    generateQrCode();
+                }
             }, 1000);
+            
+            // Test Supabase connection
+            if (supabase) {
+                try {
+                    const { data, error } = await supabase
+                        .from('cards')
+                        .select('count', { count: 'exact', head: true });
+                    
+                    if (error) {
+                        console.error('Supabase connection test failed:', error);
+                        updateSyncStatus(false);
+                    } else {
+                        console.log('Supabase connection successful');
+                        updateSyncStatus(true);
+                    }
+                } catch (error) {
+                    console.error('Supabase connection test failed:', error);
+                    updateSyncStatus(false);
+                }
+            }
         }
         
         // Initialize when page loads
