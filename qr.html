@@ -5,10 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QR Code Generator | AR Magic Cards</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- FIXED: Correct QRCode CDN URL -->
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
     <!-- FIXED: Correct Supabase CDN URL -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <style>
+        /* ALL CSS STAYS EXACTLY THE SAME AS BEFORE */
         * {
             margin: 0;
             padding: 0;
@@ -871,6 +873,40 @@
                 }
             }
             
+            // Test if QRCode library is loaded
+            function testQRCodeLibrary() {
+                console.log('Testing QRCode library...');
+                console.log('window.QRCode:', window.QRCode);
+                console.log('typeof QRCode:', typeof QRCode);
+                console.log('QRCode.toCanvas:', QRCode ? QRCode.toCanvas : 'Not available');
+                
+                if (!QRCode || typeof QRCode.toCanvas !== 'function') {
+                    console.error('QRCode library not loaded properly');
+                    showNotification('QR Code library failed to load. Trying alternative...', 'error');
+                    loadQRCodeLibrary();
+                    return false;
+                }
+                return true;
+            }
+            
+            // Load QRCode library dynamically if not loaded
+            function loadQRCodeLibrary() {
+                return new Promise((resolve) => {
+                    const script = document.createElement('script');
+                    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.3/qrcode.min.js';
+                    script.onload = function() {
+                        console.log('QRCode library loaded dynamically');
+                        resolve(true);
+                    };
+                    script.onerror = function() {
+                        console.error('Failed to load QRCode library');
+                        showNotification('Failed to load QR Code library. Please refresh the page.', 'error');
+                        resolve(false);
+                    };
+                    document.head.appendChild(script);
+                });
+            }
+            
             // Load saved cards from Supabase
             async function loadCardsFromSupabase() {
                 try {
@@ -1013,13 +1049,16 @@
                         // For AR cards, generate a URL that opens in viewer
                         // Get the current base URL
                         let baseUrl = window.location.origin;
-                        if (window.location.pathname.includes('qr.html')) {
-                            baseUrl = baseUrl + window.location.pathname.replace('qr.html', 'viewer.html');
+                        let path = window.location.pathname;
+                        
+                        // Remove qr.html from path and add viewer.html
+                        if (path.includes('qr.html')) {
+                            path = path.replace('qr.html', 'viewer.html');
                         } else {
-                            baseUrl = baseUrl + '/viewer.html';
+                            path = '/viewer.html';
                         }
                         
-                        qrData = `${baseUrl}?card=${encodeURIComponent(cardId)}`;
+                        qrData = `${baseUrl}${path}?card=${encodeURIComponent(cardId)}`;
                         label = cardId;
                         
                         // Find card in saved cards for description
@@ -1103,6 +1142,15 @@
             
             // Generate and display QR code
             async function generateQrCode() {
+                // First check if QRCode library is available
+                if (!QRCode || typeof QRCode.toCanvas !== 'function') {
+                    const loaded = await loadQRCodeLibrary();
+                    if (!loaded) {
+                        showNotification('QR Code library not available. Cannot generate QR code.', 'error');
+                        return;
+                    }
+                }
+                
                 const qrData = generateQrData();
                 if (!qrData) return;
                 
@@ -1127,6 +1175,10 @@
                         },
                         margin: 1
                     }, function(error) {
+                        // Reset button
+                        generateQrBtn.innerHTML = originalText;
+                        generateQrBtn.disabled = false;
+                        
                         if (error) {
                             console.error('QR Code generation error:', error);
                             showNotification('Error generating QR code: ' + error.message, 'error');
@@ -1147,7 +1199,6 @@
                 } catch (error) {
                     console.error('QR generation error:', error);
                     showNotification('Error generating QR code: ' + error.message, 'error');
-                } finally {
                     // Reset button
                     generateQrBtn.innerHTML = originalText;
                     generateQrBtn.disabled = false;
@@ -1390,6 +1441,12 @@
             // Initialize the page
             async function initQrPage() {
                 console.log('Initializing QR page...');
+                
+                // Test QRCode library first
+                const qrCodeLoaded = testQRCodeLibrary();
+                if (!qrCodeLoaded) {
+                    await loadQRCodeLibrary();
+                }
                 
                 // Initialize Supabase
                 const supabaseInitialized = initSupabase();
