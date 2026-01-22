@@ -6,6 +6,8 @@
     <title>Magic Card Viewer - Scan QR Codes</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <!-- Add Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -272,6 +274,20 @@
             line-height: 1.6;
             color: #333;
             min-height: 80px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .media-container {
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .media-container img, .media-container video {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
         
         .card-meta {
@@ -522,6 +538,7 @@
                 <div class="card-message" id="displayMessage">
                     Your card message will appear here...
                 </div>
+                <div class="media-container" id="mediaContainer"></div>
             </div>
             
             <div class="card-meta">
@@ -583,9 +600,9 @@
     </div>
     
     <script>
-        // Supabase Configuration
+        // Supabase Configuration - Use same credentials as qr.html
         const SUPABASE_URL = 'https://elmhkhvryjzljxskbfps.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVsbWhraHZyeWp6bGp4c2tiZnBzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0NDc3NjMsImV4cCI6MjA4NDAyMzc2M30.Orrh2Pejnt3KPJMTUTmRRkhCwtZVfjUreKvX546bOcw';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVsbWhraHZyeWp6bGp4c2tiZnBzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0NDc3NjMsImV4cCI6MjA4NDAyMzc2M30.Orrh2Pejnt3KPJMTUTmRRkhCwtZVfjUreKvX546bOcw';
         
         // DOM Elements
         const video = document.getElementById('video');
@@ -600,6 +617,7 @@
         const displayMessage = document.getElementById('displayMessage');
         const displayType = document.getElementById('displayType');
         const displayDate = document.getElementById('displayDate');
+        const mediaContainer = document.getElementById('mediaContainer');
         const shareBtn = document.getElementById('shareBtn');
         const qrBtn = document.getElementById('qrBtn');
         const backBtn = document.getElementById('backBtn');
@@ -614,6 +632,7 @@
         let canvas = null;
         let context = null;
         let animationFrame = null;
+        let supabase = null;
         
         // Show notification
         function showNotification(message, type = 'info') {
@@ -637,7 +656,24 @@
             loading.classList.remove('show');
         }
         
-        // Load card from Supabase
+        // Initialize Supabase client
+        function initializeSupabase() {
+            try {
+                if (window.supabase && window.supabase.createClient) {
+                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                    console.log('Supabase client initialized successfully');
+                    return true;
+                } else {
+                    console.error('Supabase library not loaded');
+                    return false;
+                }
+            } catch (error) {
+                console.error('Error initializing Supabase:', error);
+                return false;
+            }
+        }
+        
+        // Load card from Supabase using Supabase JS client
         async function loadCard(cardId) {
             if (!cardId || cardId.trim() === '') {
                 showNotification('Please enter a Card ID', 'error');
@@ -653,23 +689,33 @@
             showLoading(`Loading card ${cardId}...`);
             
             try {
-                // Fetch from Supabase
-                const response = await fetch(
-                    `${SUPABASE_URL}/rest/v1/cards?card_id=eq.${encodeURIComponent(cardId)}&select=*`,
-                    {
-                        headers: {
-                            'apikey': SUPABASE_KEY,
-                            'Authorization': `Bearer ${SUPABASE_KEY}`,
-                            'Content-Type': 'application/json'
-                        }
+                if (!supabase) {
+                    const initialized = initializeSupabase();
+                    if (!initialized) {
+                        throw new Error('Failed to connect to database');
                     }
-                );
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
                 }
                 
-                const cards = await response.json();
+                // Fetch from cards table using Supabase JS client
+                const { data: cards, error } = await supabase
+                    .from('cards')
+                    .select('card_id, message_type, message_text, media_url, file_name, created_at, status')
+                    .eq('card_id', cardId)
+                    .eq('status', 'active')
+                    .limit(1);
+                
+                if (error) {
+                    console.error('Supabase error:', error);
+                    
+                    // Check if it's a "table doesn't exist" error
+                    if (error.message.includes('does not exist')) {
+                        showNotification('Cards table not found. Create cards first in the Maker.', 'error');
+                    } else {
+                        showNotification('Error loading card: ' + error.message, 'error');
+                    }
+                    hideLoading();
+                    return null;
+                }
                 
                 if (!cards || cards.length === 0) {
                     showNotification(`Card ${cardId} not found`, 'error');
@@ -711,6 +757,38 @@
                 });
             } else {
                 displayDate.textContent = 'Recently';
+            }
+            
+            // Display media if available
+            mediaContainer.innerHTML = '';
+            if (card.media_url) {
+                const fileExtension = card.media_url.split('.').pop().toLowerCase();
+                const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension);
+                const isVideo = ['mp4', 'webm', 'ogg'].includes(fileExtension);
+                
+                if (isImage) {
+                    const img = document.createElement('img');
+                    img.src = card.media_url;
+                    img.alt = card.file_name || 'Card Media';
+                    img.onload = () => showNotification('Media loaded successfully', 'success');
+                    img.onerror = () => showNotification('Could not load media', 'error');
+                    mediaContainer.appendChild(img);
+                } else if (isVideo) {
+                    const video = document.createElement('video');
+                    video.src = card.media_url;
+                    video.controls = true;
+                    video.style.width = '100%';
+                    mediaContainer.appendChild(video);
+                } else {
+                    // For other file types, show a link
+                    const link = document.createElement('a');
+                    link.href = card.media_url;
+                    link.textContent = card.file_name || 'Download Media';
+                    link.target = '_blank';
+                    link.className = 'btn btn-secondary';
+                    link.style.textDecoration = 'none';
+                    mediaContainer.appendChild(link);
+                }
             }
             
             // Show card, hide scanner
@@ -838,6 +916,7 @@
                     
                     // Clean up card ID
                     if (cardId) {
+                        cardId = decodeURIComponent(cardId); // Decode URL encoded characters
                         cardId = cardId.toUpperCase();
                         if (!cardId.startsWith('CARD')) {
                             cardId = 'CARD' + cardId.replace(/[^0-9]/g, '');
@@ -902,7 +981,7 @@
                 return;
             }
             
-            const cardUrl = `${window.location.origin}${window.location.pathname}?card=${currentCard.card_id}`;
+            const cardUrl = `${window.location.origin}${window.location.pathname}?card=${encodeURIComponent(currentCard.card_id)}`;
             const shareText = `Magic Card: ${currentCard.card_id}\n\n${currentCard.message_text}\n\nView at: ${cardUrl}`;
             
             if (navigator.share) {
@@ -935,7 +1014,7 @@
             }
             
             // Open QR generator page
-            window.open(`qr.html?card=${currentCard.card_id}`, '_blank');
+            window.open(`qr.html?card=${encodeURIComponent(currentCard.card_id)}`, '_blank');
         }
         
         // Check URL for card parameter
@@ -944,12 +1023,18 @@
             const cardId = params.get('card');
             
             if (cardId) {
+                console.log('Found card ID in URL:', cardId);
                 await handleCardLoad(cardId);
+                return true;
             }
+            return false;
         }
         
         // Initialize
         async function initialize() {
+            // Initialize Supabase
+            initializeSupabase();
+            
             // Event Listeners
             startBtn.addEventListener('click', startScanner);
             stopBtn.addEventListener('click', stopScanner);
@@ -975,10 +1060,10 @@
             backBtn.addEventListener('click', resetToScanner);
             
             // Check URL for direct card access
-            await checkUrlForCard();
+            const hasCardInUrl = await checkUrlForCard();
             
             // Auto-start scanner if no card loaded
-            if (!currentCard) {
+            if (!hasCardInUrl) {
                 // Start scanner after a brief delay
                 setTimeout(startScanner, 1000);
             }
