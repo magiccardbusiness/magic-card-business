@@ -8,6 +8,7 @@
     <!-- Add Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <style>
+        /* ALL YOUR CSS STAYS EXACTLY THE SAME - KEEP IT ALL */
         * {
             margin: 0;
             padding: 0;
@@ -746,29 +747,9 @@
         
         // Main application
         document.addEventListener('DOMContentLoaded', function() {
-            // Initialize Supabase client
-            let supabase = null;
-            let isSupabaseConnected = false;
+            console.log('DOM fully loaded, starting initialization...');
             
-            try {
-                if (window.supabase && window.supabase.createClient) {
-                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                    console.log('Supabase client initialized successfully');
-                    isSupabaseConnected = true;
-                    updateSyncStatus(true);
-                } else {
-                    console.error('Supabase library not loaded');
-                    updateSyncStatus(false);
-                }
-            } catch (error) {
-                console.error('Error initializing Supabase:', error);
-                updateSyncStatus(false);
-            }
-            
-            // Initialize QR code generator
-            const qrGenerator = new QRCodeGenerator();
-            
-            // DOM elements
+            // Initialize DOM elements first
             const cardIdInput = document.getElementById('cardId');
             const cardSelect = document.getElementById('cardSelect');
             const qrTypeRadios = document.querySelectorAll('input[name="qrType"]');
@@ -788,14 +769,26 @@
             const syncStatus = document.getElementById('syncStatus');
             const recentQrGrid = document.getElementById('recentQrGrid');
             
+            console.log('DOM elements loaded:', {
+                cardIdInput: !!cardIdInput,
+                syncStatus: !!syncStatus,
+                notification: !!notification
+            });
+            
             // State
             let currentQrColor = '#000000';
             let currentQrData = null;
             let recentQrCodes = JSON.parse(localStorage.getItem('recentQrCodes')) || [];
             let loadedCards = [];
+            let supabase = null;
+            let isSupabaseConnected = false;
             
             // Show notification
             function showNotification(message, type = 'info') {
+                if (!notification) {
+                    console.error('Notification element not found');
+                    return;
+                }
                 notification.textContent = message;
                 notification.className = `notification ${type}`;
                 notification.classList.add('show');
@@ -807,6 +800,11 @@
             
             // Update sync status
             function updateSyncStatus(connected) {
+                if (!syncStatus) {
+                    console.error('syncStatus element not found');
+                    return;
+                }
+                
                 if (connected) {
                     syncStatus.className = 'sync-status online';
                     syncStatus.innerHTML = '<i class="fas fa-cloud"></i><span>Connected to Supabase</span>';
@@ -816,10 +814,33 @@
                 }
             }
             
+            // Initialize Supabase client AFTER DOM is loaded
+            function initializeSupabase() {
+                try {
+                    if (window.supabase && window.supabase.createClient) {
+                        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                        console.log('Supabase client initialized successfully');
+                        isSupabaseConnected = true;
+                        updateSyncStatus(true);
+                        return true;
+                    } else {
+                        console.error('Supabase library not loaded');
+                        updateSyncStatus(false);
+                        return false;
+                    }
+                } catch (error) {
+                    console.error('Error initializing Supabase:', error);
+                    updateSyncStatus(false);
+                    return false;
+                }
+            }
+            
             // Load cards from Supabase (using your exact table structure)
             async function loadCardsFromSupabase() {
                 if (!isSupabaseConnected || !supabase) {
-                    cardSelect.innerHTML = '<option value="">Supabase not connected</option>';
+                    if (cardSelect) {
+                        cardSelect.innerHTML = '<option value="">Supabase not connected</option>';
+                    }
                     showNotification('Cannot connect to Supabase. Working in offline mode.', 'error');
                     return;
                 }
@@ -838,45 +859,57 @@
                         
                         // Check if it's a "table doesn't exist" error
                         if (error.message.includes('does not exist')) {
-                            cardSelect.innerHTML = '<option value="">No cards table found</option>';
+                            if (cardSelect) {
+                                cardSelect.innerHTML = '<option value="">No cards table found</option>';
+                            }
                             showNotification('Cards table not found in Supabase. Create cards first in the Maker.', 'error');
                         } else {
-                            cardSelect.innerHTML = '<option value="">Error loading cards</option>';
+                            if (cardSelect) {
+                                cardSelect.innerHTML = '<option value="">Error loading cards</option>';
+                            }
                             showNotification('Error loading cards: ' + error.message, 'error');
                         }
                         return;
                     }
                     
                     if (cards && cards.length > 0) {
-                        cardSelect.innerHTML = '<option value="">Select a card from Supabase</option>';
+                        if (cardSelect) {
+                            cardSelect.innerHTML = '<option value="">Select a card from Supabase</option>';
+                        }
                         loadedCards = cards;
                         
                         cards.forEach(card => {
-                            const option = document.createElement('option');
-                            option.value = card.card_id;
-                            
-                            // Create a descriptive label
-                            let label = card.card_id;
-                            if (card.message_text) {
-                                label += ` - ${card.message_text.substring(0, 25)}`;
-                                if (card.message_text.length > 25) label += '...';
-                            } else if (card.message_type) {
-                                label += ` - ${card.message_type}`;
+                            if (cardSelect) {
+                                const option = document.createElement('option');
+                                option.value = card.card_id;
+                                
+                                // Create a descriptive label
+                                let label = card.card_id;
+                                if (card.message_text) {
+                                    label += ` - ${card.message_text.substring(0, 25)}`;
+                                    if (card.message_text.length > 25) label += '...';
+                                } else if (card.message_type) {
+                                    label += ` - ${card.message_type}`;
+                                }
+                                
+                                option.textContent = label;
+                                option.title = card.message_text || card.message_type || 'No message';
+                                cardSelect.appendChild(option);
                             }
-                            
-                            option.textContent = label;
-                            option.title = card.message_text || card.message_type || 'No message';
-                            cardSelect.appendChild(option);
                         });
                         
                         showNotification(`Loaded ${cards.length} cards from Supabase`, 'success');
                     } else {
-                        cardSelect.innerHTML = '<option value="">No cards found in Supabase</option>';
+                        if (cardSelect) {
+                            cardSelect.innerHTML = '<option value="">No cards found in Supabase</option>';
+                        }
                         showNotification('No cards found. Create cards first in the Maker.', 'info');
                     }
                 } catch (error) {
                     console.error('Error loading cards:', error);
-                    cardSelect.innerHTML = '<option value="">Error loading cards</option>';
+                    if (cardSelect) {
+                        cardSelect.innerHTML = '<option value="">Error loading cards</option>';
+                    }
                     showNotification('Error loading cards: ' + error.message, 'error');
                 }
             }
@@ -937,6 +970,8 @@
             
             // Update dynamic options
             function updateDynamicOptions() {
+                if (!dynamicOptions) return;
+                
                 const qrType = document.querySelector('input[name="qrType"]:checked').value;
                 let optionsHTML = '';
                 
@@ -1007,7 +1042,7 @@
                 
                 switch(qrType) {
                     case 'card':
-                        cardId = cardIdInput.value.trim();
+                        cardId = cardIdInput ? cardIdInput.value.trim() : '';
                         if (!cardId) {
                             showNotification('Please enter a Card ID', 'error');
                             return null;
@@ -1114,12 +1149,15 @@
                 currentQrData = qrData;
                 
                 // Show loading
-                const originalText = generateBtn.innerHTML;
-                generateBtn.innerHTML = '<div class="loading"></div> Generating...';
-                generateBtn.disabled = true;
+                if (generateBtn) {
+                    const originalText = generateBtn.innerHTML;
+                    generateBtn.innerHTML = '<div class="loading"></div> Generating...';
+                    generateBtn.disabled = true;
+                }
                 
                 try {
                     // Generate QR code
+                    const qrGenerator = new QRCodeGenerator();
                     const success = qrGenerator.generate(qrData.data);
                     
                     if (success) {
@@ -1127,17 +1165,17 @@
                         qrGenerator.changeColor(currentQrColor);
                         
                         // Show QR code
-                        qrCanvas.style.display = 'block';
-                        emptyQr.style.display = 'none';
+                        if (qrCanvas) qrCanvas.style.display = 'block';
+                        if (emptyQr) emptyQr.style.display = 'none';
                         
                         // Update info
-                        qrLabel.textContent = qrData.label;
-                        qrType.textContent = qrData.type.charAt(0).toUpperCase() + qrData.type.slice(1);
-                        qrDesc.textContent = qrData.description;
-                        qrInfo.style.display = 'block';
+                        if (qrLabel) qrLabel.textContent = qrData.label;
+                        if (qrType) qrType.textContent = qrData.type.charAt(0).toUpperCase() + qrData.type.slice(1);
+                        if (qrDesc) qrDesc.textContent = qrData.description;
+                        if (qrInfo) qrInfo.style.display = 'block';
                         
                         // Save to local storage for recent list
-                        addToRecentQrCodes(qrData);
+                        addToRecentQrCodes(qrData, qrGenerator);
                         
                         // Save to Supabase if connected
                         if (isSupabaseConnected) {
@@ -1154,13 +1192,15 @@
                     showNotification('Error: ' + error.message, 'error');
                 } finally {
                     // Reset button
-                    generateBtn.innerHTML = originalText;
-                    generateBtn.disabled = false;
+                    if (generateBtn) {
+                        generateBtn.innerHTML = '<i class="fas fa-bolt"></i> Generate QR Code';
+                        generateBtn.disabled = false;
+                    }
                 }
             }
             
             // Add QR code to recent list
-            function addToRecentQrCodes(qrData) {
+            function addToRecentQrCodes(qrData, qrGenerator) {
                 const recentItem = {
                     ...qrData,
                     color: currentQrColor,
@@ -1194,6 +1234,8 @@
             
             // Update recent QR codes grid
             function updateRecentQrGrid() {
+                if (!recentQrGrid) return;
+                
                 if (recentQrCodes.length === 0) {
                     recentQrGrid.innerHTML = `
                         <div style="text-align: center; padding: 40px; color: #999; grid-column: 1 / -1;">
@@ -1256,7 +1298,7 @@
                 const qr = recentQrCodes[index];
                 
                 // Set values
-                if (qr.type === 'card') {
+                if (qr.type === 'card' && cardIdInput) {
                     cardIdInput.value = qr.cardId;
                 }
                 
@@ -1302,119 +1344,161 @@
                 });
             }
             
-            // Event Listeners
-            qrTypeRadios.forEach(radio => {
-                radio.addEventListener('change', function() {
-                    // Update active class
-                    document.querySelectorAll('.qr-option').forEach(option => {
-                        option.classList.remove('active');
+            // Initialize everything
+            function initializeApp() {
+                console.log('Initializing application...');
+                
+                // Set initial sync status
+                updateSyncStatus(false);
+                
+                // Initialize Supabase
+                const supabaseInitialized = initializeSupabase();
+                
+                // Initialize QR code generator UI
+                updateDynamicOptions();
+                updateRecentQrGrid();
+                
+                // Set up event listeners
+                if (qrTypeRadios) {
+                    qrTypeRadios.forEach(radio => {
+                        radio.addEventListener('change', function() {
+                            // Update active class
+                            document.querySelectorAll('.qr-option').forEach(option => {
+                                option.classList.remove('active');
+                            });
+                            if (this.parentElement) {
+                                this.parentElement.classList.add('active');
+                            }
+                            
+                            // Update options
+                            updateDynamicOptions();
+                        });
                     });
-                    this.parentElement.classList.add('active');
-                    
-                    // Update options
-                    updateDynamicOptions();
-                });
-            });
-            
-            colorBoxes.forEach(box => {
-                box.addEventListener('click', function() {
-                    currentQrColor = this.getAttribute('data-color');
-                    updateColorSelection(currentQrColor);
-                    
-                    // Update existing QR code color
-                    if (qrCanvas.style.display === 'block') {
-                        qrGenerator.changeColor(currentQrColor);
-                    }
-                });
-            });
-            
-            // Card selection from dropdown
-            cardSelect.addEventListener('change', function() {
-                if (this.value) {
-                    cardIdInput.value = this.value;
-                    // Set QR type to card
-                    document.getElementById('typeCard').checked = true;
-                    document.querySelectorAll('.qr-option').forEach(option => {
-                        option.classList.remove('active');
+                }
+                
+                if (colorBoxes) {
+                    colorBoxes.forEach(box => {
+                        box.addEventListener('click', function() {
+                            currentQrColor = this.getAttribute('data-color');
+                            updateColorSelection(currentQrColor);
+                            
+                            // Update existing QR code color
+                            if (qrCanvas && qrCanvas.style.display === 'block') {
+                                const qrGenerator = new QRCodeGenerator();
+                                qrGenerator.changeColor(currentQrColor);
+                            }
+                        });
                     });
-                    document.getElementById('typeCard').parentElement.classList.add('active');
-                    updateDynamicOptions();
-                    
-                    // Show card info if available
-                    const cardDetails = getCardDetails(this.value);
-                    if (cardDetails) {
-                        showNotification(`Selected: ${cardDetails.type} - ${cardDetails.message.substring(0, 50)}...`, 'info');
+                }
+                
+                // Card selection from dropdown
+                if (cardSelect) {
+                    cardSelect.addEventListener('change', function() {
+                        if (this.value && cardIdInput) {
+                            cardIdInput.value = this.value;
+                            // Set QR type to card
+                            const typeCardRadio = document.getElementById('typeCard');
+                            if (typeCardRadio) {
+                                typeCardRadio.checked = true;
+                                document.querySelectorAll('.qr-option').forEach(option => {
+                                    option.classList.remove('active');
+                                });
+                                if (typeCardRadio.parentElement) {
+                                    typeCardRadio.parentElement.classList.add('active');
+                                }
+                            }
+                            updateDynamicOptions();
+                            
+                            // Show card info if available
+                            const cardDetails = getCardDetails(this.value);
+                            if (cardDetails) {
+                                showNotification(`Selected: ${cardDetails.type} - ${cardDetails.message.substring(0, 50)}...`, 'info');
+                            }
+                        }
+                    });
+                }
+                
+                if (generateBtn) {
+                    generateBtn.addEventListener('click', generateQR);
+                }
+                
+                if (clearBtn) {
+                    clearBtn.addEventListener('click', function() {
+                        if (cardIdInput) cardIdInput.value = '';
+                        if (qrCanvas) qrCanvas.style.display = 'none';
+                        if (emptyQr) emptyQr.style.display = 'block';
+                        if (qrInfo) qrInfo.style.display = 'none';
+                        showNotification('Cleared QR code', 'info');
+                    });
+                }
+                
+                if (downloadPngBtn) {
+                    downloadPngBtn.addEventListener('click', function() {
+                        if (!qrCanvas || qrCanvas.style.display !== 'block') {
+                            showNotification('No QR code to download', 'error');
+                            return;
+                        }
+                        
+                        const qrGenerator = new QRCodeGenerator();
+                        const filename = `QRCode-${currentQrData ? currentQrData.label.replace(/[^a-z0-9]/gi, '-') : 'qr'}-${Date.now()}.png`;
+                        qrGenerator.download(filename);
+                        showNotification('QR code downloaded as PNG', 'success');
+                    });
+                }
+                
+                if (shareBtn) {
+                    shareBtn.addEventListener('click', function() {
+                        if (!qrCanvas || qrCanvas.style.display !== 'block') {
+                            showNotification('No QR code to share', 'error');
+                            return;
+                        }
+                        
+                        const qrGenerator = new QRCodeGenerator();
+                        const dataURL = qrGenerator.getDataURL();
+                        
+                        // Copy to clipboard using modern API
+                        navigator.clipboard.writeText(dataURL).then(() => {
+                            showNotification('QR code image copied to clipboard!', 'success');
+                        }).catch(err => {
+                            // Fallback for older browsers
+                            const tempInput = document.createElement('input');
+                            tempInput.value = dataURL;
+                            document.body.appendChild(tempInput);
+                            tempInput.select();
+                            document.execCommand('copy');
+                            document.body.removeChild(tempInput);
+                            showNotification('QR code image copied to clipboard!', 'success');
+                        });
+                    });
+                }
+                
+                // Load cards from Supabase
+                if (supabaseInitialized) {
+                    setTimeout(() => {
+                        loadCardsFromSupabase();
+                    }, 500);
+                } else {
+                    // Add some sample cards if Supabase is not connected
+                    if (cardSelect) {
+                        cardSelect.innerHTML = '<option value="">Supabase not connected. Using demo cards.</option>';
+                        const sampleOption = document.createElement('option');
+                        sampleOption.value = 'CARD1234';
+                        sampleOption.textContent = 'CARD1234 - Sample AR Card';
+                        cardSelect.appendChild(sampleOption);
                     }
                 }
-            });
-            
-            generateBtn.addEventListener('click', generateQR);
-            
-            clearBtn.addEventListener('click', function() {
-                cardIdInput.value = '';
-                qrCanvas.style.display = 'none';
-                emptyQr.style.display = 'block';
-                qrInfo.style.display = 'none';
-                showNotification('Cleared QR code', 'info');
-            });
-            
-            downloadPngBtn.addEventListener('click', function() {
-                if (qrCanvas.style.display !== 'block') {
-                    showNotification('No QR code to download', 'error');
-                    return;
-                }
                 
-                const filename = `QRCode-${currentQrData.label.replace(/[^a-z0-9]/gi, '-')}-${Date.now()}.png`;
-                qrGenerator.download(filename);
-                showNotification('QR code downloaded as PNG', 'success');
-            });
-            
-            shareBtn.addEventListener('click', function() {
-                if (qrCanvas.style.display !== 'block') {
-                    showNotification('No QR code to share', 'error');
-                    return;
-                }
+                // Auto-generate a sample QR code on load
+                setTimeout(() => {
+                    generateQR();
+                }, 1000);
                 
-                const dataURL = qrGenerator.getDataURL();
-                
-                // Copy to clipboard using modern API
-                navigator.clipboard.writeText(dataURL).then(() => {
-                    showNotification('QR code image copied to clipboard!', 'success');
-                }).catch(err => {
-                    // Fallback for older browsers
-                    const tempInput = document.createElement('input');
-                    tempInput.value = dataURL;
-                    document.body.appendChild(tempInput);
-                    tempInput.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(tempInput);
-                    showNotification('QR code image copied to clipboard!', 'success');
-                });
-            });
-            
-            // Initialize
-            updateDynamicOptions();
-            updateRecentQrGrid();
-            
-            // Load cards from Supabase
-            if (isSupabaseConnected) {
-                loadCardsFromSupabase();
-            } else {
-                // Add some sample cards if Supabase is not connected
-                cardSelect.innerHTML = '<option value="">Supabase not connected. Using demo cards.</option>';
-                const sampleOption = document.createElement('option');
-                sampleOption.value = 'CARD1234';
-                sampleOption.textContent = 'CARD1234 - Sample AR Card';
-                cardSelect.appendChild(sampleOption);
+                console.log('QR Code Generator initialized successfully!');
+                console.log('Supabase connected:', isSupabaseConnected);
             }
             
-            // Auto-generate a sample QR code on load
-            setTimeout(() => {
-                generateQR();
-            }, 1000);
-            
-            console.log('QR Code Generator initialized successfully!');
-            console.log('Supabase connected:', isSupabaseConnected);
+            // Start the application
+            initializeApp();
         });
     </script>
 </body>
