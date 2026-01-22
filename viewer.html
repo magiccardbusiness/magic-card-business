@@ -658,6 +658,7 @@
         
         // Initialize Supabase client
         function initializeSupabase() {
+            console.log('Initializing Supabase...');
             try {
                 if (window.supabase && window.supabase.createClient) {
                     supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -677,6 +678,7 @@
         
         // Load card from Supabase using Supabase JS client
         async function loadCard(cardId) {
+            console.log('loadCard called with:', cardId);
             if (!cardId || cardId.trim() === '') {
                 showNotification('Please enter a Card ID', 'error');
                 return null;
@@ -738,7 +740,7 @@
                 
             } catch (error) {
                 console.error('Error loading card:', error);
-                showNotification('Failed to load card from database', 'error');
+                showNotification('Failed to load card from database. Error: ' + error.message, 'error');
                 hideLoading();
                 return null;
             }
@@ -746,6 +748,7 @@
         
         // Display card
         function displayCard(card) {
+            console.log('Displaying card:', card);
             currentCard = card;
             
             // Update display
@@ -1032,21 +1035,38 @@
             window.open(`qr.html?card=${encodeURIComponent(currentCard.card_id)}`, '_blank');
         }
         
-        // Check URL for card parameter
+        // Check URL for card parameter - SIMPLIFIED VERSION
         async function checkUrlForCard() {
+            console.log('Checking URL for card parameter...');
             const params = new URLSearchParams(window.location.search);
             const cardId = params.get('card');
             
             if (cardId) {
                 console.log('Found card ID in URL:', cardId);
                 
-                // Initialize Supabase first if not already done
+                // Wait for Supabase to initialize
                 if (!supabase) {
+                    console.log('Initializing Supabase from URL check...');
                     initializeSupabase();
-                    // Give Supabase a moment to initialize
-                    await new Promise(resolve => setTimeout(resolve, 100));
+                    // Wait a bit for initialization
+                    await new Promise(resolve => setTimeout(resolve, 500));
                 }
                 
+                // Directly handle the card load
+                await handleCardLoad(cardId);
+                return true;
+            }
+            return false;
+        }
+        
+        // Load from URL parameter - NEW SIMPLE FUNCTION
+        async function loadFromUrl() {
+            console.log('loadFromUrl called');
+            const urlParams = new URLSearchParams(window.location.search);
+            const cardId = urlParams.get('card');
+            
+            if (cardId) {
+                console.log('Loading card from URL parameter:', cardId);
                 await handleCardLoad(cardId);
                 return true;
             }
@@ -1055,7 +1075,10 @@
         
         // Initialize
         async function initialize() {
+            console.log('Initializing viewer...');
+            
             // Initialize Supabase FIRST
+            console.log('Step 1: Initializing Supabase');
             const supabaseInitialized = initializeSupabase();
             
             if (!supabaseInitialized) {
@@ -1063,6 +1086,7 @@
             }
             
             // Event Listeners
+            console.log('Step 2: Setting up event listeners');
             startBtn.addEventListener('click', startScanner);
             stopBtn.addEventListener('click', stopScanner);
             
@@ -1086,20 +1110,29 @@
             qrBtn.addEventListener('click', generateQr);
             backBtn.addEventListener('click', resetToScanner);
             
-            // Check URL for direct card access - wait for Supabase
+            // Check URL for direct card access - SIMPLIFIED
+            console.log('Step 3: Checking URL for card parameter');
             setTimeout(async () => {
-                const hasCardInUrl = await checkUrlForCard();
+                const hasCardInUrl = await loadFromUrl();
                 
                 // Auto-start scanner if no card loaded
                 if (!hasCardInUrl) {
+                    console.log('No card in URL, starting scanner...');
                     // Start scanner after a brief delay
                     setTimeout(startScanner, 1000);
                 }
-            }, 200);
+            }, 300);
         }
         
         // Start when page loads
         document.addEventListener('DOMContentLoaded', initialize);
+        
+        // Debug: Log when page is fully loaded
+        window.addEventListener('load', () => {
+            console.log('Page fully loaded');
+            console.log('URL:', window.location.href);
+            console.log('Query params:', new URLSearchParams(window.location.search).toString());
+        });
     </script>
 </body>
 </html>
