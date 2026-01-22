@@ -6,9 +6,10 @@
     <title>Magic Card Viewer - Scan QR Codes</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-    <!-- Add Supabase JS -->
+    <!-- Add Supabase JS - ONLY ONCE -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <style>
+        /* ... KEEP ALL THE SAME STYLES ... */
         * {
             margin: 0;
             padding: 0;
@@ -625,14 +626,14 @@
         const loadingText = document.getElementById('loadingText');
         const notification = document.getElementById('notification');
         
-        // State
+        // State - DO NOT DECLARE 'supabase' HERE, let it be global
         let stream = null;
         let isScanning = false;
         let currentCard = null;
         let canvas = null;
         let context = null;
         let animationFrame = null;
-        let supabase = null;
+        // Remove: let supabase = null; - Let it be managed by the Supabase library
         
         // Show notification
         function showNotification(message, type = 'info') {
@@ -656,24 +657,41 @@
             loading.classList.remove('show');
         }
         
-        // Initialize Supabase client
+        // Initialize Supabase client - FIXED: Check if it already exists
         function initializeSupabase() {
             console.log('Initializing Supabase...');
             try {
-                if (window.supabase && window.supabase.createClient) {
-                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                    console.log('Supabase client initialized successfully');
-                    return true;
+                // Check if supabase is already defined globally by the library
+                if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
+                    console.log('Supabase library is available');
+                    
+                    // Create client only if it doesn't exist
+                    if (!window.supabaseClient) {
+                        window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                        console.log('Supabase client created successfully');
+                    } else {
+                        console.log('Supabase client already exists');
+                    }
+                    
+                    return window.supabaseClient;
                 } else {
                     console.error('Supabase library not loaded');
                     showNotification('Database library not loaded. Please refresh the page.', 'error');
-                    return false;
+                    return null;
                 }
             } catch (error) {
                 console.error('Error initializing Supabase:', error);
                 showNotification('Error connecting to database: ' + error.message, 'error');
-                return false;
+                return null;
             }
+        }
+        
+        // Get Supabase client
+        function getSupabaseClient() {
+            if (!window.supabaseClient) {
+                return initializeSupabase();
+            }
+            return window.supabaseClient;
         }
         
         // Load card from Supabase using Supabase JS client
@@ -693,18 +711,15 @@
             showLoading(`Loading card ${cardId}...`);
             
             try {
-                if (!supabase) {
-                    console.log('Supabase not initialized, initializing now...');
-                    const initialized = initializeSupabase();
-                    if (!initialized) {
-                        throw new Error('Failed to connect to database');
-                    }
+                const supabaseClient = getSupabaseClient();
+                if (!supabaseClient) {
+                    throw new Error('Failed to connect to database');
                 }
                 
                 console.log('Fetching card from Supabase:', cardId);
                 
                 // Fetch from cards table using Supabase JS client
-                const { data: cards, error } = await supabase
+                const { data: cards, error } = await supabaseClient
                     .from('cards')
                     .select('card_id, message_type, message_text, media_url, file_name, created_at, status')
                     .eq('card_id', cardId)
@@ -963,7 +978,6 @@
             }
             
             console.log('Looking for card:', cardId);
-            console.log('Supabase initialized:', supabase !== null);
             
             const card = await loadCard(cardId);
             if (card) {
@@ -1035,31 +1049,7 @@
             window.open(`qr.html?card=${encodeURIComponent(currentCard.card_id)}`, '_blank');
         }
         
-        // Check URL for card parameter - SIMPLIFIED VERSION
-        async function checkUrlForCard() {
-            console.log('Checking URL for card parameter...');
-            const params = new URLSearchParams(window.location.search);
-            const cardId = params.get('card');
-            
-            if (cardId) {
-                console.log('Found card ID in URL:', cardId);
-                
-                // Wait for Supabase to initialize
-                if (!supabase) {
-                    console.log('Initializing Supabase from URL check...');
-                    initializeSupabase();
-                    // Wait a bit for initialization
-                    await new Promise(resolve => setTimeout(resolve, 500));
-                }
-                
-                // Directly handle the card load
-                await handleCardLoad(cardId);
-                return true;
-            }
-            return false;
-        }
-        
-        // Load from URL parameter - NEW SIMPLE FUNCTION
+        // Load from URL parameter
         async function loadFromUrl() {
             console.log('loadFromUrl called');
             const urlParams = new URLSearchParams(window.location.search);
@@ -1079,11 +1069,7 @@
             
             // Initialize Supabase FIRST
             console.log('Step 1: Initializing Supabase');
-            const supabaseInitialized = initializeSupabase();
-            
-            if (!supabaseInitialized) {
-                showNotification('Failed to connect to database. Please check your connection.', 'error');
-            }
+            initializeSupabase();
             
             // Event Listeners
             console.log('Step 2: Setting up event listeners');
@@ -1110,7 +1096,7 @@
             qrBtn.addEventListener('click', generateQr);
             backBtn.addEventListener('click', resetToScanner);
             
-            // Check URL for direct card access - SIMPLIFIED
+            // Check URL for direct card access
             console.log('Step 3: Checking URL for card parameter');
             setTimeout(async () => {
                 const hasCardInUrl = await loadFromUrl();
