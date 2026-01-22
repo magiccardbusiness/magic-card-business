@@ -1,4 +1,1025 @@
-                        description = `${cardDetails.type}: ${cardDetails.message.substring(0, 50)}...`;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Generator | AR Magic Cards</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Add Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <!-- Add QRCode library - UPDATED TO MORE RELIABLE VERSION -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <style>
+        /* ALL YOUR CSS STAYS EXACTLY THE SAME - KEEP IT ALL */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            flex: 1;
+        }
+        
+        header {
+            text-align: center;
+            color: white;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.5;
+        }
+        
+        .sync-status {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            backdrop-filter: blur(5px);
+        }
+        
+        .sync-status.online {
+            background: rgba(0, 176, 155, 0.3);
+        }
+        
+        .sync-status.offline {
+            background: rgba(255, 65, 108, 0.3);
+        }
+        
+        .content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            justify-content: center;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            flex: 1;
+            min-width: 300px;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+        
+        .card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .card h2 i {
+            color: #11998e;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #444;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            border-color: #11998e;
+            outline: none;
+        }
+        
+        .qr-options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .qr-option {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .qr-option:hover {
+            background-color: #f9f9f9;
+        }
+        
+        .qr-option.active {
+            border-color: #11998e;
+            background-color: #e6f7f3;
+        }
+        
+        .qr-option input {
+            width: auto;
+            margin-right: 10px;
+        }
+        
+        .color-picker {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .color-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .color-box {
+            width: 30px;
+            height: 30px;
+            border-radius: 5px;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+        
+        .color-box.active {
+            border-color: #333;
+            transform: scale(1.1);
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+        }
+        
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s;
+            flex: 1;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(to right, #11998e, #38ef7d);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(17, 153, 142, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+        
+        .qr-display {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 350px;
+            border: 2px dashed #ccc;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            background-color: #f9f9f9;
+        }
+        
+        #qrCanvas {
+            max-width: 250px;
+            max-height: 250px;
+            display: none;
+        }
+        
+        .empty-qr {
+            text-align: center;
+            color: #999;
+        }
+        
+        .empty-qr i {
+            font-size: 4rem;
+            margin-bottom: 15px;
+        }
+        
+        .qr-info {
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .qr-label {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #11998e;
+            margin-bottom: 10px;
+        }
+        
+        .qr-type {
+            display: inline-block;
+            background: #e6f7f3;
+            color: #0d7a6f;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+        
+        .download-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+        
+        .download-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #f0f0f0;
+            color: #333;
+        }
+        
+        .download-btn:hover {
+            background: #e0e0e0;
+        }
+        
+        .download-btn.primary {
+            background: linear-gradient(to right, #11998e, #38ef7d);
+            color: white;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            opacity: 0;
+            transform: translateX(100px);
+            transition: all 0.5s;
+        }
+        
+        .notification.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        
+        .notification.success {
+            background: linear-gradient(to right, #11998e, #38ef7d);
+        }
+        
+        .notification.error {
+            background: linear-gradient(to right, #ff416c, #ff4b2b);
+        }
+        
+        .notification.info {
+            background: linear-gradient(to right, #36D1DC, #5B86E5);
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #11998e;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @media (max-width: 768px) {
+            .content {
+                flex-direction: column;
+            }
+            
+            .card {
+                max-width: 100%;
+            }
+            
+            .qr-options {
+                grid-template-columns: 1fr;
+            }
+            
+            .buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sync-status" id="syncStatus">
+            <i class="fas fa-cloud"></i>
+            <span>Connecting to Supabase...</span>
+        </div>
+        
+        <header>
+            <h1><i class="fas fa-qrcode"></i> QR Code Generator</h1>
+            <p>Generate QR codes for your AR Magic Cards from Supabase database. Share them with friends or print them for physical cards.</p>
+        </header>
+        
+        <div class="content">
+            <!-- Generator Card -->
+            <div class="card">
+                <h2><i class="fas fa-cogs"></i> QR Code Settings</h2>
+                
+                <div class="form-group">
+                    <label for="cardId">Card ID:</label>
+                    <input type="text" id="cardId" placeholder="Enter Card ID (e.g., CARD1234)" value="CARD1234">
+                </div>
+                
+                <div class="form-group">
+                    <label for="cardSelect">Select from Supabase Cards:</label>
+                    <select id="cardSelect" class="card-select">
+                        <option value="">Loading cards from Supabase...</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>QR Code Type:</label>
+                    <div class="qr-options">
+                        <div class="qr-option active">
+                            <input type="radio" id="typeCard" name="qrType" value="card" checked>
+                            <label for="typeCard">AR Card</label>
+                        </div>
+                        <div class="qr-option">
+                            <input type="radio" id="typeUrl" name="qrType" value="url">
+                            <label for="typeUrl">Website URL</label>
+                        </div>
+                        <div class="qr-option">
+                            <input type="radio" id="typeText" name="qrType" value="text">
+                            <label for="typeText">Plain Text</label>
+                        </div>
+                        <div class="qr-option">
+                            <input type="radio" id="typeWifi" name="qrType" value="wifi">
+                            <label for="typeWifi">Wi-Fi</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="dynamicOptions">
+                    <div class="form-group">
+                        <label>AR Card Options:</label>
+                        <div style="background-color: #f0f8ff; padding: 15px; border-radius: 8px;">
+                            <p style="margin-bottom: 10px; color: #555;">QR code will open the card directly in the AR scanner.</p>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <input type="checkbox" id="autoScan" checked>
+                                <label for="autoScan" style="font-weight: normal;">Auto-scan card when opened</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>QR Code Color:</label>
+                    <div class="color-picker">
+                        <div class="color-option">
+                            <div class="color-box active" style="background-color: #000000;" data-color="#000000"></div>
+                            <span>Black</span>
+                        </div>
+                        <div class="color-option">
+                            <div class="color-box" style="background-color: #11998e;" data-color="#11998e"></div>
+                            <span>Teal</span>
+                        </div>
+                        <div class="color-option">
+                            <div class="color-box" style="background-color: #2575fc;" data-color="#2575fc"></div>
+                            <span>Blue</span>
+                        </div>
+                        <div class="color-option">
+                            <div class="color-box" style="background-color: #ff416c;" data-color="#ff416c"></div>
+                            <span>Pink</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="buttons">
+                    <button class="btn btn-primary" id="generateBtn">
+                        <i class="fas fa-bolt"></i> Generate QR Code
+                    </button>
+                    <button class="btn btn-secondary" id="clearBtn">
+                        <i class="fas fa-trash"></i> Clear
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Preview Card -->
+            <div class="card">
+                <h2><i class="fas fa-eye"></i> QR Code Preview</h2>
+                
+                <div class="qr-display">
+                    <canvas id="qrCanvas" width="250" height="250"></canvas>
+                    <div id="emptyQr" class="empty-qr">
+                        <i class="fas fa-qrcode"></i>
+                        <p>Your QR code will appear here</p>
+                        <p style="font-size: 0.9rem; margin-top: 10px;">Configure settings and click "Generate QR Code"</p>
+                    </div>
+                </div>
+                
+                <div id="qrInfo" style="display: none;">
+                    <div class="qr-info">
+                        <div class="qr-label" id="qrLabel">CARD1234</div>
+                        <div class="qr-type" id="qrType">AR Card</div>
+                        <p style="color: #666; margin-bottom: 15px;" id="qrDesc">
+                            Scan this QR code with the AR Magic Card Scanner to view the card.
+                        </p>
+                        
+                        <div class="download-buttons">
+                            <button class="download-btn primary" id="downloadPng">
+                                <i class="fas fa-download"></i> PNG
+                            </button>
+                            <button class="download-btn" id="shareBtn">
+                                <i class="fas fa-share-alt"></i> Copy
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent QR Codes Section -->
+        <div class="card" style="max-width: 100%; margin-top: 30px;">
+            <h2><i class="fas fa-history"></i> Recently Generated QR Codes</h2>
+            <div class="recent-qr-grid" id="recentQrGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; margin-top: 20px;">
+                <div style="text-align: center; padding: 40px; color: #999; grid-column: 1 / -1;">
+                    <i class="fas fa-qrcode" style="font-size: 3rem; margin-bottom: 15px;"></i>
+                    <p>No QR codes generated yet. Generate your first one above!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Notification -->
+    <div class="notification" id="notification"></div>
+
+    <script>
+        // Check if QRCode library is loaded
+        function isQRCodeLoaded() {
+            return typeof QRCode !== 'undefined' && QRCode !== null;
+        }
+
+        // Wait for QRCode library to load
+        function waitForQRCode(callback, maxAttempts = 10, interval = 500) {
+            let attempts = 0;
+            
+            function check() {
+                attempts++;
+                if (isQRCodeLoaded()) {
+                    console.log('QRCode library loaded successfully');
+                    callback();
+                } else if (attempts < maxAttempts) {
+                    console.log(`Waiting for QRCode library... attempt ${attempts}`);
+                    setTimeout(check, interval);
+                } else {
+                    console.error('QRCode library failed to load');
+                    // Fallback to custom QR code generator
+                    loadFallbackQRCodeGenerator();
+                    callback();
+                }
+            }
+            
+            check();
+        }
+
+        // Fallback QR code generator if library fails
+        function loadFallbackQRCodeGenerator() {
+            console.log('Loading fallback QR code generator');
+            // We'll use the existing QRCodeGenerator class which has a basic implementation
+        }
+
+        // === SUPABASE CREDENTIALS ===
+        const SUPABASE_URL = 'https://elmhkhvryjzljxskbfps.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVsbWhraHZyeWp6bGp4c2tiZnBzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0NDc3NjMsImV4cCI6MjA4NDAyMzc2M30.Orrh2Pejnt3KPJMTUTmRRkhCwtZVfjUreKvX546bOcw';
+        // ==============================
+        
+        // Simple QR Code Generator - WITH FALLBACK SUPPORT
+        class QRCodeGenerator {
+            constructor() {
+                this.canvas = document.getElementById('qrCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.size = 250;
+                this.useLibrary = false;
+            }
+            
+            generate(text) {
+                // Clear canvas
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Set white background
+                this.ctx.fillStyle = '#ffffff';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Check if QRCode library is available
+                if (isQRCodeLoaded()) {
+                    this.useLibrary = true;
+                    return this.generateWithLibrary(text);
+                } else {
+                    this.useLibrary = false;
+                    return this.generateFallback(text);
+                }
+            }
+            
+            generateWithLibrary(text) {
+                try {
+                    // Generate QR code using the QRCode library
+                    QRCode.toCanvas(this.canvas, text, {
+                        width: this.size,
+                        margin: 2,
+                        color: {
+                            dark: '#000000',
+                            light: '#FFFFFF'
+                        }
+                    }, function(error) {
+                        if (error) {
+                            console.error('QR Code generation error:', error);
+                            throw error;
+                        }
+                    });
+                    return true;
+                } catch (error) {
+                    console.error('QR generation error with library:', error);
+                    // Fallback to custom generator
+                    return this.generateFallback(text);
+                }
+            }
+            
+            generateFallback(text) {
+                try {
+                    // Simple fallback QR code generation
+                    console.log('Using fallback QR code generator');
+                    
+                    // Create a simple pattern for demonstration
+                    this.ctx.fillStyle = '#000000';
+                    
+                    // Draw a simple pattern (for demo purposes)
+                    // In a real implementation, you'd want a proper QR code algorithm
+                    const cellSize = 10;
+                    const offset = 10;
+                    
+                    // Draw border
+                    this.ctx.fillRect(offset, offset, this.size - offset*2, this.size - offset*2);
+                    
+                    // Draw white squares for pattern
+                    this.ctx.fillStyle = '#ffffff';
+                    for (let i = 0; i < 5; i++) {
+                        for (let j = 0; j < 5; j++) {
+                            if ((i + j) % 2 === 0) {
+                                this.ctx.fillRect(
+                                    offset + i * cellSize * 2,
+                                    offset + j * cellSize * 2,
+                                    cellSize,
+                                    cellSize
+                                );
+                            }
+                        }
+                    }
+                    
+                    // Add text label
+                    this.ctx.fillStyle = '#000000';
+                    this.ctx.font = '12px Arial';
+                    this.ctx.textAlign = 'center';
+                    this.ctx.fillText(`QR for: ${text.substring(0, 20)}...`, this.size/2, this.size - 5);
+                    
+                    return true;
+                } catch (error) {
+                    console.error('Fallback QR generation error:', error);
+                    return false;
+                }
+            }
+            
+            changeColor(color) {
+                if (!this.canvas || this.canvas.style.display !== 'block') return;
+                
+                // Save current QR code image data
+                const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+                const data = imageData.data;
+                
+                // Convert color
+                const rgb = this.hexToRgb(color);
+                
+                for (let i = 0; i < data.length; i += 4) {
+                    // If pixel is black (or nearly black), change to new color
+                    if (data[i] < 50 && data[i + 1] < 50 && data[i + 2] < 50) {
+                        data[i] = rgb.r;
+                        data[i + 1] = rgb.g;
+                        data[i + 2] = rgb.b;
+                    }
+                }
+                
+                this.ctx.putImageData(imageData, 0, 0);
+            }
+            
+            hexToRgb(hex) {
+                const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+                return result ? {
+                    r: parseInt(result[1], 16),
+                    g: parseInt(result[2], 16),
+                    b: parseInt(result[3], 16)
+                } : { r: 0, g: 0, b: 0 };
+            }
+            
+            download(filename = 'qrcode.png') {
+                const link = document.createElement('a');
+                link.download = filename;
+                link.href = this.canvas.toDataURL('image/png');
+                link.click();
+            }
+            
+            getDataURL() {
+                return this.canvas.toDataURL('image/png');
+            }
+        }
+        
+        // Main application - MODIFIED TO WAIT FOR QRCODE LIBRARY
+        function startApplication() {
+            console.log('Starting application initialization...');
+            
+            // Initialize DOM elements first
+            const cardIdInput = document.getElementById('cardId');
+            const cardSelect = document.getElementById('cardSelect');
+            const qrTypeRadios = document.querySelectorAll('input[name="qrType"]');
+            const dynamicOptions = document.getElementById('dynamicOptions');
+            const colorBoxes = document.querySelectorAll('.color-box');
+            const generateBtn = document.getElementById('generateBtn');
+            const clearBtn = document.getElementById('clearBtn');
+            const qrCanvas = document.getElementById('qrCanvas');
+            const emptyQr = document.getElementById('emptyQr');
+            const qrInfo = document.getElementById('qrInfo');
+            const qrLabel = document.getElementById('qrLabel');
+            const qrType = document.getElementById('qrType');
+            const qrDesc = document.getElementById('qrDesc');
+            const downloadPngBtn = document.getElementById('downloadPng');
+            const shareBtn = document.getElementById('shareBtn');
+            const notification = document.getElementById('notification');
+            const syncStatus = document.getElementById('syncStatus');
+            const recentQrGrid = document.getElementById('recentQrGrid');
+            
+            console.log('DOM elements loaded:', {
+                cardIdInput: !!cardIdInput,
+                syncStatus: !!syncStatus,
+                notification: !!notification
+            });
+            
+            // State
+            let currentQrColor = '#000000';
+            let currentQrData = null;
+            let recentQrCodes = JSON.parse(localStorage.getItem('recentQrCodes')) || [];
+            let loadedCards = [];
+            let supabase = null;
+            let isSupabaseConnected = false;
+            
+            // Show notification
+            function showNotification(message, type = 'info') {
+                if (!notification) {
+                    console.error('Notification element not found');
+                    return;
+                }
+                notification.textContent = message;
+                notification.className = `notification ${type}`;
+                notification.classList.add('show');
+                
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                }, 3000);
+            }
+            
+            // Update sync status
+            function updateSyncStatus(connected) {
+                if (!syncStatus) {
+                    console.error('syncStatus element not found');
+                    return;
+                }
+                
+                if (connected) {
+                    syncStatus.className = 'sync-status online';
+                    syncStatus.innerHTML = '<i class="fas fa-cloud"></i><span>Connected to Supabase</span>';
+                } else {
+                    syncStatus.className = 'sync-status offline';
+                    syncStatus.innerHTML = '<i class="fas fa-cloud-slash"></i><span>Offline Mode</span>';
+                }
+            }
+            
+            // Initialize Supabase client AFTER DOM is loaded
+            function initializeSupabase() {
+                try {
+                    if (window.supabase && window.supabase.createClient) {
+                        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                        console.log('Supabase client initialized successfully');
+                        isSupabaseConnected = true;
+                        updateSyncStatus(true);
+                        return true;
+                    } else {
+                        console.error('Supabase library not loaded');
+                        updateSyncStatus(false);
+                        return false;
+                    }
+                } catch (error) {
+                    console.error('Error initializing Supabase:', error);
+                    updateSyncStatus(false);
+                    return false;
+                }
+            }
+            
+            // Load cards from Supabase (using your exact table structure)
+            async function loadCardsFromSupabase() {
+                if (!isSupabaseConnected || !supabase) {
+                    if (cardSelect) {
+                        cardSelect.innerHTML = '<option value="">Supabase not connected</option>';
+                    }
+                    showNotification('Cannot connect to Supabase. Working in offline mode.', 'error');
+                    return;
+                }
+                
+                try {
+                    // Load from your 'cards' table with exact column names
+                    const { data: cards, error } = await supabase
+                        .from('cards')
+                        .select('card_id, message_type, message_text, media_url, file_name, created_at, status')
+                        .eq('status', 'active') // Only load active cards
+                        .order('created_at', { ascending: false })
+                        .limit(50);
+                    
+                    if (error) {
+                        console.error('Supabase error:', error);
+                        
+                        // Check if it's a "table doesn't exist" error
+                        if (error.message.includes('does not exist')) {
+                            if (cardSelect) {
+                                cardSelect.innerHTML = '<option value="">No cards table found</option>';
+                            }
+                            showNotification('Cards table not found in Supabase. Create cards first in the Maker.', 'error');
+                        } else {
+                            if (cardSelect) {
+                                cardSelect.innerHTML = '<option value="">Error loading cards</option>';
+                            }
+                            showNotification('Error loading cards: ' + error.message, 'error');
+                        }
+                        return;
+                    }
+                    
+                    if (cards && cards.length > 0) {
+                        if (cardSelect) {
+                            cardSelect.innerHTML = '<option value="">Select a card from Supabase</option>';
+                        }
+                        loadedCards = cards;
+                        
+                        cards.forEach(card => {
+                            if (cardSelect) {
+                                const option = document.createElement('option');
+                                option.value = card.card_id;
+                                
+                                // Create a descriptive label
+                                let label = card.card_id;
+                                if (card.message_text) {
+                                    label += ` - ${card.message_text.substring(0, 25)}`;
+                                    if (card.message_text.length > 25) label += '...';
+                                } else if (card.message_type) {
+                                    label += ` - ${card.message_type}`;
+                                }
+                                
+                                option.textContent = label;
+                                option.title = card.message_text || card.message_type || 'No message';
+                                cardSelect.appendChild(option);
+                            }
+                        });
+                        
+                        showNotification(`Loaded ${cards.length} cards from Supabase`, 'success');
+                    } else {
+                        if (cardSelect) {
+                            cardSelect.innerHTML = '<option value="">No cards found in Supabase</option>';
+                        }
+                        showNotification('No cards found. Create cards first in the Maker.', 'info');
+                    }
+                } catch (error) {
+                    console.error('Error loading cards:', error);
+                    if (cardSelect) {
+                        cardSelect.innerHTML = '<option value="">Error loading cards</option>';
+                    }
+                    showNotification('Error loading cards: ' + error.message, 'error');
+                }
+            }
+            
+            // After generating QR code, save to Supabase qr_codes table
+            async function saveToSupabase(cardId, qrData, qrImageUrl) {
+                if (!isSupabaseConnected || !supabase) {
+                    console.log('Supabase not connected, skipping save');
+                    return;
+                }
+                
+                try {
+                    const { data, error } = await supabase
+                        .from('qr_codes')
+                        .insert([
+                            { 
+                                card_id: cardId,
+                                qr_data: qrData,
+                                qr_image_url: qrImageUrl,
+                                qr_type: document.querySelector('input[name="qrType"]:checked').value,
+                                color: currentQrColor,
+                                created_at: new Date().toISOString()
+                            }
+                        ]);
+                    
+                    if (error) {
+                        console.error('Supabase save error:', error);
+                        
+                        // Check if table doesn't exist
+                        if (error.message.includes('does not exist')) {
+                            showNotification('QR codes table not found. Please create it in Supabase.', 'error');
+                        } else {
+                            showNotification('Could not save to Supabase: ' + error.message, 'error');
+                        }
+                    } else {
+                        console.log('Saved to Supabase qr_codes table:', data);
+                        showNotification('QR code saved to Supabase database', 'success');
+                    }
+                } catch (error) {
+                    console.error('Error saving to Supabase:', error);
+                    showNotification('Error saving to Supabase: ' + error.message, 'error');
+                }
+            }
+            
+            // Get card details from loaded cards
+            function getCardDetails(cardId) {
+                const card = loadedCards.find(c => c.card_id === cardId);
+                if (card) {
+                    return {
+                        message: card.message_text || 'No message',
+                        type: card.message_type || 'Unknown type',
+                        media: card.media_url,
+                        fileName: card.file_name
+                    };
+                }
+                return null;
+            }
+            
+            // Update dynamic options
+            function updateDynamicOptions() {
+                if (!dynamicOptions) return;
+                
+                const qrType = document.querySelector('input[name="qrType"]:checked').value;
+                let optionsHTML = '';
+                
+                switch(qrType) {
+                    case 'card':
+                        optionsHTML = `
+                            <div class="form-group">
+                                <label>AR Card Options:</label>
+                                <div style="background-color: #f0f8ff; padding: 15px; border-radius: 8px;">
+                                    <p style="margin-bottom: 10px; color: #555;">QR code will open the card directly in the AR scanner.</p>
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <input type="checkbox" id="autoScan" checked>
+                                        <label for="autoScan" style="font-weight: normal;">Auto-scan card when opened</label>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        break;
+                        
+                    case 'url':
+                        optionsHTML = `
+                            <div class="form-group">
+                                <label for="urlInput">Website URL:</label>
+                                <input type="url" id="urlInput" placeholder="https://example.com" value="https://example.com">
+                            </div>
+                        `;
+                        break;
+                        
+                    case 'text':
+                        optionsHTML = `
+                            <div class="form-group">
+                                <label for="textInput">Text Content:</label>
+                                <textarea id="textInput" placeholder="Enter text for QR code" rows="4" style="resize: vertical;">Hello World!</textarea>
+                            </div>
+                        `;
+                        break;
+                        
+                    case 'wifi':
+                        optionsHTML = `
+                            <div class="form-group">
+                                <label for="wifiSsid">Wi-Fi Network Name (SSID):</label>
+                                <input type="text" id="wifiSsid" placeholder="MyWiFiNetwork" value="MyWiFiNetwork">
+                                
+                                <label for="wifiPassword" style="margin-top: 15px;">Wi-Fi Password:</label>
+                                <input type="text" id="wifiPassword" placeholder="Password123" value="Password123">
+                                
+                                <label for="wifiType" style="margin-top: 15px;">Security Type:</label>
+                                <select id="wifiType">
+                                    <option value="WPA">WPA/WPA2</option>
+                                    <option value="WEP">WEP</option>
+                                    <option value="nopass">No Password</option>
+                                </select>
+                            </div>
+                        `;
+                        break;
+                }
+                
+                dynamicOptions.innerHTML = optionsHTML;
+            }
+            
+            // Get QR data based on type - FIXED TO POINT TO viewer.html
+            function getQrData() {
+                const qrType = document.querySelector('input[name="qrType"]:checked').value;
+                let data = '';
+                let label = '';
+                let description = '';
+                let cardId = '';
+                
+                switch(qrType) {
+                    case 'card':
+                        cardId = cardIdInput ? cardIdInput.value.trim() : '';
+                        if (!cardId) {
+                            showNotification('Please enter a Card ID', 'error');
+                            return null;
+                        }
+                        
+                        if (!cardId.toUpperCase().startsWith('CARD')) {
+                            cardId = 'CARD' + cardId;
+                        }
+                        
+                        // Create URL for viewer.html page
+                        const baseUrl = window.location.origin;
+                        // Get the current directory path
+                        const currentPath = window.location.pathname;
+                        const currentDir = currentPath.substring(0, currentPath.lastIndexOf('/') + 1);
+                        
+                        // Create the viewer.html URL with card parameter
+                        data = `${baseUrl}${currentDir}viewer.html?card=${encodeURIComponent(cardId)}`;
+                        label = cardId;
+                        
+                        // Get card details for description
+                        const cardDetails = getCardDetails(cardId);
+                        if (cardDetails) {
+                            description = `${cardDetails.type}: ${cardDetails.message.substring(0, 50)}...`;
                         } else {
                             description = 'Scan this QR code to view the AR Magic Card';
                         }
