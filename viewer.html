@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Magic Card Viewer - Scan QR Codes</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -13,72 +15,72 @@
         }
         
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
             min-height: 100vh;
-            padding: 20px;
             display: flex;
             flex-direction: column;
-            align-items: center;
+            padding: 20px;
         }
         
         .container {
-            width: 100%;
             max-width: 800px;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            overflow: hidden;
+            width: 100%;
+            margin: 0 auto;
+            flex: 1;
         }
         
-        /* Header */
-        .header {
-            background: #4f46e5;
+        header {
+            text-align: center;
             color: white;
-            padding: 25px;
-            text-align: center;
-        }
-        
-        .header h1 {
-            font-size: 2rem;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-        }
-        
-        .header p {
-            opacity: 0.9;
-            font-size: 1.1rem;
-        }
-        
-        /* Main Content */
-        .content {
-            padding: 30px;
-        }
-        
-        /* Scanner Section */
-        .scanner-section {
-            text-align: center;
+            padding: 20px;
             margin-bottom: 30px;
         }
         
-        .scanner-title {
-            color: #4f46e5;
-            margin-bottom: 20px;
-            font-size: 1.8rem;
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
         }
         
-        .camera-container {
-            width: 100%;
-            max-width: 400px;
-            height: 400px;
-            margin: 0 auto 20px;
-            position: relative;
-            border: 3px solid #4f46e5;
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.5;
+        }
+        
+        .scanner-container {
+            background: white;
             border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+        
+        .scanner-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .scanner-header h2 {
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .scanner-box {
+            width: 100%;
+            height: 400px;
+            background: #f8f9fa;
+            border-radius: 10px;
             overflow: hidden;
-            background: #f8fafc;
+            position: relative;
+            border: 3px solid #11998e;
+            margin-bottom: 20px;
         }
         
         #video {
@@ -87,15 +89,25 @@
             object-fit: cover;
         }
         
-        .scanner-frame {
+        .scanner-overlay {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.7);
+        }
+        
+        .scanner-frame {
             width: 250px;
             height: 250px;
-            border: 2px solid #4f46e5;
+            border: 2px solid #11998e;
             border-radius: 8px;
+            position: relative;
         }
         
         .scanner-frame::before,
@@ -104,7 +116,7 @@
             position: absolute;
             width: 20px;
             height: 20px;
-            border: 2px solid #4f46e5;
+            border: 2px solid #11998e;
         }
         
         .scanner-frame::before {
@@ -121,6 +133,13 @@
             border-top: none;
         }
         
+        .scanner-instructions {
+            text-align: center;
+            color: #666;
+            margin-top: 20px;
+            font-size: 1rem;
+        }
+        
         .scanner-controls {
             display: flex;
             gap: 15px;
@@ -129,51 +148,52 @@
         }
         
         .btn {
-            padding: 12px 30px;
+            padding: 12px 25px;
             border: none;
             border-radius: 8px;
+            font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 10px;
             transition: all 0.3s;
         }
         
-        .btn.primary {
-            background: #4f46e5;
+        .btn-primary {
+            background: linear-gradient(to right, #11998e, #38ef7d);
             color: white;
         }
         
-        .btn.secondary {
-            background: #64748b;
-            color: white;
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(17, 153, 142, 0.4);
         }
         
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
         }
         
-        .scanner-instructions {
-            margin-top: 20px;
-            color: #64748b;
-            font-size: 1rem;
+        .btn-secondary:hover {
+            background: #e0e0e0;
         }
         
-        /* Manual Input */
-        .manual-section {
-            background: #f8fafc;
-            padding: 25px;
+        .manual-input {
+            background: white;
             border-radius: 15px;
-            margin-top: 30px;
-            border: 2px solid #e2e8f0;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
         }
         
-        .manual-section h3 {
-            color: #4f46e5;
-            margin-bottom: 15px;
-            text-align: center;
+        .manual-input h3 {
+            color: #333;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         
         .input-group {
@@ -183,25 +203,30 @@
         
         .input-group input {
             flex: 1;
-            padding: 15px;
-            border: 2px solid #cbd5e1;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
             border-radius: 8px;
             font-size: 1rem;
-            outline: none;
+            transition: border-color 0.3s;
         }
         
         .input-group input:focus {
-            border-color: #4f46e5;
+            border-color: #11998e;
+            outline: none;
         }
         
-        /* Card Display */
         .card-display {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
             display: none;
-            animation: fadeIn 0.5s ease;
         }
         
         .card-display.show {
             display: block;
+            animation: fadeIn 0.5s ease;
         }
         
         @keyframes fadeIn {
@@ -210,93 +235,90 @@
         }
         
         .card-header {
-            background: #4f46e5;
-            color: white;
-            padding: 20px;
-            border-radius: 10px 10px 0 0;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
         }
         
         .card-title {
             display: flex;
             align-items: center;
             gap: 10px;
+            font-size: 1.5rem;
+            color: #333;
         }
         
         .card-id {
-            background: rgba(255, 255, 255, 0.2);
+            background: #e6f7f3;
             padding: 5px 15px;
             border-radius: 20px;
             font-size: 0.9rem;
             font-weight: 600;
+            color: #11998e;
         }
         
         .card-content {
-            background: white;
-            padding: 30px;
-            border: 2px solid #e2e8f0;
-            border-top: none;
-            border-radius: 0 0 10px 10px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 25px;
         }
         
         .card-message {
             font-size: 1.3rem;
             line-height: 1.6;
-            color: #1e293b;
-            padding: 20px;
-            background: #f8fafc;
-            border-radius: 8px;
-            border-left: 4px solid #4f46e5;
+            color: #333;
+            min-height: 80px;
         }
         
         .card-meta {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 15px;
-            margin-top: 25px;
+            margin-bottom: 30px;
         }
         
         .meta-item {
-            background: #f8fafc;
+            background: #f8f9fa;
             padding: 15px;
             border-radius: 8px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
         }
         
         .meta-item i {
-            color: #4f46e5;
+            color: #11998e;
             font-size: 1.2rem;
         }
         
         .meta-label {
             font-size: 0.85rem;
-            color: #64748b;
+            color: #666;
             margin-bottom: 5px;
         }
         
         .meta-value {
             font-size: 1rem;
-            color: #1e293b;
+            color: #333;
             font-weight: 500;
         }
         
         .card-actions {
             display: flex;
             gap: 15px;
-            margin-top: 30px;
-            justify-content: center;
+            margin-top: 25px;
         }
         
         .back-btn {
-            margin-top: 20px;
             width: 100%;
-            padding: 15px;
-            background: #e2e8f0;
-            color: #475569;
+            margin-top: 20px;
+            padding: 12px;
+            background: #f0f0f0;
+            color: #333;
             border: none;
             border-radius: 8px;
             font-weight: 600;
@@ -309,45 +331,41 @@
         }
         
         .back-btn:hover {
-            background: #cbd5e1;
+            background: #e0e0e0;
         }
         
-        /* Alert */
-        .alert {
+        .notification {
             position: fixed;
             top: 20px;
             right: 20px;
             padding: 15px 25px;
-            background: white;
-            border-left: 4px solid #4f46e5;
             border-radius: 8px;
-            color: #1e293b;
+            color: white;
             font-weight: 600;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
             z-index: 1000;
             opacity: 0;
             transform: translateX(100px);
-            transition: all 0.3s;
+            transition: all 0.5s;
         }
         
-        .alert.show {
+        .notification.show {
             opacity: 1;
             transform: translateX(0);
         }
         
-        .alert.success {
-            border-left-color: #10b981;
+        .notification.success {
+            background: linear-gradient(to right, #11998e, #38ef7d);
         }
         
-        .alert.error {
-            border-left-color: #ef4444;
+        .notification.error {
+            background: linear-gradient(to right, #ff416c, #ff4b2b);
         }
         
-        .alert.info {
-            border-left-color: #3b82f6;
+        .notification.info {
+            background: linear-gradient(to right, #36D1DC, #5B86E5);
         }
         
-        /* Loading */
         .loading {
             position: fixed;
             top: 0;
@@ -370,21 +388,21 @@
         .spinner {
             width: 50px;
             height: 50px;
-            border: 4px solid #e2e8f0;
-            border-top: 4px solid #4f46e5;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #11998e;
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
         
         @keyframes spin {
+            0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
         
-        /* Navigation */
         .nav-buttons {
             display: flex;
-            justify-content: center;
             gap: 15px;
+            justify-content: center;
             margin-top: 30px;
             flex-wrap: wrap;
         }
@@ -392,8 +410,8 @@
         .nav-btn {
             padding: 12px 25px;
             background: white;
-            color: #4f46e5;
-            border: 2px solid #4f46e5;
+            color: #11998e;
+            border: 2px solid #11998e;
             border-radius: 8px;
             text-decoration: none;
             font-weight: 600;
@@ -404,29 +422,16 @@
         }
         
         .nav-btn:hover {
-            background: #4f46e5;
+            background: #11998e;
             color: white;
         }
         
-        /* Mobile Responsive */
         @media (max-width: 768px) {
             .container {
-                border-radius: 15px;
+                padding: 10px;
             }
             
-            .header {
-                padding: 20px;
-            }
-            
-            .header h1 {
-                font-size: 1.5rem;
-            }
-            
-            .content {
-                padding: 20px;
-            }
-            
-            .camera-container {
+            .scanner-box {
                 height: 300px;
             }
             
@@ -450,127 +455,124 @@
             .nav-buttons {
                 flex-direction: column;
             }
-            
-            .nav-btn {
-                justify-content: center;
-            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Header -->
-        <div class="header">
+        <header>
             <h1><i class="fas fa-camera"></i> Magic Card Viewer</h1>
             <p>Scan QR codes from your Magic Cards to view messages</p>
+        </header>
+        
+        <!-- Scanner Section -->
+        <div class="scanner-container" id="scannerSection">
+            <div class="scanner-header">
+                <h2><i class="fas fa-qrcode"></i> QR Code Scanner</h2>
+            </div>
+            
+            <div class="scanner-box">
+                <video id="video" autoplay playsinline></video>
+                <div class="scanner-overlay">
+                    <div class="scanner-frame"></div>
+                    <div style="margin-top: 20px; color: #11998e; font-weight: 600; text-align: center;">
+                        Point camera at QR code<br>
+                        <span style="font-size: 0.9rem; color: #666;">QR codes from qr.html work automatically</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="scanner-controls">
+                <button class="btn btn-primary" id="startBtn">
+                    <i class="fas fa-camera"></i> Start Scanner
+                </button>
+                <button class="btn btn-secondary" id="stopBtn" style="display: none;">
+                    <i class="fas fa-stop"></i> Stop Scanner
+                </button>
+            </div>
+            
+            <div class="scanner-instructions">
+                <p><i class="fas fa-lightbulb"></i> The scanner will automatically detect QR codes from your Magic Cards</p>
+                <p>Make sure the QR code is inside the frame</p>
+            </div>
         </div>
         
-        <!-- Main Content -->
-        <div class="content">
-            <!-- Scanner Section -->
-            <div class="scanner-section" id="scannerSection">
-                <h2 class="scanner-title">Scan QR Code</h2>
-                <p style="color: #64748b; margin-bottom: 20px;">
-                    Point your camera at a QR code from your Magic Card
-                </p>
-                
-                <div class="camera-container">
-                    <video id="video" autoplay playsinline></video>
-                    <div class="scanner-frame"></div>
-                </div>
-                
-                <div class="scanner-controls">
-                    <button class="btn primary" id="startBtn">
-                        <i class="fas fa-camera"></i> Start Camera
-                    </button>
-                    <button class="btn secondary" id="stopBtn" style="display: none;">
-                        <i class="fas fa-stop"></i> Stop Camera
-                    </button>
-                </div>
-                
-                <div class="scanner-instructions">
-                    <p><i class="fas fa-lightbulb"></i> Make sure the QR code is inside the frame</p>
-                    <p>The scanner will automatically detect the code</p>
+        <!-- Manual Input -->
+        <div class="manual-input" id="manualSection">
+            <h3><i class="fas fa-keyboard"></i> Or Enter Card ID Manually</h3>
+            <div class="input-group">
+                <input type="text" id="cardIdInput" placeholder="Enter Card ID (e.g., CARD1234)">
+                <button class="btn btn-primary" id="loadCardBtn">
+                    <i class="fas fa-search"></i> Load Card
+                </button>
+            </div>
+        </div>
+        
+        <!-- Card Display -->
+        <div class="card-display" id="cardDisplay">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="fas fa-gem"></i>
+                    <span>Magic Card</span>
+                    <span class="card-id" id="displayCardId">CARD1234</span>
                 </div>
             </div>
             
-            <!-- Manual Input -->
-            <div class="manual-section" id="manualSection">
-                <h3>Or Enter Card ID Manually</h3>
-                <div class="input-group">
-                    <input type="text" id="cardIdInput" placeholder="Enter Card ID (e.g., CARD6842)">
-                    <button class="btn primary" id="loadCardBtn">
-                        <i class="fas fa-search"></i> Load Card
-                    </button>
+            <div class="card-content">
+                <div class="card-message" id="displayMessage">
+                    Your card message will appear here...
                 </div>
             </div>
             
-            <!-- Card Display -->
-            <div class="card-display" id="cardDisplay">
-                <div class="card-header">
-                    <div class="card-title">
-                        <i class="fas fa-gem"></i>
-                        <span>Magic Card</span>
-                        <span class="card-id" id="displayCardId">CARD6842</span>
+            <div class="card-meta">
+                <div class="meta-item">
+                    <i class="fas fa-tag"></i>
+                    <div>
+                        <div class="meta-label">Type</div>
+                        <div class="meta-value" id="displayType">Text Message</div>
                     </div>
                 </div>
-                
-                <div class="card-content">
-                    <div class="card-message" id="displayMessage">
-                        Loading message...
+                <div class="meta-item">
+                    <i class="fas fa-calendar"></i>
+                    <div>
+                        <div class="meta-label">Created</div>
+                        <div class="meta-value" id="displayDate">Just now</div>
                     </div>
-                    
-                    <div class="card-meta">
-                        <div class="meta-item">
-                            <i class="fas fa-tag"></i>
-                            <div>
-                                <div class="meta-label">Type</div>
-                                <div class="meta-value" id="displayType">Text Message</div>
-                            </div>
-                        </div>
-                        <div class="meta-item">
-                            <i class="fas fa-calendar"></i>
-                            <div>
-                                <div class="meta-label">Created</div>
-                                <div class="meta-value" id="displayDate">Just now</div>
-                            </div>
-                        </div>
-                        <div class="meta-item">
-                            <i class="fas fa-database"></i>
-                            <div>
-                                <div class="meta-label">Source</div>
-                                <div class="meta-value">Supabase Cloud</div>
-                            </div>
-                        </div>
+                </div>
+                <div class="meta-item">
+                    <i class="fas fa-database"></i>
+                    <div>
+                        <div class="meta-label">Source</div>
+                        <div class="meta-value">Supabase Database</div>
                     </div>
-                    
-                    <div class="card-actions">
-                        <button class="btn primary" id="shareBtn">
-                            <i class="fas fa-share-alt"></i> Share Card
-                        </button>
-                        <button class="btn secondary" id="generateQrBtn">
-                            <i class="fas fa-qrcode"></i> Generate QR
-                        </button>
-                    </div>
-                    
-                    <button class="back-btn" id="backBtn">
-                        <i class="fas fa-redo"></i> Scan Another Code
-                    </button>
                 </div>
             </div>
+            
+            <div class="card-actions">
+                <button class="btn btn-primary" id="shareBtn">
+                    <i class="fas fa-share-alt"></i> Share Card
+                </button>
+                <button class="btn btn-secondary" id="qrBtn">
+                    <i class="fas fa-qrcode"></i> Generate QR
+                </button>
+            </div>
+            
+            <button class="back-btn" id="backBtn">
+                <i class="fas fa-redo"></i> Scan Another Code
+            </button>
         </div>
     </div>
     
-    <!-- Loading Overlay -->
+    <!-- Loading -->
     <div class="loading" id="loading">
         <div class="spinner"></div>
         <div id="loadingText">Loading...</div>
     </div>
     
-    <!-- Alert -->
-    <div class="alert" id="alert"></div>
+    <!-- Notification -->
+    <div class="notification" id="notification"></div>
     
-    <!-- Navigation Buttons -->
+    <!-- Navigation -->
     <div class="nav-buttons">
         <a href="maker.html" class="nav-btn">
             <i class="fas fa-magic"></i> Create Cards
@@ -580,13 +582,8 @@
         </a>
     </div>
     
-    <!-- Font Awesome -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
-    <!-- Simple QR Scanner -->
-    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-    
     <script>
-        // Configuration
+        // Supabase Configuration
         const SUPABASE_URL = 'https://elmhkhvryjzljxskbfps.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVsbWhraHZyeWp6bGp4c2tiZnBzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0NDc3NjMsImV4cCI6MjA4NDAyMzc2M30.Orrh2Pejnt3KPJMTUTmRRkhCwtZVfjUreKvX546bOcw';
         
@@ -604,11 +601,11 @@
         const displayType = document.getElementById('displayType');
         const displayDate = document.getElementById('displayDate');
         const shareBtn = document.getElementById('shareBtn');
-        const generateQrBtn = document.getElementById('generateQrBtn');
+        const qrBtn = document.getElementById('qrBtn');
         const backBtn = document.getElementById('backBtn');
         const loading = document.getElementById('loading');
         const loadingText = document.getElementById('loadingText');
-        const alert = document.getElementById('alert');
+        const notification = document.getElementById('notification');
         
         // State
         let stream = null;
@@ -618,13 +615,14 @@
         let context = null;
         let animationFrame = null;
         
-        // Show alert
-        function showAlert(message, type = 'info') {
-            alert.textContent = message;
-            alert.className = `alert ${type} show`;
+        // Show notification
+        function showNotification(message, type = 'info') {
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.classList.add('show');
             
             setTimeout(() => {
-                alert.classList.remove('show');
+                notification.classList.remove('show');
             }, 3000);
         }
         
@@ -642,7 +640,7 @@
         // Load card from Supabase
         async function loadCard(cardId) {
             if (!cardId || cardId.trim() === '') {
-                showAlert('Please enter a Card ID', 'error');
+                showNotification('Please enter a Card ID', 'error');
                 return null;
             }
             
@@ -674,7 +672,7 @@
                 const cards = await response.json();
                 
                 if (!cards || cards.length === 0) {
-                    showAlert(`Card ${cardId} not found`, 'error');
+                    showNotification(`Card ${cardId} not found`, 'error');
                     hideLoading();
                     return null;
                 }
@@ -687,7 +685,7 @@
                 
             } catch (error) {
                 console.error('Error loading card:', error);
-                showAlert('Failed to load card from database', 'error');
+                showNotification('Failed to load card from database', 'error');
                 hideLoading();
                 return null;
             }
@@ -721,13 +719,13 @@
             manualSection.style.display = 'none';
             
             // Stop camera if scanning
-            stopCamera();
+            stopScanner();
             
-            showAlert(`Card ${card.card_id} loaded!`, 'success');
+            showNotification(`Card ${card.card_id} loaded!`, 'success');
         }
         
-        // Start camera
-        async function startCamera() {
+        // Start scanner
+        async function startScanner() {
             try {
                 // Request camera access
                 stream = await navigator.mediaDevices.getUserMedia({
@@ -760,22 +758,22 @@
                 isScanning = true;
                 scanFrame();
                 
-                showAlert('Camera started. Point at QR code.', 'info');
+                showNotification('Scanner started. Point at QR code.', 'info');
                 
             } catch (error) {
                 console.error('Camera error:', error);
                 if (error.name === 'NotAllowedError') {
-                    showAlert('Camera access denied. Please allow camera access.', 'error');
+                    showNotification('Camera access denied. Please allow camera access.', 'error');
                 } else if (error.name === 'NotFoundError') {
-                    showAlert('No camera found on this device.', 'error');
+                    showNotification('No camera found on this device.', 'error');
                 } else {
-                    showAlert(`Camera error: ${error.message}`, 'error');
+                    showNotification(`Camera error: ${error.message}`, 'error');
                 }
             }
         }
         
-        // Stop camera
-        function stopCamera() {
+        // Stop scanner
+        function stopScanner() {
             if (stream) {
                 stream.getTracks().forEach(track => track.stop());
                 stream = null;
@@ -817,38 +815,38 @@
                     console.log('QR Code detected:', code.data);
                     
                     // Stop scanning
-                    stopCamera();
+                    stopScanner();
                     
                     // Extract card ID from QR code data
                     let cardId = code.data;
                     
-                    // Check for different QR code formats
-                    // Format 1: Direct card ID (CARD1234)
-                    // Format 2: URL with card parameter
-                    // Format 3: Full viewer.html URL
-                    
+                    // Check for URL format (from qr.html)
                     if (code.data.includes('viewer.html?card=')) {
                         // Extract card ID from URL
                         try {
                             const url = new URL(code.data);
-                            cardId = url.searchParams.get('card') || code.data;
+                            cardId = url.searchParams.get('card');
                         } catch (e) {
-                            // Not a valid URL
-                        }
-                    } else if (code.data.includes('?card=')) {
-                        // Simple URL with card parameter
-                        const match = code.data.match(/card=([^&]+)/);
-                        if (match) {
-                            cardId = match[1];
+                            console.log('Not a valid URL, trying to extract manually');
+                            // Try to extract card parameter manually
+                            const match = code.data.match(/card=([^&]+)/);
+                            if (match) {
+                                cardId = match[1];
+                            }
                         }
                     }
                     
                     // Clean up card ID
-                    cardId = cardId.replace(/^CARD/, 'CARD').toUpperCase();
-                    
-                    // Load the card
-                    handleCardLoad(cardId);
-                    return;
+                    if (cardId) {
+                        cardId = cardId.toUpperCase();
+                        if (!cardId.startsWith('CARD')) {
+                            cardId = 'CARD' + cardId.replace(/[^0-9]/g, '');
+                        }
+                        
+                        // Load the card
+                        handleCardLoad(cardId);
+                        return;
+                    }
                 }
                 
                 // Continue scanning
@@ -868,9 +866,8 @@
         // Handle card loading
         async function handleCardLoad(cardId) {
             // Clean up card ID
-            if (cardId.includes('CARD')) {
-                cardId = cardId.match(/CARD\d+/)?.[0] || cardId;
-            } else if (/^\d+$/.test(cardId)) {
+            cardId = cardId.toUpperCase();
+            if (!cardId.startsWith('CARD')) {
                 cardId = 'CARD' + cardId;
             }
             
@@ -878,8 +875,8 @@
             if (card) {
                 displayCard(card);
             } else {
-                // Restart camera if card not found
-                setTimeout(startCamera, 2000);
+                // Restart scanner if card not found
+                setTimeout(startScanner, 2000);
             }
         }
         
@@ -892,8 +889,8 @@
             // Clear input
             cardIdInput.value = '';
             
-            // Restart camera
-            startCamera();
+            // Restart scanner
+            startScanner();
             
             currentCard = null;
         }
@@ -901,7 +898,7 @@
         // Share card
         function shareCard() {
             if (!currentCard) {
-                showAlert('No card to share', 'error');
+                showNotification('No card to share', 'error');
                 return;
             }
             
@@ -916,7 +913,7 @@
                 });
             } else {
                 navigator.clipboard.writeText(shareText)
-                    .then(() => showAlert('Card details copied!', 'success'))
+                    .then(() => showNotification('Card details copied!', 'success'))
                     .catch(() => {
                         // Fallback
                         const textarea = document.createElement('textarea');
@@ -925,7 +922,7 @@
                         textarea.select();
                         document.execCommand('copy');
                         document.body.removeChild(textarea);
-                        showAlert('Card details copied!', 'success');
+                        showNotification('Card details copied!', 'success');
                     });
             }
         }
@@ -933,7 +930,7 @@
         // Generate QR for current card
         function generateQr() {
             if (!currentCard) {
-                showAlert('No card to generate QR for', 'error');
+                showNotification('No card to generate QR for', 'error');
                 return;
             }
             
@@ -947,15 +944,15 @@
             const cardId = params.get('card');
             
             if (cardId) {
-                handleCardLoad(cardId);
+                await handleCardLoad(cardId);
             }
         }
         
         // Initialize
         async function initialize() {
             // Event Listeners
-            startBtn.addEventListener('click', startCamera);
-            stopBtn.addEventListener('click', stopCamera);
+            startBtn.addEventListener('click', startScanner);
+            stopBtn.addEventListener('click', stopScanner);
             
             loadCardBtn.addEventListener('click', async () => {
                 const cardId = cardIdInput.value.trim();
@@ -974,23 +971,17 @@
             });
             
             shareBtn.addEventListener('click', shareCard);
-            generateQrBtn.addEventListener('click', generateQr);
+            qrBtn.addEventListener('click', generateQr);
             backBtn.addEventListener('click', resetToScanner);
             
             // Check URL for direct card access
             await checkUrlForCard();
             
-            // Auto-start camera if no card loaded
+            // Auto-start scanner if no card loaded
             if (!currentCard) {
-                setTimeout(startCamera, 1000);
+                // Start scanner after a brief delay
+                setTimeout(startScanner, 1000);
             }
-            
-            // Show instructions
-            setTimeout(() => {
-                if (!currentCard) {
-                    showAlert('Allow camera access to scan QR codes', 'info');
-                }
-            }, 1500);
         }
         
         // Start when page loads
