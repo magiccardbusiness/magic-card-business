@@ -3,15 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AR Magic Card Scanner</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- A-Frame and AR.js libraries -->
+    <title>AR Magic Card Viewer</title>
+    <!-- A-Frame for AR -->
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <!-- AR.js for marker-based AR -->
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-    <!-- Correct Supabase CDN -->
+    <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* ... (keep all existing CSS styles exactly as they are) ... */
         * {
             margin: 0;
             padding: 0;
@@ -24,293 +25,840 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            padding: 20px;
+            overflow-x: hidden;
         }
         
         .container {
-            max-width: 1200px;
             width: 100%;
-            margin: 0 auto;
             flex: 1;
+            display: flex;
+            flex-direction: column;
         }
         
-        header {
-            text-align: center;
-            color: white;
-            padding: 20px;
-            margin-bottom: 30px;
-            position: relative;
-        }
-        
-        header h1 {
-            font-size: 2.8rem;
-            margin-bottom: 10px;
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-        }
-        
-        header p {
-            font-size: 1.2rem;
-            opacity: 0.9;
-            max-width: 700px;
-            margin: 0 auto;
-            line-height: 1.5;
-        }
-        
-        /* ... (keep ALL other CSS styles exactly as in your file) ... */
-        
-        /* AR View specific styles */
-        #arView {
-            width: 100%;
-            height: 400px;
-            border: 2px solid #1a2980;
-            border-radius: 10px;
-            overflow: hidden;
-            position: relative;
-            margin-bottom: 20px;
-        }
-        
-        #arView a-scene {
-            width: 100%;
-            height: 100%;
-        }
-        
-        .ar-fullscreen-btn {
-            position: absolute;
-            bottom: 10px;
-            right: 10px;
+        /* Header Styles */
+        .header {
             background: rgba(0, 0, 0, 0.7);
             color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 5px;
-            cursor: pointer;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(10px);
+            position: relative;
             z-index: 100;
         }
         
+        .header h1 {
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .header h1 i {
+            color: #26d0ce;
+        }
+        
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .nav-button {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .nav-button:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+        
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ff416c;
+        }
+        
+        .status-dot.connected {
+            background: #38ef7d;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+        }
+        
+        /* Loading Screen */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1a2980 0%, #26d0ce 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: opacity 0.5s;
+        }
+        
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #38ef7d;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        .loading-text {
+            color: white;
+            font-size: 1.2rem;
+            text-align: center;
+        }
+        
+        /* Scan Mode */
+        .scan-mode {
+            width: 100%;
+            max-width: 800px;
+            text-align: center;
+            color: white;
+            display: none;
+        }
+        
+        .scan-instructions {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .scan-instructions h2 {
+            font-size: 2rem;
+            margin-bottom: 15px;
+            color: #38ef7d;
+        }
+        
+        .scan-instructions p {
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            line-height: 1.6;
+            opacity: 0.9;
+        }
+        
+        .feature-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 25px;
+        }
+        
+        .feature-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .feature-item i {
+            font-size: 2rem;
+            color: #38ef7d;
+        }
+        
+        .feature-item span {
+            font-size: 0.9rem;
+        }
+        
+        .start-scan-btn {
+            background: linear-gradient(to right, #38ef7d, #11998e);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin: 30px auto;
+            transition: all 0.3s;
+        }
+        
+        .start-scan-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(56, 239, 125, 0.4);
+        }
+        
+        /* AR Scene Container */
+        .ar-scene-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            display: none;
+        }
+        
+        #arScene {
+            width: 100%;
+            height: 100vh;
+        }
+        
+        /* AR Overlay */
+        .ar-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 20px;
+            color: white;
+            z-index: 50;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .scanning-info {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px 25px;
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(56, 239, 125, 0.3);
+        }
+        
+        .scanning-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(56, 239, 125, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: pulse 1.5s infinite;
+        }
+        
+        .scanning-icon i {
+            color: #38ef7d;
+            font-size: 1.2rem;
+        }
+        
+        /* Card Display */
+        .card-display {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            border-radius: 20px 20px 0 0;
+            padding: 30px;
+            transform: translateY(100%);
+            transition: transform 0.5s ease;
+            z-index: 100;
+            backdrop-filter: blur(20px);
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+        
+        .card-display.show {
+            transform: translateY(0);
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(56, 239, 125, 0.3);
+        }
+        
+        .card-title {
+            color: #38ef7d;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .close-card-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.8rem;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+        
+        .close-card-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .card-content {
+            color: white;
+        }
+        
+        .card-message {
+            font-size: 1.2rem;
+            line-height: 1.6;
+            margin-bottom: 25px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            border-left: 4px solid #38ef7d;
+        }
+        
+        .card-meta {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .meta-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .meta-item i {
+            color: #38ef7d;
+            font-size: 1.2rem;
+        }
+        
+        .meta-label {
+            font-size: 0.9rem;
+            color: #aaa;
+            margin-bottom: 5px;
+        }
+        
+        .meta-value {
+            font-size: 1rem;
+            color: white;
+        }
+        
+        .card-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .card-action-btn {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s;
+            min-width: 120px;
+        }
+        
+        .card-action-btn.primary {
+            background: linear-gradient(to right, #38ef7d, #11998e);
+            color: white;
+        }
+        
+        .card-action-btn.secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+        
+        .card-action-btn:hover {
+            transform: translateY(-3px);
+        }
+        
+        /* Manual Input */
+        .manual-input {
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 30px;
+            width: 100%;
+            max-width: 500px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .manual-input h3 {
+            color: #38ef7d;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+        
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .input-group input {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid rgba(56, 239, 125, 0.3);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1rem;
+        }
+        
+        .input-group input:focus {
+            outline: none;
+            border-color: #38ef7d;
+        }
+        
+        .input-group button {
+            background: linear-gradient(to right, #38ef7d, #11998e);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .input-group button:hover {
+            transform: translateY(-2px);
+        }
+        
+        /* Notification */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 10px;
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            opacity: 0;
+            transform: translateX(100px);
+            transition: all 0.5s;
+            max-width: 400px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .notification.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        
+        .notification.success {
+            background: rgba(56, 239, 125, 0.9);
+            border-left: 5px solid #11998e;
+        }
+        
+        .notification.error {
+            background: rgba(255, 65, 108, 0.9);
+            border-left: 5px solid #c2185b;
+        }
+        
+        .notification.info {
+            background: rgba(41, 128, 185, 0.9);
+            border-left: 5px solid #1a5276;
+        }
+        
+        /* Mobile Responsive */
         @media (max-width: 768px) {
-            .scanner-container {
+            .header {
                 flex-direction: column;
-            }
-            
-            .scanner-section, .ar-view-section {
-                max-width: 100%;
+                gap: 15px;
+                padding: 15px;
             }
             
             .nav-buttons {
-                position: relative;
-                top: 0;
-                left: 0;
-                right: 0;
-                flex-direction: column;
-                gap: 10px;
-                margin-bottom: 20px;
-            }
-            
-            .sync-status {
-                position: relative;
-                top: 0;
-                left: 0;
-                transform: none;
-                margin: 10px auto;
-                display: inline-flex;
+                width: 100%;
                 justify-content: center;
             }
             
-            header {
-                padding-top: 10px;
+            .scan-instructions {
+                padding: 20px;
             }
             
-            header h1 {
-                font-size: 2.2rem;
+            .scan-instructions h2 {
+                font-size: 1.5rem;
             }
             
-            .cards-grid {
-                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            .feature-list {
+                grid-template-columns: 1fr;
             }
+            
+            .card-display {
+                padding: 20px;
+            }
+            
+            .card-actions {
+                flex-direction: column;
+            }
+            
+            .input-group {
+                flex-direction: column;
+            }
+        }
+        
+        /* Animations */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .floating {
+            animation: float 3s ease-in-out infinite;
         }
     </style>
-    <script>
-        // Supabase configuration - USE YOUR CREDENTIALS
-        const SUPABASE_URL = 'https://elmhkhvryjzljxskbfps.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVsbWhraHZyeWp6bGp4c2tiZnBzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0NDc3NjMsImV4cCI6MjA4NDAyMzc2M30.Orrh2Pejnt3KPJMTUTmRRkhCwtZVfjUreKvX546bOcw';
-        
-        // Initialize Supabase
-        let supabase;
-        
-        // Initialize Supabase client
-        function initSupabase() {
-            try {
-                if (window.supabase && window.supabase.createClient) {
-                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                    console.log('Supabase initialized successfully');
-                    return true;
-                } else {
-                    console.error('Supabase library not loaded properly');
-                    return false;
-                }
-            } catch (error) {
-                console.error('Error initializing Supabase:', error);
-                return false;
-            }
-        }
-    </script>
 </head>
 <body>
     <div class="container">
-        <!-- Navigation & Status -->
-        <div class="nav-buttons">
-            <a href="maker.html" class="nav-button">
-                <i class="fas fa-arrow-left"></i> Back to Creator
-            </a>
-            <a href="qr.html" class="nav-button">
-                <i class="fas fa-qrcode"></i> QR Generator
-            </a>
+        <!-- Header -->
+        <div class="header">
+            <h1><i class="fas fa-camera"></i> AR Magic Card Viewer</h1>
+            <div class="nav-buttons">
+                <a href="maker.html" class="nav-button">
+                    <i class="fas fa-magic"></i> Card Maker
+                </a>
+                <a href="qr.html" class="nav-button">
+                    <i class="fas fa-qrcode"></i> QR Generator
+                </a>
+                <button class="nav-button" id="toggleManualInput">
+                    <i class="fas fa-keyboard"></i> Manual Input
+                </button>
+            </div>
+            <div class="status-indicator">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">Connecting...</span>
+            </div>
         </div>
         
-        <div class="sync-status online" id="syncStatus">
-            <i class="fas fa-cloud"></i>
-            <span>Connected to Cloud</span>
+        <!-- Loading Screen -->
+        <div class="loading-screen" id="loadingScreen">
+            <div class="loading-spinner"></div>
+            <div class="loading-text" id="loadingText">Initializing AR Viewer...</div>
         </div>
         
-        <header>
-            <h1><i class="fas fa-camera"></i> AR Magic Card Scanner</h1>
-            <p>Scan your magic cards to reveal augmented reality experiences. Cards are loaded from Supabase cloud database.</p>
-        </header>
-        
-        <div class="scanner-container">
-            <!-- Scanner Section -->
-            <div class="scanner-section">
-                <div class="section-title">
-                    <i class="fas fa-qrcode"></i> Card Scanner
-                </div>
-                
-                <div class="scanner-box">
-                    <div class="scanner-frame">
-                        <div class="scanning-line"></div>
-                        <div style="font-size: 4rem; color: #1a2980;">
-                            <i class="fas fa-camera"></i>
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Scan Mode -->
+            <div class="scan-mode" id="scanMode">
+                <div class="scan-instructions">
+                    <h2><i class="fas fa-camera floating"></i> Ready to Scan</h2>
+                    <p>Point your camera at a QR code from your AR Magic Cards to reveal the hidden message in augmented reality!</p>
+                    
+                    <div class="feature-list">
+                        <div class="feature-item">
+                            <i class="fas fa-qrcode"></i>
+                            <span>Scan QR Codes</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-vr-cardboard"></i>
+                            <span>AR Experience</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-cloud"></i>
+                            <span>Cloud Connected</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-share-alt"></i>
+                            <span>Share Messages</span>
                         </div>
                     </div>
-                    <div style="margin-top: 20px; color: #666; font-size: 1.1rem;">
-                        Point your camera at a Magic Card
+                    
+                    <button class="start-scan-btn" id="startScanBtn">
+                        <i class="fas fa-play"></i> Start AR Scanner
+                    </button>
+                </div>
+                
+                <!-- Manual Input -->
+                <div class="manual-input" id="manualInput" style="display: none;">
+                    <h3><i class="fas fa-keyboard"></i> Enter Card ID Manually</h3>
+                    <p>If you don't have a QR code, you can enter the Card ID directly:</p>
+                    <div class="input-group">
+                        <input type="text" id="manualCardId" placeholder="Enter Card ID (e.g., CARD1234)">
+                        <button id="manualLoadBtn">
+                            <i class="fas fa-search"></i> Load Card
+                        </button>
                     </div>
                 </div>
+            </div>
+            
+            <!-- AR Scene Container -->
+            <div class="ar-scene-container" id="arSceneContainer">
+                <!-- AR.js Scene -->
+                <a-scene 
+                    id="arScene"
+                    embedded 
+                    arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
+                    vr-mode-ui="enabled: false"
+                    renderer="logarithmicDepthBuffer: true;"
+                    gesture-detector
+                >
+                    <!-- Hiro Marker (Standard AR.js marker) -->
+                    <a-marker 
+                        id="hiroMarker"
+                        type="pattern" 
+                        preset="hiro"
+                        emitevents="true"
+                        smooth="true"
+                        smoothCount="10"
+                        smoothTolerance="0.01"
+                        smoothThreshold="5"
+                    >
+                        <!-- 3D Card that appears when marker is detected -->
+                        <a-entity 
+                            id="arCard"
+                            position="0 0.1 0"
+                            scale="0.5 0.5 0.5"
+                            visible="false"
+                            animation="property: rotation; to: 0 360 0; loop: true; dur: 10000; easing: linear"
+                        >
+                            <!-- Card Base -->
+                            <a-box 
+                                position="0 0 0" 
+                                width="1.2" 
+                                height="0.8" 
+                                depth="0.05"
+                                color="#1a2980"
+                                roughness="0.3"
+                                metalness="0.7"
+                                opacity="0.9"
+                            ></a-box>
+                            
+                            <!-- Card Face -->
+                            <a-plane 
+                                position="0 0 0.026"
+                                width="1.15"
+                                height="0.75"
+                                color="#ffffff"
+                                shader="flat"
+                                opacity="0.95"
+                            ></a-plane>
+                            
+                            <!-- Message Text -->
+                            <a-text 
+                                id="arMessageText"
+                                value="Scan a QR Code"
+                                position="0 0.2 0.03"
+                                width="1"
+                                align="center"
+                                color="#1a2980"
+                                font="https://cdn.aframe.io/fonts/Exo2SemiBold.fnt"
+                                wrap-count="20"
+                            ></a-text>
+                            
+                            <!-- Card ID -->
+                            <a-text 
+                                id="arCardId"
+                                value="CARD ID: ---"
+                                position="0 -0.2 0.03"
+                                width="1"
+                                align="center"
+                                color="#26d0ce"
+                                font="https://cdn.aframe.io/fonts/Exo2SemiBold.fnt"
+                            ></a-text>
+                            
+                            <!-- Tap Indicator -->
+                            <a-ring 
+                                position="0 -0.35 0"
+                                radius-inner="0.1"
+                                radius-outer="0.15"
+                                color="#38ef7d"
+                                opacity="0.7"
+                                animation="property: opacity; from: 0.3; to: 0.8; dir: alternate; dur: 1000; loop: true"
+                            >
+                                <a-text 
+                                    value="Tap card"
+                                    position="0 0 0.001"
+                                    width="0.4"
+                                    align="center"
+                                    color="white"
+                                    scale="0.5 0.5 0.5"
+                                ></a-text>
+                            </a-ring>
+                        </a-entity>
+                    </a-marker>
+                    
+                    <!-- Camera -->
+                    <a-entity camera></a-entity>
+                </a-scene>
                 
-                <div class="card-input-container">
-                    <p>Or enter a Card ID from Supabase:</p>
-                    <input type="text" id="cardIdInput" placeholder="Enter Card ID (e.g., CARD6842)" value="CARD6842">
-                </div>
-                
-                <div class="button-container">
-                    <button class="btn btn-primary" id="scanBtn">
-                        <i class="fas fa-search"></i> Scan Card
-                    </button>
-                    <button class="btn btn-secondary" id="demoBtn">
-                        <i class="fas fa-play-circle"></i> Try Demo
-                    </button>
-                    <button class="btn btn-secondary" id="startArBtn">
-                        <i class="fas fa-vr-cardboard"></i> Start AR Camera
-                    </button>
+                <!-- AR Overlay -->
+                <div class="ar-overlay">
+                    <div class="scanning-info">
+                        <div class="scanning-icon">
+                            <i class="fas fa-search"></i>
+                        </div>
+                        <div>
+                            <div style="font-weight: bold; font-size: 1.1rem;">Scanning for QR Codes</div>
+                            <div style="font-size: 0.9rem; opacity: 0.8;">Point camera at a QR code or Hiro marker</div>
+                        </div>
+                    </div>
                 </div>
             </div>
             
-            <!-- AR View Section -->
-            <div class="ar-view-section">
-                <div class="section-title">
-                    <i class="fas fa-vr-cardboard"></i> AR Experience
-                </div>
-                
-                <!-- AR View Container -->
-                <div id="arView">
-                    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" vr-mode-ui="enabled: false">
-                        <!-- AR Content will be inserted here -->
-                        <a-marker preset="hiro">
-                            <a-entity id="arContent" position="0 0 0" scale="1 1 1">
-                                <!-- Card content will appear here when scanned -->
-                            </a-entity>
-                        </a-marker>
-                        <a-entity camera></a-entity>
-                    </a-scene>
-                    <button class="ar-fullscreen-btn" id="fullscreenBtn">
-                        <i class="fas fa-expand"></i> Fullscreen
+            <!-- Card Display Panel -->
+            <div class="card-display" id="cardDisplay">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fas fa-gem"></i>
+                        <span id="displayCardId">CARD1234</span>
+                    </div>
+                    <button class="close-card-btn" id="closeCardBtn">
+                        <i class="fas fa-times"></i>
                     </button>
                 </div>
                 
-                <div class="ar-controls">
-                    <button class="control-btn" id="rotateBtn">
-                        <i class="fas fa-sync-alt"></i> Rotate
-                    </button>
-                    <button class="control-btn" id="zoomInBtn">
-                        <i class="fas fa-search-plus"></i> Zoom In
-                    </button>
-                    <button class="control-btn" id="zoomOutBtn">
-                        <i class="fas fa-search-minus"></i> Zoom Out
-                    </button>
-                    <button class="control-btn" id="resetBtn">
-                        <i class="fas fa-redo"></i> Reset
-                    </button>
-                </div>
-                
-                <div class="card-info" id="cardInfo" style="display: none; margin-top: 20px; padding: 15px; background: #f5f9ff; border-radius: 8px;">
-                    <h3 style="color: #1a2980; margin-bottom: 10px;">Card Information</h3>
-                    <p><strong>Card ID:</strong> <span id="infoCardId">-</span></p>
-                    <p><strong>Type:</strong> <span id="infoType">-</span></p>
-                    <p><strong>Message:</strong> <span id="infoMessage">-</span></p>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Recent Cards Section -->
-        <div class="recent-cards">
-            <div class="section-title">
-                <i class="fas fa-history"></i> Recent Cards from Cloud
-            </div>
-            <p>Cards loaded from Supabase database. Click any card to scan it.</p>
-            
-            <div class="cards-grid" id="recentCardsGrid">
-                <!-- Cards will be loaded from Supabase -->
-                <div class="card-item" style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #999;">
-                    <div class="loading" style="margin: 0 auto 20px;"></div>
-                    <p>Loading cards from cloud...</p>
+                <div class="card-content">
+                    <div class="card-message" id="displayMessage">
+                        Loading message...
+                    </div>
+                    
+                    <div class="card-meta">
+                        <div class="meta-item">
+                            <i class="fas fa-tag"></i>
+                            <div>
+                                <div class="meta-label">Type</div>
+                                <div class="meta-value" id="displayType">Text</div>
+                            </div>
+                        </div>
+                        <div class="meta-item">
+                            <i class="fas fa-calendar"></i>
+                            <div>
+                                <div class="meta-label">Created</div>
+                                <div class="meta-value" id="displayDate">Just now</div>
+                            </div>
+                        </div>
+                        <div class="meta-item">
+                            <i class="fas fa-database"></i>
+                            <div>
+                                <div class="meta-label">Source</div>
+                                <div class="meta-value" id="displaySource">Supabase</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card-actions">
+                        <button class="card-action-btn primary" id="shareCardBtn">
+                            <i class="fas fa-share-alt"></i> Share Card
+                        </button>
+                        <button class="card-action-btn secondary" id="newScanBtn">
+                            <i class="fas fa-redo"></i> New Scan
+                        </button>
+                        <button class="card-action-btn secondary" id="generateQrBtn">
+                            <i class="fas fa-qrcode"></i> Generate QR
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
     
-    <!-- Notification Element -->
+    <!-- Notification -->
     <div class="notification" id="notification"></div>
     
     <script>
-        // Wait for DOM to be fully loaded
+        // === SUPABASE CREDENTIALS ===
+        const SUPABASE_URL = 'https://elmhkhvryjzljxskbfps.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVsbWhraHZyeWp6bGp4c2tiZnBzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0NDc3NjMsImV4cCI6MjA4NDAyMzc2M30.Orrh2Pejnt3KPJMTUTmRRkhCwtZVfjUreKvX546bOcw';
+        // ==============================
+        
         document.addEventListener('DOMContentLoaded', function() {
-            
-            // Initialize Supabase
-            const supabaseInitialized = initSupabase();
+            console.log('AR Viewer initializing...');
             
             // DOM Elements
-            const cardIdInput = document.getElementById('cardIdInput');
-            const scanBtn = document.getElementById('scanBtn');
-            const demoBtn = document.getElementById('demoBtn');
-            const startArBtn = document.getElementById('startArBtn');
-            const recentCardsGrid = document.getElementById('recentCardsGrid');
+            const loadingScreen = document.getElementById('loadingScreen');
+            const loadingText = document.getElementById('loadingText');
+            const scanMode = document.getElementById('scanMode');
+            const arSceneContainer = document.getElementById('arSceneContainer');
+            const startScanBtn = document.getElementById('startScanBtn');
+            const toggleManualInputBtn = document.getElementById('toggleManualInput');
+            const manualInput = document.getElementById('manualInput');
+            const manualCardId = document.getElementById('manualCardId');
+            const manualLoadBtn = document.getElementById('manualLoadBtn');
+            const cardDisplay = document.getElementById('cardDisplay');
+            const closeCardBtn = document.getElementById('closeCardBtn');
+            const displayCardId = document.getElementById('displayCardId');
+            const displayMessage = document.getElementById('displayMessage');
+            const displayType = document.getElementById('displayType');
+            const displayDate = document.getElementById('displayDate');
+            const displaySource = document.getElementById('displaySource');
+            const shareCardBtn = document.getElementById('shareCardBtn');
+            const newScanBtn = document.getElementById('newScanBtn');
+            const generateQrBtn = document.getElementById('generateQrBtn');
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
             const notification = document.getElementById('notification');
-            const syncStatus = document.getElementById('syncStatus');
-            const fullscreenBtn = document.getElementById('fullscreenBtn');
-            const rotateBtn = document.getElementById('rotateBtn');
-            const zoomInBtn = document.getElementById('zoomInBtn');
-            const zoomOutBtn = document.getElementById('zoomOutBtn');
-            const resetBtn = document.getElementById('resetBtn');
-            const cardInfo = document.getElementById('cardInfo');
-            const infoCardId = document.getElementById('infoCardId');
-            const infoType = document.getElementById('infoType');
-            const infoMessage = document.getElementById('infoMessage');
-            const arContent = document.getElementById('arContent');
+            const arMessageText = document.getElementById('arMessageText');
+            const arCardId = document.getElementById('arCardId');
+            const arCard = document.getElementById('arCard');
+            const hiroMarker = document.getElementById('hiroMarker');
             
-            // State variables
+            // State
+            let supabase = null;
+            let isSupabaseConnected = false;
             let currentCard = null;
-            let recentCards = [];
-            let scale = 1;
-            let rotation = 0;
+            let isScanning = false;
+            let arScene = null;
             
             // Show notification
             function showNotification(message, type = 'info') {
@@ -323,91 +871,66 @@
                 }, 3000);
             }
             
-            // Update sync status
-            function updateSyncStatus(connected) {
+            // Update connection status
+            function updateStatus(connected, message) {
                 if (connected) {
-                    syncStatus.className = 'sync-status online';
-                    syncStatus.innerHTML = '<i class="fas fa-cloud"></i><span>Connected to Cloud</span>';
+                    statusDot.className = 'status-dot connected';
+                    statusText.textContent = message || 'Connected to Supabase';
                 } else {
-                    syncStatus.className = 'sync-status offline';
-                    syncStatus.innerHTML = '<i class="fas fa-cloud-slash"></i><span>Offline Mode</span>';
+                    statusDot.className = 'status-dot';
+                    statusText.textContent = message || 'Disconnected';
                 }
             }
             
-            // Fetch card from Supabase
-            async function fetchCardFromSupabase(cardId) {
+            // Initialize Supabase
+            async function initializeSupabase() {
                 try {
-                    if (!supabase || typeof supabase.from !== 'function') {
-                        throw new Error('Supabase client not properly initialized');
-                    }
+                    loadingText.textContent = 'Connecting to database...';
                     
-                    const { data, error } = await supabase
-                        .from('cards')
-                        .select('*')
-                        .eq('card_id', cardId)
-                        .eq('status', 'active')
-                        .single();
-                    
-                    if (error) {
-                        if (error.code === 'PGRST116') {
-                            return null; // Card not found
+                    if (window.supabase && window.supabase.createClient) {
+                        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                        
+                        // Test connection
+                        const { data, error } = await supabase
+                            .from('cards')
+                            .select('count')
+                            .limit(1);
+                        
+                        if (error) {
+                            console.error('Supabase connection test failed:', error);
+                            updateStatus(false, 'Database error');
+                            showNotification('Cannot connect to database. Using offline mode.', 'error');
+                            return false;
                         }
-                        throw error;
-                    }
-                    
-                    return data;
-                } catch (error) {
-                    console.error('Error fetching card from Supabase:', error);
-                    
-                    // Check if table exists
-                    if (error.message.includes('does not exist')) {
-                        showNotification('Cards table not found in Supabase. Create cards in Maker first.', 'error');
+                        
+                        isSupabaseConnected = true;
+                        updateStatus(true, 'Ready to scan');
+                        showNotification('Connected to Supabase database', 'success');
+                        return true;
                     } else {
-                        updateSyncStatus(false);
+                        console.error('Supabase library not loaded');
+                        updateStatus(false, 'Library error');
+                        return false;
                     }
-                    
-                    return null;
-                }
-            }
-            
-            // Fetch recent cards from Supabase
-            async function fetchRecentCards() {
-                try {
-                    if (!supabase || typeof supabase.from !== 'function') {
-                        throw new Error('Supabase client not initialized');
-                    }
-                    
-                    const { data, error } = await supabase
-                        .from('cards')
-                        .select('*')
-                        .eq('status', 'active')
-                        .order('created_at', { ascending: false })
-                        .limit(6);
-                    
-                    if (error) {
-                        // If table doesn't exist, return empty array
-                        if (error.message.includes('does not exist')) {
-                            return [];
-                        }
-                        throw error;
-                    }
-                    
-                    recentCards = data || [];
-                    updateSyncStatus(true);
-                    return data || [];
                 } catch (error) {
-                    console.error('Error fetching recent cards:', error);
-                    updateSyncStatus(false);
-                    return [];
+                    console.error('Error initializing Supabase:', error);
+                    updateStatus(false, 'Connection failed');
+                    showNotification('Could not connect to database', 'error');
+                    return false;
                 }
             }
             
-            // Scan a card
-            async function scanCard(cardId) {
-                // Validate card ID format
+            // Get card from URL parameter
+            function getCardFromURL() {
+                const urlParams = new URLSearchParams(window.location.search);
+                return urlParams.get('card');
+            }
+            
+            // Load card data from Supabase
+            async function loadCardData(cardId) {
                 if (!cardId) {
                     showNotification('Please enter a Card ID', 'error');
-                    return false;
+                    return null;
                 }
                 
                 // Ensure card ID has CARD prefix if missing
@@ -415,360 +938,325 @@
                     cardId = 'CARD' + cardId;
                 }
                 
-                // Show loading
-                scanBtn.innerHTML = '<div class="loading"></div> Scanning...';
-                scanBtn.disabled = true;
+                showNotification(`Loading card ${cardId}...`, 'info');
                 
-                // Fetch card from Supabase
-                const cardData = await fetchCardFromSupabase(cardId);
-                
-                // Reset button
-                scanBtn.innerHTML = '<i class="fas fa-search"></i> Scan Card';
-                scanBtn.disabled = false;
-                
-                if (!cardData) {
-                    // Check if it's a demo card
-                    if (cardId === 'CARD6842') {
-                        currentCard = {
-                            card_id: 'CARD6842',
-                            message_type: 'Text Message',
-                            message_text: 'Happy Birthday 😊'
-                        };
-                        showNotification('Using demo card (not in database)', 'info');
-                    } else {
-                        showNotification(`Card ${cardId} not found in Supabase database.`, 'error');
-                        return false;
+                try {
+                    // Try to load from Supabase
+                    const { data: cards, error } = await supabase
+                        .from('cards')
+                        .select('*')
+                        .eq('card_id', cardId)
+                        .single();
+                    
+                    if (error) {
+                        console.error('Supabase error:', error);
+                        
+                        if (error.message.includes('does not exist')) {
+                            showNotification(`Card ${cardId} not found in database`, 'error');
+                        } else {
+                            showNotification(`Error loading card: ${error.message}`, 'error');
+                        }
+                        return null;
                     }
+                    
+                    if (!cards) {
+                        showNotification(`Card ${cardId} not found`, 'error');
+                        return null;
+                    }
+                    
+                    // Update AR display
+                    if (arMessageText && arCardId && arCard) {
+                        const messagePreview = cards.message_text 
+                            ? cards.message_text.substring(0, 50) + (cards.message_text.length > 50 ? '...' : '')
+                            : 'No message';
+                        
+                        arMessageText.setAttribute('value', messagePreview);
+                        arCardId.setAttribute('value', `ID: ${cards.card_id}`);
+                        arCard.setAttribute('visible', 'true');
+                    }
+                    
+                    showNotification(`Card ${cardId} loaded successfully!`, 'success');
+                    return cards;
+                    
+                } catch (error) {
+                    console.error('Error loading card:', error);
+                    showNotification(`Error: ${error.message}`, 'error');
+                    return null;
+                }
+            }
+            
+            // Display card details
+            function displayCardDetails(card) {
+                currentCard = card;
+                
+                // Update display elements
+                displayCardId.textContent = card.card_id;
+                displayMessage.textContent = card.message_text || 'No message available';
+                displayType.textContent = card.message_type || 'Unknown type';
+                
+                // Format date
+                if (card.created_at) {
+                    const date = new Date(card.created_at);
+                    displayDate.textContent = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                 } else {
-                    currentCard = cardData;
+                    displayDate.textContent = 'Unknown';
                 }
                 
-                // Update input field
-                cardIdInput.value = cardId;
+                displaySource.textContent = 'Supabase Database';
                 
-                // Add to recent cards (if not already there)
-                const existingIndex = recentCards.findIndex(card => card.card_id === cardId);
-                if (existingIndex !== -1) {
-                    recentCards.splice(existingIndex, 1);
-                }
+                // Show card display
+                cardDisplay.classList.add('show');
                 
-                recentCards.unshift(currentCard);
-                
-                // Keep only last 6 cards
-                if (recentCards.length > 6) {
-                    recentCards = recentCards.slice(0, 6);
-                }
-                
-                // Display the card in AR
-                displayCardInAR(currentCard);
-                
-                // Update recent cards grid
-                updateRecentCardsGrid();
-                
-                showNotification(`Card ${cardId} scanned successfully from cloud!`, 'success');
-                return true;
+                // Log for debugging
+                console.log('Displaying card:', card);
             }
             
-            // Display card in AR using A-Frame
-            function displayCardInAR(card) {
-                // Show card info
-                cardInfo.style.display = 'block';
-                infoCardId.textContent = card.card_id;
-                infoType.textContent = card.message_type;
-                infoMessage.textContent = card.message_text || 'No message';
+            // Start AR scanner
+            function startARScanner() {
+                loadingScreen.style.display = 'flex';
+                loadingText.textContent = 'Starting camera...';
                 
-                // Clear previous AR content
-                arContent.innerHTML = '';
-                
-                // Create AR content based on card type
-                let arEntity;
-                
-                switch(card.message_type) {
-                    case 'Text Message':
-                        arEntity = document.createElement('a-text');
-                        arEntity.setAttribute('value', card.message_text || 'No message');
-                        arEntity.setAttribute('color', '#FFFFFF');
-                        arEntity.setAttribute('align', 'center');
-                        arEntity.setAttribute('width', 4);
-                        arEntity.setAttribute('position', '0 0.5 0');
-                        break;
+                // Request camera permissions
+                navigator.mediaDevices.getUserMedia({ video: true })
+                    .then(function(stream) {
+                        console.log('Camera access granted');
                         
-                    case 'Image':
-                        // For demo, use a placeholder image
-                        arEntity = document.createElement('a-image');
-                        arEntity.setAttribute('src', 'https://cdn-icons-png.flaticon.com/512/1161/1161380.png');
-                        arEntity.setAttribute('width', 1);
-                        arEntity.setAttribute('height', 1);
-                        arEntity.setAttribute('position', '0 0.5 0');
-                        break;
+                        // Hide loading and show AR scene
+                        setTimeout(() => {
+                            loadingScreen.style.display = 'none';
+                            scanMode.style.display = 'none';
+                            arSceneContainer.style.display = 'block';
+                            isScanning = true;
+                            
+                            // Check for URL parameter
+                            const urlCardId = getCardFromURL();
+                            if (urlCardId) {
+                                handleCardScan(urlCardId);
+                            }
+                        }, 1000);
+                    })
+                    .catch(function(error) {
+                        console.error('Camera access denied:', error);
+                        loadingText.textContent = 'Camera access denied';
+                        showNotification('Camera access is required for AR scanning', 'error');
                         
-                    case 'Video':
-                        // For demo, use a video placeholder
-                        arEntity = document.createElement('a-video');
-                        arEntity.setAttribute('src', '#videoTexture');
-                        arEntity.setAttribute('width', 1);
-                        arEntity.setAttribute('height', 0.75);
-                        arEntity.setAttribute('position', '0 0.5 0');
-                        break;
-                        
-                    case 'Audio':
-                        // For demo, use a speaker icon
-                        arEntity = document.createElement('a-image');
-                        arEntity.setAttribute('src', 'https://cdn-icons-png.flaticon.com/512/727/727241.png');
-                        arEntity.setAttribute('width', 1);
-                        arEntity.setAttribute('height', 1);
-                        arEntity.setAttribute('position', '0 0.5 0');
-                        break;
-                        
-                    default:
-                        arEntity = document.createElement('a-text');
-                        arEntity.setAttribute('value', card.message_text || 'AR Card');
-                        arEntity.setAttribute('color', '#FFFFFF');
-                        arEntity.setAttribute('align', 'center');
-                        arEntity.setAttribute('width', 4);
-                        arEntity.setAttribute('position', '0 0.5 0');
-                }
-                
-                // Apply current scale and rotation
-                arEntity.setAttribute('scale', `${scale} ${scale} ${scale}`);
-                arEntity.setAttribute('rotation', `0 ${rotation} 0`);
-                
-                arContent.appendChild(arEntity);
-                
-                // Also create a background plane for better visibility
-                const background = document.createElement('a-plane');
-                background.setAttribute('color', '#1a2980');
-                background.setAttribute('opacity', '0.8');
-                background.setAttribute('width', '1.5');
-                background.setAttribute('height', '1');
-                background.setAttribute('position', '0 0.5 -0.1');
-                arContent.appendChild(background);
+                        setTimeout(() => {
+                            loadingScreen.style.display = 'none';
+                            showNotification('Please allow camera access and try again', 'error');
+                        }, 2000);
+                    });
             }
             
-            // Update recent cards grid
-            async function updateRecentCardsGrid() {
-                // Fetch fresh data from Supabase
-                const cards = await fetchRecentCards();
+            // Handle card scan (from QR code or manual input)
+            async function handleCardScan(cardId) {
+                if (!cardId) return;
                 
-                if (cards.length === 0) {
-                    recentCardsGrid.innerHTML = `
-                        <div style="grid-column: 1 / -1; text-align: center; color: #999; padding: 40px;">
-                            <i class="fas fa-database" style="font-size: 3rem; margin-bottom: 15px;"></i>
-                            <p>No cards found in Supabase database.</p>
-                            <p style="font-size: 0.9rem; margin-top: 10px;">Create cards in the Maker page first.</p>
-                        </div>
-                    `;
+                // Show loading
+                loadingScreen.style.display = 'flex';
+                loadingText.textContent = `Loading card ${cardId}...`;
+                
+                // Load card data
+                const card = await loadCardData(cardId);
+                
+                if (card) {
+                    // Display card details
+                    displayCardDetails(card);
+                    
+                    // Update URL without reloading
+                    const newUrl = `${window.location.pathname}?card=${encodeURIComponent(cardId)}`;
+                    window.history.pushState({}, '', newUrl);
+                }
+                
+                // Hide loading
+                loadingScreen.style.display = 'none';
+            }
+            
+            // Share card
+            function shareCard() {
+                if (!currentCard) {
+                    showNotification('No card to share', 'error');
                     return;
                 }
                 
-                let gridHTML = '';
-                cards.forEach(card => {
-                    let icon = 'fa-font';
-                    if (card.message_type.includes('Image')) icon = 'fa-image';
-                    else if (card.message_type.includes('Video')) icon = 'fa-video';
-                    else if (card.message_type.includes('Audio')) icon = 'fa-music';
-                    
-                    gridHTML += `
-                    <div class="card-item" data-card-id="${card.card_id}">
-                        <div class="card-item-id">${card.card_id}</div>
-                        <div class="card-item-type">${card.message_type}</div>
-                        <div class="card-item-preview">
-                            <i class="fas ${icon} fa-2x" style="color: #1a2980;"></i>
-                        </div>
-                        <div style="font-size: 0.9rem; color: #666; min-height: 40px; padding: 10px 0;">
-                            ${(card.message_text || '').substring(0, 30) + ((card.message_text || '').length > 30 ? '...' : '') || 'No message'}
-                        </div>
-                        <button class="scan-btn" data-card-id="${card.card_id}">
-                            <i class="fas fa-eye"></i> View in AR
-                        </button>
-                    </div>
-                    `;
-                });
+                const cardUrl = `${window.location.origin}${window.location.pathname}?card=${encodeURIComponent(currentCard.card_id)}`;
+                const shareText = `Check out this AR Magic Card: ${currentCard.card_id}\n\n${currentCard.message_text || 'Secret message'}\n\nView it here: ${cardUrl}`;
                 
-                recentCardsGrid.innerHTML = gridHTML;
-                
-                // Add event listeners to card items
-                document.querySelectorAll('.card-item').forEach(item => {
-                    item.addEventListener('click', function() {
-                        const cardId = this.getAttribute('data-card-id');
-                        scanCard(cardId);
-                    });
-                });
-                
-                // Add event listeners to scan buttons
-                document.querySelectorAll('.scan-btn').forEach(btn => {
-                    btn.addEventListener('click', function(e) {
-                        e.stopPropagation(); // Prevent card item click
-                        const cardId = this.getAttribute('data-card-id');
-                        scanCard(cardId);
-                    });
-                });
-            }
-            
-            // Simulate camera scanning
-            function simulateScanning() {
-                const scannerBox = document.querySelector('.scanner-box');
-                scannerBox.style.borderColor = '#1a2980';
-                scannerBox.style.boxShadow = '0 0 20px rgba(26, 41, 128, 0.5)';
-                
-                // Show scanning animation
-                const scanningText = document.createElement('div');
-                scanningText.innerHTML = '<div class="loading" style="display: inline-block; margin-right: 10px;"></div> Scanning cloud database...';
-                scanningText.style.color = '#1a2980';
-                scanningText.style.fontWeight = 'bold';
-                scanningText.style.marginTop = '15px';
-                scanningText.style.fontSize = '1.2rem';
-                
-                scannerBox.appendChild(scanningText);
-                
-                setTimeout(() => {
-                    scannerBox.style.borderColor = '#ccc';
-                    scannerBox.style.boxShadow = 'none';
-                    scanningText.remove();
-                    
-                    // Get card ID and scan
-                    const cardId = cardIdInput.value.trim();
-                    if (cardId) {
-                        scanCard(cardId);
-                    }
-                }, 1500);
-            }
-            
-            // Initialize the page
-            async function initScannerPage() {
-                // Load recent cards from Supabase
-                await updateRecentCardsGrid();
-                
-                // Auto-scan demo card on page load
-                setTimeout(async () => {
-                    // Try to load a real card first
-                    const cards = await fetchRecentCards();
-                    if (cards && cards.length > 0) {
-                        const firstCard = cards[0];
-                        await scanCard(firstCard.card_id);
-                    } else {
-                        // Use demo card if no cards in database
-                        await scanCard('CARD6842');
-                    }
-                }, 500);
-                
-                // Test Supabase connection
-                if (supabase) {
-                    try {
-                        const { data, error } = await supabase
-                            .from('cards')
-                            .select('count', { count: 'exact', head: true });
-                        
-                        if (error) {
-                            console.error('Supabase connection test failed:', error);
-                            updateSyncStatus(false);
-                        } else {
-                            console.log('Supabase connection successful');
-                            updateSyncStatus(true);
-                        }
-                    } catch (error) {
-                        console.error('Supabase connection test failed:', error);
-                        updateSyncStatus(false);
-                    }
+                if (navigator.share) {
+                    // Use Web Share API if available
+                    navigator.share({
+                        title: `AR Magic Card: ${currentCard.card_id}`,
+                        text: shareText,
+                        url: cardUrl
+                    })
+                    .then(() => console.log('Share successful'))
+                    .catch(error => console.log('Share failed:', error));
+                } else {
+                    // Fallback: copy to clipboard
+                    navigator.clipboard.writeText(shareText)
+                        .then(() => {
+                            showNotification('Card link copied to clipboard!', 'success');
+                        })
+                        .catch(err => {
+                            // Fallback for older browsers
+                            const tempInput = document.createElement('input');
+                            tempInput.value = shareText;
+                            document.body.appendChild(tempInput);
+                            tempInput.select();
+                            document.execCommand('copy');
+                            document.body.removeChild(tempInput);
+                            showNotification('Card link copied to clipboard!', 'success');
+                        });
                 }
+            }
+            
+            // Generate QR code for current card
+            function generateQRForCard() {
+                if (!currentCard) {
+                    showNotification('No card to generate QR for', 'error');
+                    return;
+                }
+                
+                // Redirect to QR generator with the card ID
+                window.open(`qr.html?card=${encodeURIComponent(currentCard.card_id)}`, '_blank');
+            }
+            
+            // Initialize the application
+            async function initializeApp() {
+                console.log('Initializing AR Viewer application...');
+                
+                // Initialize Supabase
+                const supabaseConnected = await initializeSupabase();
+                
+                if (!supabaseConnected) {
+                    // Show offline mode message
+                    updateStatus(false, 'Offline Mode');
+                    showNotification('Running in offline mode. Some features may be limited.', 'info');
+                }
+                
+                // Check for URL parameter on load
+                const urlCardId = getCardFromURL();
+                if (urlCardId) {
+                    // Direct card view mode (from QR code)
+                    scanMode.style.display = 'none';
+                    loadingScreen.style.display = 'flex';
+                    loadingText.textContent = `Loading card ${urlCardId}...`;
+                    
+                    if (supabaseConnected) {
+                        const card = await loadCardData(urlCardId);
+                        if (card) {
+                            displayCardDetails(card);
+                        }
+                    }
+                    
+                    loadingScreen.style.display = 'none';
+                } else {
+                    // Normal scan mode
+                    scanMode.style.display = 'block';
+                }
+                
+                // Hide loading screen
+                setTimeout(() => {
+                    loadingScreen.style.opacity = '0';
+                    setTimeout(() => {
+                        loadingScreen.style.display = 'none';
+                    }, 500);
+                }, 1000);
+                
+                console.log('AR Viewer initialized successfully');
             }
             
             // Event Listeners
-            scanBtn.addEventListener('click', function() {
-                const cardId = cardIdInput.value.trim();
-                if (!cardId) {
-                    showNotification('Please enter a Card ID to scan', 'error');
+            startScanBtn.addEventListener('click', startARScanner);
+            
+            toggleManualInputBtn.addEventListener('click', function() {
+                const isVisible = manualInput.style.display === 'block';
+                manualInput.style.display = isVisible ? 'none' : 'block';
+                this.innerHTML = isVisible 
+                    ? '<i class="fas fa-keyboard"></i> Manual Input'
+                    : '<i class="fas fa-times"></i> Close';
+            });
+            
+            manualLoadBtn.addEventListener('click', function() {
+                const cardId = manualCardId.value.trim();
+                if (cardId) {
+                    handleCardScan(cardId);
+                }
+            });
+            
+            manualCardId.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    const cardId = this.value.trim();
+                    if (cardId) {
+                        handleCardScan(cardId);
+                    }
+                }
+            });
+            
+            closeCardBtn.addEventListener('click', function() {
+                cardDisplay.classList.remove('show');
+            });
+            
+            shareCardBtn.addEventListener('click', shareCard);
+            
+            newScanBtn.addEventListener('click', function() {
+                cardDisplay.classList.remove('show');
+                
+                if (isScanning) {
+                    // Already in AR mode, just hide card display
                     return;
                 }
                 
-                simulateScanning();
+                // Return to scan mode
+                scanMode.style.display = 'block';
+                arSceneContainer.style.display = 'none';
+                manualInput.style.display = 'none';
+                toggleManualInputBtn.innerHTML = '<i class="fas fa-keyboard"></i> Manual Input';
+                
+                // Clear URL parameter
+                window.history.pushState({}, '', window.location.pathname);
             });
             
-            demoBtn.addEventListener('click', function() {
-                cardIdInput.value = 'CARD6842';
-                simulateScanning();
-            });
+            generateQrBtn.addEventListener('click', generateQRForCard);
             
-            startArBtn.addEventListener('click', function() {
-                showNotification('AR camera activated. Point your camera at a flat surface with good lighting.', 'info');
-                // The A-Frame scene is already embedded and will use the webcam
-            });
-            
-            fullscreenBtn.addEventListener('click', function() {
-                const arView = document.getElementById('arView');
-                if (!document.fullscreenElement) {
-                    if (arView.requestFullscreen) {
-                        arView.requestFullscreen();
-                    } else if (arView.webkitRequestFullscreen) {
-                        arView.webkitRequestFullscreen();
+            // AR Marker Events
+            if (hiroMarker) {
+                hiroMarker.addEventListener('markerFound', function() {
+                    console.log('Marker found!');
+                    showNotification('AR marker detected!', 'success');
+                    
+                    // If we have a card loaded, show it in AR
+                    if (currentCard && arCard) {
+                        arCard.setAttribute('visible', 'true');
                     }
-                } else {
-                    if (document.exitFullscreen) {
-                        document.exitFullscreen();
-                    } else if (document.webkitExitFullscreen) {
-                        document.webkitExitFullscreen();
+                });
+                
+                hiroMarker.addEventListener('markerLost', function() {
+                    console.log('Marker lost');
+                    if (arCard) {
+                        arCard.setAttribute('visible', 'false');
                     }
-                }
-            });
-            
-            // AR Controls
-            rotateBtn.addEventListener('click', function() {
-                if (currentCard) {
-                    rotation += 45;
-                    if (rotation >= 360) rotation = 0;
-                    arContent.setAttribute('rotation', `0 ${rotation} 0`);
-                    showNotification('AR content rotated', 'info');
-                }
-            });
-            
-            zoomInBtn.addEventListener('click', function() {
-                if (currentCard && scale < 2) {
-                    scale += 0.1;
-                    arContent.setAttribute('scale', `${scale} ${scale} ${scale}`);
-                }
-            });
-            
-            zoomOutBtn.addEventListener('click', function() {
-                if (currentCard && scale > 0.5) {
-                    scale -= 0.1;
-                    arContent.setAttribute('scale', `${scale} ${scale} ${scale}`);
-                }
-            });
-            
-            resetBtn.addEventListener('click', function() {
-                if (currentCard) {
-                    scale = 1;
-                    rotation = 0;
-                    arContent.setAttribute('scale', '1 1 1');
-                    arContent.setAttribute('rotation', '0 0 0');
-                    showNotification('AR content reset', 'info');
-                }
-            });
-            
-            // Allow Enter key to trigger scan
-            cardIdInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    scanBtn.click();
-                }
-            });
-            
-            // Check for card parameter in URL
-            function checkUrlForCard() {
-                const urlParams = new URLSearchParams(window.location.search);
-                const cardId = urlParams.get('card');
-                if (cardId) {
-                    cardIdInput.value = cardId;
-                    setTimeout(() => {
-                        scanCard(cardId);
-                    }, 1000);
-                }
+                });
+                
+                // Tap on AR card to show details
+                hiroMarker.addEventListener('click', function() {
+                    if (currentCard && !cardDisplay.classList.contains('show')) {
+                        displayCardDetails(currentCard);
+                    }
+                });
             }
             
-            // Initialize the scanner page
-            document.addEventListener('DOMContentLoaded', function() {
-                initScannerPage();
-                checkUrlForCard();
+            // Handle back/forward navigation
+            window.addEventListener('popstate', function() {
+                const urlCardId = getCardFromURL();
+                if (urlCardId) {
+                    handleCardScan(urlCardId);
+                } else {
+                    cardDisplay.classList.remove('show');
+                }
             });
+            
+            // Initialize the app
+            initializeApp();
         });
     </script>
 </body>
