@@ -4,10 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AR Magic Card Viewer</title>
-    <!-- A-Frame for AR -->
-    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-    <!-- AR.js for marker-based AR -->
-    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+    <!-- QR Scanner Library -->
+    <script src="https://unpkg.com/html5-qrcode@latest/dist/html5-qrcode.min.js"></script>
     <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <!-- Font Awesome -->
@@ -21,11 +19,11 @@
         }
         
         body {
-            background: linear-gradient(135deg, #1a2980 0%, #26d0ce 100%);
+            background: #0a0e17;
+            color: white;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            overflow-x: hidden;
         }
         
         .container {
@@ -35,28 +33,25 @@
             flex-direction: column;
         }
         
-        /* Header Styles */
+        /* Header */
         .header {
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
+            background: rgba(10, 14, 23, 0.95);
             padding: 15px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            backdrop-filter: blur(10px);
-            position: relative;
+            border-bottom: 1px solid rgba(56, 239, 125, 0.2);
+            position: sticky;
+            top: 0;
             z-index: 100;
         }
         
         .header h1 {
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             display: flex;
             align-items: center;
             gap: 10px;
-        }
-        
-        .header h1 i {
-            color: #26d0ce;
+            color: #38ef7d;
         }
         
         .nav-buttons {
@@ -65,9 +60,9 @@
         }
         
         .nav-button {
-            background: rgba(255, 255, 255, 0.15);
-            color: white;
-            border: none;
+            background: rgba(56, 239, 125, 0.1);
+            color: #38ef7d;
+            border: 1px solid rgba(56, 239, 125, 0.3);
             padding: 8px 15px;
             border-radius: 20px;
             text-decoration: none;
@@ -76,11 +71,10 @@
             gap: 8px;
             font-size: 0.9rem;
             transition: all 0.3s;
-            cursor: pointer;
         }
         
         .nav-button:hover {
-            background: rgba(255, 255, 255, 0.25);
+            background: rgba(56, 239, 125, 0.2);
             transform: translateY(-2px);
         }
         
@@ -89,11 +83,12 @@
             align-items: center;
             gap: 8px;
             font-size: 0.9rem;
+            color: #aaa;
         }
         
         .status-dot {
-            width: 10px;
-            height: 10px;
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
             background: #ff416c;
         }
@@ -118,7 +113,6 @@
             justify-content: center;
             padding: 20px;
             position: relative;
-            min-height: 80vh;
         }
         
         /* Loading Screen */
@@ -128,7 +122,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, #1a2980 0%, #26d0ce 100%);
+            background: #0a0e17;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -138,117 +132,193 @@
         }
         
         .loading-spinner {
-            width: 60px;
-            height: 60px;
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            border-top: 4px solid #38ef7d;
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(56, 239, 125, 0.3);
+            border-top: 3px solid #38ef7d;
             border-radius: 50%;
             animation: spin 1s linear infinite;
             margin-bottom: 20px;
         }
         
         .loading-text {
-            color: white;
-            font-size: 1.2rem;
+            color: #aaa;
+            font-size: 1rem;
             text-align: center;
             max-width: 300px;
-            line-height: 1.5;
         }
         
-        /* Scan Mode */
-        .scan-mode {
+        /* QR Scanner - PRIMARY VIEW */
+        .qr-scanner-container {
             width: 100%;
             max-width: 800px;
-            text-align: center;
-            color: white;
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 20px;
         }
         
-        .scan-instructions {
-            background: rgba(0, 0, 0, 0.5);
-            border-radius: 15px;
-            padding: 30px;
-            margin-bottom: 20px;
-            backdrop-filter: blur(10px);
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            width: 100%;
+        .scanner-header {
+            text-align: center;
+            margin-bottom: 10px;
         }
         
-        .scan-instructions h2 {
+        .scanner-header h2 {
             font-size: 2rem;
+            color: #38ef7d;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .scanner-header p {
+            color: #aaa;
+            font-size: 1.1rem;
+            line-height: 1.5;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        
+        .scanner-box {
+            width: 100%;
+            max-width: 500px;
+            background: rgba(20, 25, 35, 0.8);
+            border-radius: 15px;
+            padding: 20px;
+            border: 2px solid rgba(56, 239, 125, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #qr-reader {
+            width: 100% !important;
+            border: none !important;
+            padding: 0 !important;
+        }
+        
+        #qr-reader__dashboard {
+            background: rgba(20, 25, 35, 0.9) !important;
+            border: none !important;
+            padding: 15px !important;
+        }
+        
+        #qr-reader__dashboard_section_csr button {
+            background: linear-gradient(to right, #38ef7d, #11998e) !important;
+            color: white !important;
+            border: none !important;
+            padding: 10px 20px !important;
+            border-radius: 8px !important;
+            font-weight: 600 !important;
+            cursor: pointer !important;
+        }
+        
+        #html5-qrcode-anchor-scan-type-change, 
+        #html5qr-code-full-region {
+            color: #38ef7d !important;
+        }
+        
+        .scanner-instructions {
+            margin-top: 20px;
+            text-align: center;
+            color: #aaa;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        
+        /* Manual Input (Secondary Option) */
+        .manual-input-container {
+            width: 100%;
+            max-width: 500px;
+            margin-top: 30px;
+            display: none;
+        }
+        
+        .manual-input-toggle {
+            background: rgba(20, 25, 35, 0.8);
+            border: 1px solid rgba(56, 239, 125, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
             margin-bottom: 15px;
+        }
+        
+        .manual-input-toggle:hover {
+            background: rgba(20, 25, 35, 0.9);
+            border-color: #38ef7d;
+        }
+        
+        .manual-input-toggle i {
+            margin-right: 10px;
             color: #38ef7d;
         }
         
-        .scan-instructions p {
-            font-size: 1.1rem;
-            margin-bottom: 20px;
-            line-height: 1.6;
-            opacity: 0.9;
-        }
-        
-        .feature-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-top: 25px;
-        }
-        
-        .feature-item {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 15px;
+        .manual-input-box {
+            background: rgba(20, 25, 35, 0.8);
+            border: 1px solid rgba(56, 239, 125, 0.3);
             border-radius: 10px;
+            padding: 25px;
+            margin-top: 10px;
+        }
+        
+        .manual-input-box h3 {
+            color: #38ef7d;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+        
+        .input-group {
             display: flex;
-            flex-direction: column;
-            align-items: center;
             gap: 10px;
         }
         
-        .feature-item i {
-            font-size: 2rem;
-            color: #38ef7d;
+        .input-group input {
+            flex: 1;
+            padding: 15px;
+            border: 1px solid rgba(56, 239, 125, 0.3);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            font-size: 1rem;
         }
         
-        .feature-item span {
-            font-size: 0.9rem;
+        .input-group input:focus {
+            outline: none;
+            border-color: #38ef7d;
         }
         
-        .start-scan-btn {
+        .input-group input::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+        }
+        
+        .input-group button {
             background: linear-gradient(to right, #38ef7d, #11998e);
             color: white;
             border: none;
-            padding: 15px 40px;
-            border-radius: 50px;
-            font-size: 1.2rem;
+            padding: 15px 25px;
+            border-radius: 8px;
             font-weight: 600;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin: 20px auto;
-            transition: all 0.3s;
+            min-width: 100px;
         }
         
-        .start-scan-btn:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(56, 239, 125, 0.4);
+        .input-group button:hover {
+            opacity: 0.9;
         }
         
-        /* Card Display (Visible when card is loaded) */
+        /* Card Display */
         .card-display-container {
             display: none;
             width: 100%;
-            max-width: 800px;
-            background: rgba(0, 0, 0, 0.7);
+            max-width: 600px;
+            background: rgba(20, 25, 35, 0.95);
             border-radius: 15px;
             padding: 30px;
-            color: white;
-            margin-top: 20px;
-            backdrop-filter: blur(10px);
             border: 2px solid rgba(56, 239, 125, 0.3);
+            margin-top: 20px;
         }
         
         .card-display-container.show {
@@ -261,29 +331,25 @@
             to { opacity: 1; transform: translateY(0); }
         }
         
-        .card-display-header {
+        .card-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 25px;
             padding-bottom: 15px;
-            border-bottom: 2px solid rgba(56, 239, 125, 0.3);
+            border-bottom: 1px solid rgba(56, 239, 125, 0.3);
         }
         
-        .card-display-title {
-            font-size: 1.8rem;
+        .card-title {
+            font-size: 1.5rem;
             color: #38ef7d;
             display: flex;
             align-items: center;
-            gap: 12px;
-        }
-        
-        .card-display-title i {
-            font-size: 1.5rem;
+            gap: 10px;
         }
         
         .card-id {
-            background: rgba(56, 239, 125, 0.2);
+            background: rgba(56, 239, 125, 0.1);
             padding: 5px 15px;
             border-radius: 20px;
             font-size: 0.9rem;
@@ -291,7 +357,7 @@
             color: #38ef7d;
         }
         
-        .card-content-box {
+        .card-content {
             background: rgba(255, 255, 255, 0.05);
             border-radius: 10px;
             padding: 25px;
@@ -300,9 +366,9 @@
         }
         
         .card-message {
-            font-size: 1.3rem;
+            font-size: 1.2rem;
             line-height: 1.6;
-            margin-bottom: 10px;
+            color: white;
             min-height: 60px;
         }
         
@@ -324,12 +390,8 @@
         
         .meta-item i {
             color: #38ef7d;
-            font-size: 1.3rem;
+            font-size: 1.2rem;
             width: 30px;
-        }
-        
-        .meta-content {
-            flex: 1;
         }
         
         .meta-label {
@@ -352,18 +414,18 @@
         
         .card-action-btn {
             flex: 1;
-            padding: 14px 25px;
+            padding: 12px 20px;
             border: none;
-            border-radius: 10px;
-            font-size: 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
             font-weight: 600;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            gap: 8px;
             transition: all 0.3s;
-            min-width: 160px;
+            min-width: 140px;
         }
         
         .card-action-btn.primary {
@@ -377,171 +439,30 @@
         }
         
         .card-action-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            transform: translateY(-2px);
+            opacity: 0.9;
         }
         
         .new-scan-btn {
-            margin-top: 30px;
-            background: rgba(255, 255, 255, 0.1);
+            width: 100%;
+            margin-top: 20px;
+            background: rgba(255, 255, 255, 0.05);
             color: white;
-            border: none;
-            padding: 12px 25px;
-            border-radius: 10px;
+            border: 1px solid rgba(56, 239, 125, 0.3);
+            padding: 12px;
+            border-radius: 8px;
             font-size: 1rem;
             cursor: pointer;
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 10px;
             transition: all 0.3s;
         }
         
         .new-scan-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: translateY(-2px);
-        }
-        
-        /* Manual Input */
-        .manual-input {
-            background: rgba(0, 0, 0, 0.7);
-            border-radius: 15px;
-            padding: 25px;
-            margin-top: 20px;
-            width: 100%;
-            max-width: 500px;
-            backdrop-filter: blur(10px);
-        }
-        
-        .manual-input h3 {
-            color: #38ef7d;
-            margin-bottom: 15px;
-            font-size: 1.3rem;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .input-group {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
-        }
-        
-        .input-group input {
-            flex: 1;
-            padding: 15px;
-            border: 2px solid rgba(56, 239, 125, 0.3);
-            border-radius: 8px;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            font-size: 1rem;
-        }
-        
-        .input-group input:focus {
-            outline: none;
+            background: rgba(56, 239, 125, 0.1);
             border-color: #38ef7d;
-        }
-        
-        .input-group input::placeholder {
-            color: rgba(255, 255, 255, 0.5);
-        }
-        
-        .input-group button {
-            background: linear-gradient(to right, #38ef7d, #11998e);
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            min-width: 120px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-        
-        .input-group button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(56, 239, 125, 0.3);
-        }
-        
-        /* QR Scanner Mode */
-        .qr-scanner {
-            width: 100%;
-            max-width: 500px;
-            background: rgba(0, 0, 0, 0.7);
-            border-radius: 15px;
-            padding: 25px;
-            color: white;
-            text-align: center;
-            margin-top: 20px;
-            backdrop-filter: blur(10px);
-            display: none;
-        }
-        
-        .qr-scanner.show {
-            display: block;
-        }
-        
-        .qr-scanner h3 {
-            color: #38ef7d;
-            margin-bottom: 20px;
-            font-size: 1.5rem;
-        }
-        
-        .qr-preview {
-            width: 300px;
-            height: 300px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 2px dashed #38ef7d;
-            border-radius: 10px;
-            margin: 0 auto 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .qr-preview video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        
-        .qr-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(0, 0, 0, 0.5);
-        }
-        
-        .scanner-instructions {
-            color: #38ef7d;
-            font-size: 1.1rem;
-            margin-bottom: 20px;
-            line-height: 1.5;
-        }
-        
-        .stop-scan-btn {
-            background: #ff416c;
-            color: white;
-            border: none;
-            padding: 12px 25px;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            margin-top: 15px;
         }
         
         /* Notification */
@@ -550,7 +471,7 @@
             top: 20px;
             right: 20px;
             padding: 15px 25px;
-            border-radius: 10px;
+            border-radius: 8px;
             color: white;
             font-weight: 600;
             box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
@@ -560,6 +481,7 @@
             transition: all 0.5s;
             max-width: 400px;
             backdrop-filter: blur(10px);
+            border-left: 4px solid;
         }
         
         .notification.show {
@@ -569,17 +491,17 @@
         
         .notification.success {
             background: rgba(56, 239, 125, 0.9);
-            border-left: 5px solid #11998e;
+            border-left-color: #11998e;
         }
         
         .notification.error {
             background: rgba(255, 65, 108, 0.9);
-            border-left: 5px solid #c2185b;
+            border-left-color: #c2185b;
         }
         
         .notification.info {
             background: rgba(41, 128, 185, 0.9);
-            border-left: 5px solid #1a5276;
+            border-left-color: #1a5276;
         }
         
         /* Mobile Responsive */
@@ -596,16 +518,12 @@
                 flex-wrap: wrap;
             }
             
-            .scan-instructions {
-                padding: 20px;
-            }
-            
-            .scan-instructions h2 {
+            .scanner-header h2 {
                 font-size: 1.5rem;
             }
             
-            .feature-list {
-                grid-template-columns: repeat(2, 1fr);
+            .scanner-box {
+                padding: 15px;
             }
             
             .card-actions {
@@ -619,26 +537,11 @@
             .input-group {
                 flex-direction: column;
             }
-            
-            .qr-preview {
-                width: 250px;
-                height: 250px;
-            }
         }
         
-        /* Animations */
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
-        }
-        
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-        }
-        
-        .floating {
-            animation: float 3s ease-in-out infinite;
         }
     </style>
 </head>
@@ -646,101 +549,76 @@
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <h1><i class="fas fa-camera"></i> AR Magic Card Viewer</h1>
+            <h1><i class="fas fa-camera"></i> Magic Card Viewer</h1>
             <div class="nav-buttons">
                 <a href="maker.html" class="nav-button">
-                    <i class="fas fa-magic"></i> Card Maker
+                    <i class="fas fa-magic"></i> Create
                 </a>
                 <a href="qr.html" class="nav-button">
-                    <i class="fas fa-qrcode"></i> QR Generator
+                    <i class="fas fa-qrcode"></i> Generate QR
                 </a>
-                <button class="nav-button" id="toggleManualInput">
-                    <i class="fas fa-keyboard"></i> Manual Input
-                </button>
-                <button class="nav-button" id="toggleQrScanner">
-                    <i class="fas fa-qrcode"></i> Scan QR
-                </button>
             </div>
             <div class="status-indicator">
                 <div class="status-dot" id="statusDot"></div>
-                <span id="statusText">Connecting...</span>
+                <span id="statusText">Loading...</span>
             </div>
         </div>
         
         <!-- Loading Screen -->
         <div class="loading-screen" id="loadingScreen">
             <div class="loading-spinner"></div>
-            <div class="loading-text" id="loadingText">Initializing AR Viewer...</div>
+            <div class="loading-text" id="loadingText">Initializing QR Scanner...</div>
+            <div class="loading-text" style="font-size: 0.9rem; margin-top: 10px; color: #666;">
+                Please allow camera access when prompted
+            </div>
         </div>
         
         <!-- Main Content -->
         <div class="main-content">
-            <!-- Scan Mode -->
-            <div class="scan-mode" id="scanMode">
-                <div class="scan-instructions">
-                    <h2><i class="fas fa-camera floating"></i> Discover AR Magic Cards</h2>
-                    <p>Scan QR codes from your AR Magic Cards to reveal hidden messages or enter a Card ID manually to view the content.</p>
+            <!-- QR Scanner - PRIMARY VIEW -->
+            <div class="qr-scanner-container" id="qrScannerContainer" style="display: none;">
+                <div class="scanner-header">
+                    <h2><i class="fas fa-qrcode"></i> Scan QR Code</h2>
+                    <p>Point your camera at a QR code from your Magic Cards to view the message</p>
+                </div>
+                
+                <div class="scanner-box">
+                    <div id="qr-reader"></div>
+                </div>
+                
+                <div class="scanner-instructions">
+                    <p><i class="fas fa-lightbulb"></i> Tip: Ensure good lighting and hold steady for faster scanning</p>
+                </div>
+                
+                <!-- Manual Input Toggle -->
+                <div class="manual-input-container" id="manualInputContainer">
+                    <div class="manual-input-toggle" id="manualInputToggle">
+                        <i class="fas fa-keyboard"></i> Or enter Card ID manually
+                    </div>
                     
-                    <div class="feature-list">
-                        <div class="feature-item">
-                            <i class="fas fa-qrcode"></i>
-                            <span>Scan QR Codes</span>
-                        </div>
-                        <div class="feature-item">
-                            <i class="fas fa-keyboard"></i>
-                            <span>Manual Entry</span>
-                        </div>
-                        <div class="feature-item">
-                            <i class="fas fa-cloud"></i>
-                            <span>Cloud Connected</span>
-                        </div>
-                        <div class="feature-item">
-                            <i class="fas fa-share-alt"></i>
-                            <span>Share Messages</span>
+                    <div class="manual-input-box" id="manualInputBox" style="display: none;">
+                        <h3><i class="fas fa-keyboard"></i> Manual Entry</h3>
+                        <div class="input-group">
+                            <input type="text" id="manualCardId" placeholder="Enter Card ID (e.g., CARD1234)">
+                            <button id="manualLoadBtn">
+                                <i class="fas fa-search"></i> Load
+                            </button>
                         </div>
                     </div>
-                </div>
-                
-                <!-- Manual Input -->
-                <div class="manual-input" id="manualInput" style="display: none;">
-                    <h3><i class="fas fa-keyboard"></i> Enter Card ID Manually</h3>
-                    <p>If you have a Card ID, enter it below to view the message:</p>
-                    <div class="input-group">
-                        <input type="text" id="manualCardId" placeholder="Enter Card ID (e.g., CARD1234)">
-                        <button id="manualLoadBtn">
-                            <i class="fas fa-search"></i> Load Card
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- QR Scanner -->
-                <div class="qr-scanner" id="qrScanner">
-                    <h3><i class="fas fa-qrcode"></i> Scan QR Code</h3>
-                    <div class="scanner-instructions">
-                        Point your camera at a QR code from an AR Magic Card
-                    </div>
-                    <div class="qr-preview" id="qrPreview">
-                        <div class="qr-overlay">
-                            <i class="fas fa-camera" style="font-size: 3rem; color: #38ef7d;"></i>
-                        </div>
-                    </div>
-                    <button class="stop-scan-btn" id="stopScanBtn">
-                        <i class="fas fa-stop"></i> Stop Scanner
-                    </button>
                 </div>
             </div>
             
-            <!-- Card Display Container -->
+            <!-- Card Display -->
             <div class="card-display-container" id="cardDisplayContainer">
-                <div class="card-display-header">
-                    <div class="card-display-title">
+                <div class="card-header">
+                    <div class="card-title">
                         <i class="fas fa-gem"></i>
-                        <span id="displayCardTitle">Magic Card</span>
+                        <span>Magic Card</span>
                         <span class="card-id" id="displayCardId">CARD1234</span>
                     </div>
                 </div>
                 
-                <div class="card-content-box">
+                <div class="card-content">
                     <div class="card-message" id="displayMessage">
                         Loading message...
                     </div>
@@ -749,48 +627,38 @@
                 <div class="card-meta">
                     <div class="meta-item">
                         <i class="fas fa-tag"></i>
-                        <div class="meta-content">
-                            <div class="meta-label">Card Type</div>
+                        <div>
+                            <div class="meta-label">Type</div>
                             <div class="meta-value" id="displayType">Text Message</div>
                         </div>
                     </div>
                     <div class="meta-item">
                         <i class="fas fa-calendar"></i>
-                        <div class="meta-content">
-                            <div class="meta-label">Created On</div>
+                        <div>
+                            <div class="meta-label">Created</div>
                             <div class="meta-value" id="displayDate">Just now</div>
                         </div>
                     </div>
                     <div class="meta-item">
                         <i class="fas fa-database"></i>
-                        <div class="meta-content">
+                        <div>
                             <div class="meta-label">Source</div>
                             <div class="meta-value" id="displaySource">Supabase Database</div>
-                        </div>
-                    </div>
-                    <div class="meta-item" id="mediaItem" style="display: none;">
-                        <i class="fas fa-file"></i>
-                        <div class="meta-content">
-                            <div class="meta-label">Media File</div>
-                            <div class="meta-value" id="displayMedia">No media</div>
                         </div>
                     </div>
                 </div>
                 
                 <div class="card-actions">
                     <button class="card-action-btn primary" id="shareCardBtn">
-                        <i class="fas fa-share-alt"></i> Share This Card
+                        <i class="fas fa-share-alt"></i> Share Card
                     </button>
                     <button class="card-action-btn secondary" id="generateQrBtn">
-                        <i class="fas fa-qrcode"></i> Generate QR Code
-                    </button>
-                    <button class="card-action-btn secondary" id="viewArBtn" style="display: none;">
-                        <i class="fas fa-vr-cardboard"></i> View in AR
+                        <i class="fas fa-qrcode"></i> Generate QR
                     </button>
                 </div>
                 
                 <button class="new-scan-btn" id="newScanBtn">
-                    <i class="fas fa-redo"></i> View Another Card
+                    <i class="fas fa-redo"></i> Scan Another Code
                 </button>
             </div>
         </div>
@@ -799,42 +667,31 @@
     <!-- Notification -->
     <div class="notification" id="notification"></div>
     
-    <!-- Include QR Scanner Library -->
-    <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@latest/dist/html5-qrcode.min.js"></script>
-    
     <script>
         // === SUPABASE CREDENTIALS ===
         const SUPABASE_URL = 'https://elmhkhvryjzljxskbfps.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVsbWhraHZyeWp6bGp4c2tiZnBzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0NDc3NjMsImV4cCI6MjA4NDAyMzc2M30.Orrh2Pejnt3KPJMTUTmRRkhCwtZVfjUreKvX546bOcw';
         // ==============================
         
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('AR Viewer initializing...');
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('Magic Card Viewer initializing...');
             
             // DOM Elements
             const loadingScreen = document.getElementById('loadingScreen');
             const loadingText = document.getElementById('loadingText');
-            const scanMode = document.getElementById('scanMode');
+            const qrScannerContainer = document.getElementById('qrScannerContainer');
             const cardDisplayContainer = document.getElementById('cardDisplayContainer');
-            const toggleManualInputBtn = document.getElementById('toggleManualInput');
-            const toggleQrScannerBtn = document.getElementById('toggleQrScanner');
-            const manualInput = document.getElementById('manualInput');
-            const qrScanner = document.getElementById('qrScanner');
+            const manualInputToggle = document.getElementById('manualInputToggle');
+            const manualInputBox = document.getElementById('manualInputBox');
             const manualCardId = document.getElementById('manualCardId');
             const manualLoadBtn = document.getElementById('manualLoadBtn');
-            const qrPreview = document.getElementById('qrPreview');
-            const stopScanBtn = document.getElementById('stopScanBtn');
-            const displayCardTitle = document.getElementById('displayCardTitle');
             const displayCardId = document.getElementById('displayCardId');
             const displayMessage = document.getElementById('displayMessage');
             const displayType = document.getElementById('displayType');
             const displayDate = document.getElementById('displayDate');
             const displaySource = document.getElementById('displaySource');
-            const mediaItem = document.getElementById('mediaItem');
-            const displayMedia = document.getElementById('displayMedia');
             const shareCardBtn = document.getElementById('shareCardBtn');
             const generateQrBtn = document.getElementById('generateQrBtn');
-            const viewArBtn = document.getElementById('viewArBtn');
             const newScanBtn = document.getElementById('newScanBtn');
             const statusDot = document.getElementById('statusDot');
             const statusText = document.getElementById('statusText');
@@ -844,8 +701,7 @@
             let supabase = null;
             let isSupabaseConnected = false;
             let currentCard = null;
-            let qrScannerInstance = null;
-            let isScanning = false;
+            let html5QrCode = null;
             
             // Show notification
             function showNotification(message, type = 'info') {
@@ -862,7 +718,7 @@
             function updateStatus(connected, message) {
                 if (connected) {
                     statusDot.className = 'status-dot connected';
-                    statusText.textContent = message || 'Connected to Supabase';
+                    statusText.textContent = message || 'Connected';
                 } else {
                     statusDot.className = 'status-dot';
                     statusText.textContent = message || 'Disconnected';
@@ -872,8 +728,6 @@
             // Initialize Supabase
             async function initializeSupabase() {
                 try {
-                    loadingText.textContent = 'Connecting to database...';
-                    
                     if (window.supabase && window.supabase.createClient) {
                         supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
                         
@@ -886,13 +740,12 @@
                         if (error) {
                             console.error('Supabase connection test failed:', error);
                             updateStatus(false, 'Database error');
-                            showNotification('Cannot connect to database. Using offline mode.', 'error');
+                            showNotification('Cannot connect to database', 'error');
                             return false;
                         }
                         
                         isSupabaseConnected = true;
                         updateStatus(true, 'Ready to scan');
-                        showNotification('Connected to Supabase database', 'success');
                         return true;
                     } else {
                         console.error('Supabase library not loaded');
@@ -902,7 +755,6 @@
                 } catch (error) {
                     console.error('Error initializing Supabase:', error);
                     updateStatus(false, 'Connection failed');
-                    showNotification('Could not connect to database', 'error');
                     return false;
                 }
             }
@@ -937,14 +789,7 @@
                     
                     if (error) {
                         console.error('Supabase error:', error);
-                        
-                        if (error.message.includes('does not exist')) {
-                            showNotification(`Card ${cardId} not found in database`, 'error');
-                        } else if (error.message.includes('JSON')) {
-                            showNotification(`Card ${cardId} not found`, 'error');
-                        } else {
-                            showNotification(`Error loading card: ${error.message}`, 'error');
-                        }
+                        showNotification(`Card ${cardId} not found`, 'error');
                         return null;
                     }
                     
@@ -967,12 +812,11 @@
             function displayCardDetails(card) {
                 currentCard = card;
                 
-                // Hide scan mode and show card display
-                scanMode.style.display = 'none';
+                // Hide scanner and show card display
+                qrScannerContainer.style.display = 'none';
                 cardDisplayContainer.classList.add('show');
                 
                 // Update display elements
-                displayCardTitle.textContent = 'Magic Card';
                 displayCardId.textContent = card.card_id;
                 displayMessage.textContent = card.message_text || 'No message available';
                 displayType.textContent = card.message_type || 'Text Message';
@@ -981,10 +825,9 @@
                 if (card.created_at) {
                     const date = new Date(card.created_at);
                     displayDate.textContent = date.toLocaleDateString('en-US', { 
-                        weekday: 'long',
-                        year: 'numeric', 
-                        month: 'long', 
+                        month: 'short',
                         day: 'numeric',
+                        year: 'numeric',
                         hour: '2-digit',
                         minute: '2-digit'
                     });
@@ -994,24 +837,16 @@
                 
                 displaySource.textContent = 'Supabase Database';
                 
-                // Show media info if available
-                if (card.media_url || card.file_name) {
-                    mediaItem.style.display = 'flex';
-                    displayMedia.textContent = card.file_name || 'Media attached';
-                } else {
-                    mediaItem.style.display = 'none';
+                // Stop QR scanner
+                if (html5QrCode) {
+                    html5QrCode.stop().then(() => {
+                        console.log('QR scanner stopped');
+                    }).catch(err => {
+                        console.error('Error stopping scanner:', err);
+                    });
                 }
                 
-                // Show AR button if message type is AR
-                if (card.message_type && card.message_type.toLowerCase().includes('ar')) {
-                    viewArBtn.style.display = 'flex';
-                } else {
-                    viewArBtn.style.display = 'none';
-                }
-                
-                // Log for debugging
-                console.log('Displaying card:', card);
-                showNotification(`Card ${card.card_id} loaded successfully!`, 'success');
+                showNotification(`Card ${card.card_id} loaded!`, 'success');
             }
             
             // Share card
@@ -1022,25 +857,24 @@
                 }
                 
                 const cardUrl = `${window.location.origin}${window.location.pathname}?card=${encodeURIComponent(currentCard.card_id)}`;
-                const shareText = `✨ AR Magic Card: ${currentCard.card_id}\n\n📝 Message: ${currentCard.message_text || 'Secret message'}\n\n🔗 View it here: ${cardUrl}`;
+                const shareText = `✨ Magic Card: ${currentCard.card_id}\n\n📝 ${currentCard.message_text || 'Secret message'}\n\n🔗 ${cardUrl}`;
                 
                 if (navigator.share) {
                     // Use Web Share API if available
                     navigator.share({
-                        title: `AR Magic Card: ${currentCard.card_id}`,
+                        title: `Magic Card: ${currentCard.card_id}`,
                         text: shareText,
                         url: cardUrl
                     })
                     .then(() => console.log('Share successful'))
                     .catch(error => console.log('Share failed:', error));
                 } else {
-                    // Fallback: copy to clipboard
+                    // Copy to clipboard
                     navigator.clipboard.writeText(shareText)
                         .then(() => {
                             showNotification('Card link copied to clipboard!', 'success');
                         })
                         .catch(err => {
-                            // Fallback for older browsers
                             const tempInput = document.createElement('input');
                             tempInput.value = shareText;
                             document.body.appendChild(tempInput);
@@ -1063,92 +897,87 @@
                 window.open(`qr.html?card=${encodeURIComponent(currentCard.card_id)}`, '_blank');
             }
             
-            // Start QR scanner
-            function startQRScanner() {
+            // Initialize QR scanner
+            function initializeQRScanner() {
                 if (!window.Html5Qrcode) {
                     showNotification('QR scanner library not loaded', 'error');
                     return;
                 }
                 
-                if (isScanning) return;
-                
-                qrScanner.classList.add('show');
-                manualInput.style.display = 'none';
-                
-                const html5QrCode = new Html5Qrcode("qrPreview");
+                html5QrCode = new Html5Qrcode("qr-reader");
                 
                 const qrCodeSuccessCallback = (decodedText, decodedResult) => {
-                    console.log(`QR Code matched: ${decodedText}`);
+                    console.log(`QR Code detected: ${decodedText}`);
                     
-                    // Stop scanner
-                    html5QrCode.stop().then(() => {
-                        qrScannerInstance = null;
-                        isScanning = false;
-                        qrScanner.classList.remove('show');
-                    }).catch(err => {
-                        console.error('Error stopping scanner:', err);
-                    });
+                    // Try to extract card ID from URL or use the text directly
+                    let cardId = decodedText;
                     
-                    // Handle the decoded QR code
-                    // QR codes from qr.html should contain a URL with card parameter
                     try {
-                        const url = new URL(decodedText);
-                        const cardId = url.searchParams.get('card');
-                        if (cardId) {
-                            handleCardLoad(cardId);
-                        } else {
-                            // Maybe the QR code contains just the card ID
-                            handleCardLoad(decodedText);
+                        // Check if it's a URL with card parameter
+                        if (decodedText.includes('?card=') || decodedText.includes('viewer.html')) {
+                            const url = new URL(decodedText);
+                            cardId = url.searchParams.get('card');
                         }
                     } catch (e) {
-                        // If it's not a URL, assume it's a card ID
-                        handleCardLoad(decodedText);
+                        // Not a URL, use as-is
+                        console.log('Not a URL, using text directly');
+                    }
+                    
+                    if (cardId) {
+                        handleCardLoad(cardId);
                     }
                 };
                 
                 const config = {
                     fps: 10,
                     qrbox: { width: 250, height: 250 },
+                    rememberLastUsedCamera: true,
                     supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA],
-                    showTorchButtonIfSupported: true
+                    showTorchButtonIfSupported: true,
+                    showZoomSliderIfSupported: true
                 };
                 
+                // Start with back camera (environment) by default
                 html5QrCode.start(
                     { facingMode: "environment" },
                     config,
                     qrCodeSuccessCallback,
                     (errorMessage) => {
                         // Ignore most errors
+                        console.log(`QR Code error: ${errorMessage}`);
                     }
                 ).then(() => {
-                    qrScannerInstance = html5QrCode;
-                    isScanning = true;
-                    showNotification('QR scanner started', 'info');
+                    console.log('QR Scanner started successfully');
+                    showNotification('QR scanner ready. Point camera at a code.', 'info');
                 }).catch(err => {
-                    console.error('Error starting scanner:', err);
-                    showNotification('Could not start camera. Please check permissions.', 'error');
-                    qrScanner.classList.remove('show');
+                    console.error('Error starting QR scanner:', err);
+                    
+                    // Try again with user-facing camera if environment fails
+                    if (err.message.includes('environment')) {
+                        html5QrCode.start(
+                            { facingMode: "user" },
+                            config,
+                            qrCodeSuccessCallback,
+                            (errorMessage) => {}
+                        ).then(() => {
+                            console.log('QR Scanner started with user camera');
+                            showNotification('QR scanner ready. Point camera at a code.', 'info');
+                        }).catch(err2 => {
+                            console.error('Failed to start any camera:', err2);
+                            showNotification('Could not access camera. Please check permissions.', 'error');
+                            manualInputBox.style.display = 'block';
+                        });
+                    } else {
+                        showNotification('Could not start camera. Please check permissions.', 'error');
+                        manualInputBox.style.display = 'block';
+                    }
                 });
-            }
-            
-            // Stop QR scanner
-            function stopQRScanner() {
-                if (qrScannerInstance && isScanning) {
-                    qrScannerInstance.stop().then(() => {
-                        qrScannerInstance = null;
-                        isScanning = false;
-                        qrScanner.classList.remove('show');
-                        showNotification('Scanner stopped', 'info');
-                    }).catch(err => {
-                        console.error('Error stopping scanner:', err);
-                    });
-                }
             }
             
             // Handle card loading
             async function handleCardLoad(cardId) {
-                if (!cardId.trim()) {
-                    showNotification('Please enter a Card ID', 'error');
+                if (!cardId || !cardId.trim()) {
+                    showNotification('No card ID found in QR code', 'error');
                     return;
                 }
                 
@@ -1168,86 +997,64 @@
                 loadingScreen.style.display = 'none';
             }
             
-            // Reset to scan mode
-            function resetToScanMode() {
+            // Reset to scanner view
+            function resetToScanner() {
                 cardDisplayContainer.classList.remove('show');
-                scanMode.style.display = 'flex';
-                manualInput.style.display = 'none';
-                qrScanner.classList.remove('show');
-                toggleManualInputBtn.innerHTML = '<i class="fas fa-keyboard"></i> Manual Input';
-                toggleQrScannerBtn.innerHTML = '<i class="fas fa-qrcode"></i> Scan QR';
+                qrScannerContainer.style.display = 'flex';
+                manualInputBox.style.display = 'none';
                 
                 // Clear URL parameter
                 window.history.pushState({}, '', window.location.pathname);
                 
-                // Stop scanner if running
-                stopQRScanner();
+                // Restart scanner
+                if (html5QrCode) {
+                    initializeQRScanner();
+                }
             }
             
             // Initialize the application
             async function initializeApp() {
-                console.log('Initializing AR Viewer application...');
+                console.log('Initializing Magic Card Viewer...');
                 
                 // Initialize Supabase
-                const supabaseConnected = await initializeSupabase();
-                
-                if (!supabaseConnected) {
-                    // Show offline mode message
-                    updateStatus(false, 'Offline Mode');
-                    showNotification('Running in offline mode. Some features may be limited.', 'info');
-                }
+                await initializeSupabase();
                 
                 // Check for URL parameter on load
                 const urlCardId = getCardFromURL();
-                if (urlCardId) {
+                if (urlCardId && isSupabaseConnected) {
                     // Direct card view mode (from QR code)
-                    loadingScreen.style.display = 'flex';
                     loadingText.textContent = `Loading card ${urlCardId}...`;
                     
-                    if (supabaseConnected) {
-                        const card = await loadCardData(urlCardId);
-                        if (card) {
-                            displayCardDetails(card);
-                        }
+                    const card = await loadCardData(urlCardId);
+                    if (card) {
+                        displayCardDetails(card);
+                        loadingScreen.style.display = 'none';
+                    } else {
+                        loadingScreen.style.display = 'none';
+                        qrScannerContainer.style.display = 'flex';
+                        initializeQRScanner();
                     }
-                    
+                } else {
+                    // Normal scan mode
                     loadingScreen.style.display = 'none';
+                    qrScannerContainer.style.display = 'flex';
+                    
+                    // Initialize QR scanner with a small delay
+                    setTimeout(() => {
+                        initializeQRScanner();
+                    }, 500);
                 }
                 
-                // Hide loading screen
-                setTimeout(() => {
-                    loadingScreen.style.opacity = '0';
-                    setTimeout(() => {
-                        loadingScreen.style.display = 'none';
-                    }, 500);
-                }, 1000);
-                
-                console.log('AR Viewer initialized successfully');
+                console.log('Magic Card Viewer initialized');
             }
             
             // Event Listeners
-            toggleManualInputBtn.addEventListener('click', function() {
-                const isVisible = manualInput.style.display === 'block';
-                manualInput.style.display = isVisible ? 'none' : 'block';
-                qrScanner.classList.remove('show');
+            manualInputToggle.addEventListener('click', function() {
+                const isVisible = manualInputBox.style.display === 'block';
+                manualInputBox.style.display = isVisible ? 'none' : 'block';
                 this.innerHTML = isVisible 
-                    ? '<i class="fas fa-keyboard"></i> Manual Input'
-                    : '<i class="fas fa-times"></i> Close';
-                toggleQrScannerBtn.innerHTML = '<i class="fas fa-qrcode"></i> Scan QR';
-                stopQRScanner();
-            });
-            
-            toggleQrScannerBtn.addEventListener('click', function() {
-                const isVisible = qrScanner.classList.contains('show');
-                if (isVisible) {
-                    stopQRScanner();
-                    this.innerHTML = '<i class="fas fa-qrcode"></i> Scan QR';
-                } else {
-                    startQRScanner();
-                    this.innerHTML = '<i class="fas fa-times"></i> Close';
-                    manualInput.style.display = 'none';
-                    toggleManualInputBtn.innerHTML = '<i class="fas fa-keyboard"></i> Manual Input';
-                }
+                    ? '<i class="fas fa-keyboard"></i> Or enter Card ID manually'
+                    : '<i class="fas fa-times"></i> Hide manual entry';
             });
             
             manualLoadBtn.addEventListener('click', function() {
@@ -1266,17 +1073,11 @@
                 }
             });
             
-            stopScanBtn.addEventListener('click', stopQRScanner);
-            
             shareCardBtn.addEventListener('click', shareCard);
             
             generateQrBtn.addEventListener('click', generateQRForCard);
             
-            viewArBtn.addEventListener('click', function() {
-                showNotification('AR view coming soon!', 'info');
-            });
-            
-            newScanBtn.addEventListener('click', resetToScanMode);
+            newScanBtn.addEventListener('click', resetToScanner);
             
             // Handle back/forward navigation
             window.addEventListener('popstate', function() {
@@ -1284,7 +1085,7 @@
                 if (urlCardId) {
                     handleCardLoad(urlCardId);
                 } else {
-                    resetToScanMode();
+                    resetToScanner();
                 }
             });
             
