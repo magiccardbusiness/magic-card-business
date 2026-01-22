@@ -396,7 +396,7 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="cardSelect">Select from Supabase:</label>
+                    <label for="cardSelect">Select from Supabase Cards:</label>
                     <select id="cardSelect" class="card-select">
                         <option value="">Loading cards from Supabase...</option>
                     </select>
@@ -792,6 +792,7 @@
             let currentQrColor = '#000000';
             let currentQrData = null;
             let recentQrCodes = JSON.parse(localStorage.getItem('recentQrCodes')) || [];
+            let loadedCards = [];
             
             // Show notification
             function showNotification(message, type = 'info') {
@@ -815,7 +816,7 @@
                 }
             }
             
-            // Load cards from Supabase
+            // Load cards from Supabase (using your exact table structure)
             async function loadCardsFromSupabase() {
                 if (!isSupabaseConnected || !supabase) {
                     cardSelect.innerHTML = '<option value="">Supabase not connected</option>';
@@ -824,10 +825,11 @@
                 }
                 
                 try {
-                    // Try to load from 'cards' table (your table name)
+                    // Load from your 'cards' table with exact column names
                     const { data: cards, error } = await supabase
                         .from('cards')
-                        .select('card_id, message_text, created_at')
+                        .select('card_id, message_type, message_text, media_url, file_name, created_at, status')
+                        .eq('status', 'active') // Only load active cards
                         .order('created_at', { ascending: false })
                         .limit(50);
                     
@@ -837,7 +839,7 @@
                         // Check if it's a "table doesn't exist" error
                         if (error.message.includes('does not exist')) {
                             cardSelect.innerHTML = '<option value="">No cards table found</option>';
-                            showNotification('Cards table not found in Supabase. Create it first.', 'error');
+                            showNotification('Cards table not found in Supabase. Create cards first in the Maker.', 'error');
                         } else {
                             cardSelect.innerHTML = '<option value="">Error loading cards</option>';
                             showNotification('Error loading cards: ' + error.message, 'error');
@@ -847,14 +849,23 @@
                     
                     if (cards && cards.length > 0) {
                         cardSelect.innerHTML = '<option value="">Select a card from Supabase</option>';
+                        loadedCards = cards;
                         
                         cards.forEach(card => {
                             const option = document.createElement('option');
                             option.value = card.card_id;
-                            const messagePreview = card.message_text 
-                                ? card.message_text.substring(0, 30) + (card.message_text.length > 30 ? '...' : '')
-                                : 'No message';
-                            option.textContent = `${card.card_id} - ${messagePreview}`;
+                            
+                            // Create a descriptive label
+                            let label = card.card_id;
+                            if (card.message_text) {
+                                label += ` - ${card.message_text.substring(0, 25)}`;
+                                if (card.message_text.length > 25) label += '...';
+                            } else if (card.message_type) {
+                                label += ` - ${card.message_type}`;
+                            }
+                            
+                            option.textContent = label;
+                            option.title = card.message_text || card.message_type || 'No message';
                             cardSelect.appendChild(option);
                         });
                         
@@ -870,7 +881,7 @@
                 }
             }
             
-            // After generating QR code, save to Supabase
+            // After generating QR code, save to Supabase qr_codes table
             async function saveToSupabase(cardId, qrData, qrImageUrl) {
                 if (!isSupabaseConnected || !supabase) {
                     console.log('Supabase not connected, skipping save');
@@ -901,13 +912,27 @@
                             showNotification('Could not save to Supabase: ' + error.message, 'error');
                         }
                     } else {
-                        console.log('Saved to Supabase:', data);
+                        console.log('Saved to Supabase qr_codes table:', data);
                         showNotification('QR code saved to Supabase database', 'success');
                     }
                 } catch (error) {
                     console.error('Error saving to Supabase:', error);
                     showNotification('Error saving to Supabase: ' + error.message, 'error');
                 }
+            }
+            
+            // Get card details from loaded cards
+            function getCardDetails(cardId) {
+                const card = loadedCards.find(c => c.card_id === cardId);
+                if (card) {
+                    return {
+                        message: card.message_text || 'No message',
+                        type: card.message_type || 'Unknown type',
+                        media: card.media_url,
+                        fileName: card.file_name
+                    };
+                }
+                return null;
             }
             
             // Update dynamic options
@@ -1000,7 +1025,14 @@
                         
                         data = `${baseUrl}${viewerPath}?card=${encodeURIComponent(cardId)}`;
                         label = cardId;
-                        description = 'Scan this QR code with the AR Magic Card Scanner to view the card.';
+                        
+                        // Get card details for description
+                        const cardDetails = getCardDetails(cardId);
+                        if (cardDetails) {
+                            description = `${cardDetails.type}: ${cardDetails.message.substring(0, 50)}${cardDetails.message.length > 50 ? '...' : ''}`;
+                        } else {
+                            description = 'Scan this QR code with the AR Magic Card Scanner to view the card.';
+                        }
                         break;
                         
                     case 'url':
@@ -1307,6 +1339,12 @@
                     });
                     document.getElementById('typeCard').parentElement.classList.add('active');
                     updateDynamicOptions();
+                    
+                    // Show card info if available
+                    const cardDetails = getCardDetails(this.value);
+                    if (cardDetails) {
+                        showNotification(`Selected: ${cardDetails.type} - ${cardDetails.message.substring(0, 50)}...`, 'info');
+                    }
                 }
             });
             
