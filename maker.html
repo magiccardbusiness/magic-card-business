@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AR Magic Card Generator</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- FIXED: Correct Supabase CDN URL -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <style>
         * {
@@ -825,6 +824,7 @@
             let currentMediaType = null;
             let uploadedMediaUrl = null;
             let uploadedFileName = null;
+            let localPreviewUrl = null; // For local preview before upload
             
             // Get DOM elements safely
             function getElements() {
@@ -971,30 +971,35 @@
                 uploadedMediaUrl = null;
                 uploadedFileName = file.name;
                 
-                // Show preview
+                // Create local preview URL
+                if (localPreviewUrl) {
+                    URL.revokeObjectURL(localPreviewUrl); // Clean up previous preview
+                }
+                localPreviewUrl = URL.createObjectURL(file);
+                
+                // Show preview in upload area
                 showFilePreview(file, type);
+                
+                // Update main card preview
+                generatePreview();
                 
                 // Show notification
                 showNotification(`${type.charAt(0).toUpperCase() + type.slice(1)} selected: ${file.name}`, 'info');
-                
-                // Generate preview to show media in card preview
-                generatePreview();
             }
             
-            // Show file preview
+            // Show file preview in upload area
             function showFilePreview(file, type) {
                 let previewContainer;
                 let previewHTML = '';
-                const fileUrl = URL.createObjectURL(file);
                 
                 switch(type) {
                     case 'image':
                         previewContainer = elements.imagePreview;
                         previewHTML = `
-                            <img src="${fileUrl}" alt="Preview" class="preview-image">
+                            <img src="${localPreviewUrl}" alt="Preview" class="preview-image">
                             <div class="preview-filename">${file.name}</div>
-                            <button type="button" class="remove-media-btn" onclick="appFunctions.removeMedia('image')">
-                                <i class="fas fa-times"></i> Remove Image
+                            <button type="button" class="remove-media-btn" onclick="app.removeMedia('${type}')">
+                                <i class="fas fa-times"></i> Remove ${type.charAt(0).toUpperCase() + type.slice(1)}
                             </button>
                         `;
                         break;
@@ -1003,12 +1008,12 @@
                         previewContainer = elements.videoPreview;
                         previewHTML = `
                             <video controls class="preview-video">
-                                <source src="${fileUrl}" type="${file.type}">
+                                <source src="${localPreviewUrl}" type="${file.type}">
                                 Your browser does not support the video tag.
                             </video>
                             <div class="preview-filename">${file.name}</div>
-                            <button type="button" class="remove-media-btn" onclick="appFunctions.removeMedia('video')">
-                                <i class="fas fa-times"></i> Remove Video
+                            <button type="button" class="remove-media-btn" onclick="app.removeMedia('${type}')">
+                                <i class="fas fa-times"></i> Remove ${type.charAt(0).toUpperCase() + type.slice(1)}
                             </button>
                         `;
                         break;
@@ -1017,12 +1022,12 @@
                         previewContainer = elements.audioPreview;
                         previewHTML = `
                             <audio controls class="preview-audio">
-                                <source src="${fileUrl}" type="${file.type}">
+                                <source src="${localPreviewUrl}" type="${file.type}">
                                 Your browser does not support the audio tag.
                             </audio>
                             <div class="preview-filename">${file.name}</div>
-                            <button type="button" class="remove-media-btn" onclick="appFunctions.removeMedia('audio')">
-                                <i class="fas fa-times"></i> Remove Audio
+                            <button type="button" class="remove-media-btn" onclick="app.removeMedia('${type}')">
+                                <i class="fas fa-times"></i> Remove ${type.charAt(0).toUpperCase() + type.slice(1)}
                             </button>
                         `;
                         break;
@@ -1036,6 +1041,12 @@
             
             // Remove media file
             function removeMedia(mediaType) {
+                // Clean up local preview URL
+                if (localPreviewUrl) {
+                    URL.revokeObjectURL(localPreviewUrl);
+                    localPreviewUrl = null;
+                }
+                
                 currentMediaFile = null;
                 currentMediaType = null;
                 uploadedMediaUrl = null;
@@ -1066,11 +1077,11 @@
                         break;
                 }
                 
-                showNotification('Media removed', 'info');
+                showNotification(`${mediaType.charAt(0).toUpperCase() + mediaType.slice(1)} removed`, 'info');
                 generatePreview();
             }
             
-            // Upload file to Supabase Storage
+            // Upload file to Supabase Storage with progress tracking
             async function uploadFileToStorage() {
                 if (!currentMediaFile || !supabase) {
                     return null;
@@ -1084,14 +1095,25 @@
                     
                     if (progressContainer) progressContainer.classList.add('active');
                     
-                    // Generate unique filename
-                    const fileExt = currentMediaFile.name.split('.').pop();
-                    const fileName = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
-                    const filePath = `cards-media/${fileName}`; // Store in cards-media bucket
+                    // Generate unique filename with card ID
+                    const cardId = elements.cardIdInput.value.trim();
+                    const fullCardId = `CARD${cardId}`;
+                    const fileExt = currentMediaFile.name.split('.').pop().toLowerCase();
+                    const timestamp = Date.now();
+                    const randomString = Math.random().toString(36).substring(2, 15);
+                    const fileName = `${fullCardId}_${timestamp}_${randomString}.${fileExt}`;
+                    const filePath = fileName; // Store at root of bucket
                     
-                    // Upload to Supabase Storage - FIXED: Ensure bucket name is correct
+                    console.log('Uploading to Supabase Storage:', {
+                        bucket: 'cards-media',
+                        path: filePath,
+                        fileType: currentMediaFile.type,
+                        fileSize: currentMediaFile.size
+                    });
+                    
+                    // Upload to Supabase Storage
                     const { data, error } = await supabase.storage
-                        .from('cards-media') // Ensure this bucket exists in your Supabase
+                        .from('cards-media')
                         .upload(filePath, currentMediaFile, {
                             cacheControl: '3600',
                             upsert: false
@@ -1099,32 +1121,31 @@
                     
                     if (error) {
                         console.error('Storage upload error:', error);
-                        
-                        // If bucket doesn't exist, try without specific folder
-                        if (error.message.includes('bucket') && error.message.includes('not found')) {
-                            showNotification('Storage bucket "cards-media" not found. Please create it in Supabase Storage.', 'error');
-                            throw error;
-                        }
-                        
                         throw error;
                     }
+                    
+                    console.log('Upload successful:', data);
                     
                     // Get public URL
                     const { data: urlData } = supabase.storage
                         .from('cards-media')
                         .getPublicUrl(filePath);
                     
+                    console.log('Public URL:', urlData);
+                    
                     uploadedMediaUrl = urlData.publicUrl;
                     uploadedFileName = currentMediaFile.name;
                     
-                    // Hide progress
-                    if (progressContainer) {
-                        setTimeout(() => {
-                            progressContainer.classList.remove('active');
-                            if (progressFill) progressFill.style.width = '0%';
-                            if (progressText) progressText.textContent = '0%';
-                        }, 1000);
-                    }
+                    // Update progress to 100%
+                    if (progressFill) progressFill.style.width = '100%';
+                    if (progressText) progressText.textContent = '100%';
+                    
+                    // Hide progress after delay
+                    setTimeout(() => {
+                        if (progressContainer) progressContainer.classList.remove('active');
+                        if (progressFill) progressFill.style.width = '0%';
+                        if (progressText) progressText.textContent = '0%';
+                    }, 1000);
                     
                     return urlData.publicUrl;
                     
@@ -1133,14 +1154,20 @@
                     
                     // Hide progress
                     const progressContainer = elements[`${currentMediaType}UploadProgress`];
-                    if (progressContainer) progressContainer.classList.remove('active');
+                    if (progressContainer) {
+                        progressContainer.classList.remove('active');
+                        const progressFill = elements[`${currentMediaType}ProgressFill`];
+                        const progressText = elements[`${currentMediaType}ProgressText`];
+                        if (progressFill) progressFill.style.width = '0%';
+                        if (progressText) progressText.textContent = '0%';
+                    }
                     
                     showNotification(`Upload failed: ${error.message}`, 'error');
                     return null;
                 }
             }
             
-            // Generate card preview - FIXED: Now properly shows media in preview
+            // Generate card preview with media
             function generatePreview() {
                 if (!elements.cardIdInput) return null;
                 
@@ -1175,18 +1202,17 @@
                         break;
                         
                     case 'image':
-                        // Check if we have a local file or uploaded URL
+                        // Check what to show in preview
                         let imageContent = '';
-                        if (currentMediaFile && !uploadedMediaUrl) {
-                            // Show local file preview
-                            const localUrl = URL.createObjectURL(currentMediaFile);
-                            imageContent = `<img src="${localUrl}" alt="Image Preview" style="max-width: 100%; max-height: 200px; border-radius: 8px; margin: 10px 0;">`;
+                        if (localPreviewUrl) {
+                            // Show local preview
+                            imageContent = `<img src="${localPreviewUrl}" alt="Image Preview" style="max-width: 100%; max-height: 200px; border-radius: 8px; margin: 10px 0;">`;
                         } else if (uploadedMediaUrl) {
-                            // Show uploaded file
+                            // Show uploaded image
                             imageContent = `<img src="${uploadedMediaUrl}" alt="Image" style="max-width: 100%; max-height: 200px; border-radius: 8px; margin: 10px 0;">`;
                         } else {
-                            // Show icon if no file
-                            imageContent = `<div style="font-size: 3rem; margin: 20px 0;">
+                            // Show icon if no image
+                            imageContent = `<div style="font-size: 3rem; margin: 20px 0; color: #6a11cb;">
                                 <i class="fas fa-image"></i>
                             </div>`;
                         }
@@ -1201,17 +1227,18 @@
                         
                     case 'video':
                         let videoContent = '';
-                        if (currentMediaFile && !uploadedMediaUrl) {
-                            const localUrl = URL.createObjectURL(currentMediaFile);
+                        if (localPreviewUrl) {
                             videoContent = `<video controls style="max-width: 100%; max-height: 150px; border-radius: 8px; margin: 10px 0;">
-                                <source src="${localUrl}" type="${currentMediaFile.type}">
+                                <source src="${localPreviewUrl}" type="video/mp4">
+                                Your browser does not support the video tag.
                             </video>`;
                         } else if (uploadedMediaUrl) {
                             videoContent = `<video controls style="max-width: 100%; max-height: 150px; border-radius: 8px; margin: 10px 0;">
                                 <source src="${uploadedMediaUrl}" type="video/mp4">
+                                Your browser does not support the video tag.
                             </video>`;
                         } else {
-                            videoContent = `<div style="font-size: 3rem; margin: 20px 0;">
+                            videoContent = `<div style="font-size: 3rem; margin: 20px 0; color: #6a11cb;">
                                 <i class="fas fa-video"></i>
                             </div>`;
                         }
@@ -1226,17 +1253,18 @@
                         
                     case 'audio':
                         let audioContent = '';
-                        if (currentMediaFile && !uploadedMediaUrl) {
-                            const localUrl = URL.createObjectURL(currentMediaFile);
+                        if (localPreviewUrl) {
                             audioContent = `<audio controls style="width: 100%; margin: 10px 0;">
-                                <source src="${localUrl}" type="${currentMediaFile.type}">
+                                <source src="${localPreviewUrl}" type="audio/mpeg">
+                                Your browser does not support the audio tag.
                             </audio>`;
                         } else if (uploadedMediaUrl) {
                             audioContent = `<audio controls style="width: 100%; margin: 10px 0;">
                                 <source src="${uploadedMediaUrl}" type="audio/mpeg">
+                                Your browser does not support the audio tag.
                             </audio>`;
                         } else {
-                            audioContent = `<div style="font-size: 3rem; margin: 20px 0;">
+                            audioContent = `<div style="font-size: 3rem; margin: 20px 0; color: #6a11cb;">
                                 <i class="fas fa-music"></i>
                             </div>`;
                         }
@@ -1260,7 +1288,7 @@
                 // Return card data for saving
                 return {
                     card_id: fullCardId,
-                    message_type: contentType, // Changed to match form value
+                    message_type: contentType, // Use raw type for now
                     message_text: message,
                     media_url: uploadedMediaUrl || null,
                     file_name: uploadedFileName || null,
@@ -1275,19 +1303,6 @@
                     if (window.supabase && window.supabase.createClient) {
                         supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
                         console.log('Supabase initialized successfully');
-                        
-                        // Test connection by trying to list storage buckets
-                        try {
-                            const { data, error } = await supabase.storage.listBuckets();
-                            if (error) {
-                                console.warn('Storage buckets check failed, but Supabase client works:', error);
-                            } else {
-                                console.log('Supabase storage accessible');
-                            }
-                        } catch (storageError) {
-                            console.warn('Storage test failed:', storageError);
-                        }
-                        
                         return true;
                     } else {
                         console.error('Supabase library not loaded properly');
@@ -1299,7 +1314,7 @@
                 }
             }
             
-            // Save card to Supabase - FIXED: Proper message_type format
+            // Save card to Supabase
             async function saveCardToSupabase(cardData) {
                 try {
                     if (!supabase || typeof supabase.from !== 'function') {
@@ -1308,11 +1323,13 @@
                     
                     // Upload media file if exists and not already uploaded
                     if (currentMediaFile && !uploadedMediaUrl) {
-                        showNotification('Uploading media file...', 'info');
+                        showNotification(`Uploading ${currentMediaType} file...`, 'info');
                         const mediaUrl = await uploadFileToStorage();
                         if (mediaUrl) {
                             cardData.media_url = mediaUrl;
                             cardData.file_name = uploadedFileName;
+                        } else {
+                            throw new Error('Failed to upload media file');
                         }
                     }
                     
@@ -1329,33 +1346,30 @@
                     const supabaseCardData = {
                         card_id: cardData.card_id,
                         message_type: messageTypeDisplay,
-                        message_text: cardData.message_text,
+                        message_text: cardData.message_text || '',
                         media_url: cardData.media_url || null,
                         file_name: cardData.file_name || null,
                         status: 'active',
                         created_at: new Date().toISOString()
                     };
                     
-                    // Check if card already exists
-                    const { data: existingCards, error: checkError } = await supabase
+                    console.log('Saving card to Supabase:', supabaseCardData);
+                    
+                    // Try to insert the card
+                    const { data, error } = await supabase
                         .from('cards')
-                        .select('*')
-                        .eq('card_id', cardData.card_id)
-                        .eq('status', 'active');
+                        .insert([supabaseCardData])
+                        .select();
                     
-                    if (checkError) {
-                        console.error('Check existing card error:', checkError);
-                    }
-                    
-                    let result;
-                    
-                    if (existingCards && existingCards.length > 0) {
-                        // Update existing card
+                    if (error) {
+                        console.log('Insert error, trying update:', error);
+                        
+                        // If card exists, update it
                         const { error: updateError } = await supabase
                             .from('cards')
                             .update({
                                 message_type: messageTypeDisplay,
-                                message_text: cardData.message_text,
+                                message_text: cardData.message_text || '',
                                 media_url: cardData.media_url || null,
                                 file_name: cardData.file_name || null,
                                 updated_at: new Date().toISOString()
@@ -1363,27 +1377,14 @@
                             .eq('card_id', cardData.card_id);
                         
                         if (updateError) {
-                            console.error('Update error:', updateError);
+                            console.log('Update error:', updateError);
                             throw updateError;
                         }
                         
-                        result = { success: true, action: 'updated' };
-                    } else {
-                        // Insert new card
-                        const { data, error } = await supabase
-                            .from('cards')
-                            .insert([supabaseCardData])
-                            .select();
-                        
-                        if (error) {
-                            console.error('Insert error:', error);
-                            throw error;
-                        }
-                        
-                        result = { success: true, action: 'created' };
+                        return { success: true, action: 'updated' };
                     }
                     
-                    return result;
+                    return { success: true, action: 'created' };
                     
                 } catch (error) {
                     console.error('Supabase save error:', error);
@@ -1449,7 +1450,7 @@
                         // Shorten long messages/media URLs for display
                         let contentDisplay = card.message_text || 'No message';
                         if (card.media_url) {
-                            contentDisplay = `<i class="fas fa-link"></i> ${card.file_name || 'Media file'}`;
+                            contentDisplay = `<i class="fas fa-paperclip"></i> ${card.file_name || 'Media file'}`;
                         }
                         
                         tableHTML += `
@@ -1460,10 +1461,10 @@
                             <td>${createdDate}</td>
                             <td>
                                 <div class="action-buttons">
-                                    <button class="action-btn view" onclick="appFunctions.viewCard('${card.card_id}')">
+                                    <button class="action-btn view" onclick="app.viewCard('${card.card_id}')">
                                         <i class="fas fa-eye"></i> View
                                     </button>
-                                    <button class="action-btn delete" onclick="appFunctions.deleteCard('${card.card_id}')">
+                                    <button class="action-btn delete" onclick="app.deleteCard('${card.card_id}')">
                                         <i class="fas fa-trash"></i> Delete
                                     </button>
                                 </div>
@@ -1479,7 +1480,7 @@
                     if (elements.cardsTableBody) {
                         elements.cardsTableBody.innerHTML = `
                             <tr class="empty-row">
-                                <td colspan="5">Error loading cards from cloud: ${error.message}</td>
+                                <td colspan="5">Error loading cards: ${error.message}</td>
                             </tr>
                         `;
                     }
@@ -1489,6 +1490,10 @@
             // View card from table
             async function viewCard(cardId) {
                 try {
+                    if (!supabase) {
+                        throw new Error('Not connected to Supabase');
+                    }
+                    
                     // Extract numeric ID from CARD prefix
                     const numericId = cardId.replace('CARD', '');
                     
@@ -1498,103 +1503,102 @@
                     }
                     
                     // Load card details from Supabase
-                    if (supabase) {
-                        const { data, error } = await supabase
-                            .from('cards')
-                            .select('*')
-                            .eq('card_id', cardId)
-                            .eq('status', 'active')
-                            .single();
+                    const { data, error } = await supabase
+                        .from('cards')
+                        .select('*')
+                        .eq('card_id', cardId)
+                        .eq('status', 'active')
+                        .single();
+                    
+                    if (error) throw error;
+                    
+                    if (data) {
+                        // Set content type based on message_type
+                        document.querySelectorAll('input[name="contentType"]').forEach(radio => {
+                            radio.checked = false;
+                            radio.parentElement.classList.remove('active');
+                        });
                         
-                        if (error) throw error;
+                        let typeValue = 'text';
+                        if (data.message_type.includes('Image')) typeValue = 'image';
+                        else if (data.message_type.includes('Video')) typeValue = 'video';
+                        else if (data.message_type.includes('Audio')) typeValue = 'audio';
                         
-                        if (data) {
-                            // Set content type based on message_type
-                            document.querySelectorAll('input[name="contentType"]').forEach(radio => {
-                                radio.checked = false;
-                                radio.parentElement.classList.remove('active');
-                            });
-                            
-                            let typeValue = 'text';
-                            if (data.message_type.includes('Image')) typeValue = 'image';
-                            else if (data.message_type.includes('Video')) typeValue = 'video';
-                            else if (data.message_type.includes('Audio')) typeValue = 'audio';
-                            
-                            const typeRadio = document.getElementById(`type${typeValue.charAt(0).toUpperCase() + typeValue.slice(1)}`);
-                            if (typeRadio) {
-                                typeRadio.checked = true;
-                                typeRadio.parentElement.classList.add('active');
-                            }
-                            
-                            // Set message
-                            if (elements.messageInput) {
-                                elements.messageInput.value = data.message_text || '';
-                            }
-                            
-                            // Set media file info if exists
-                            if (data.media_url) {
-                                uploadedMediaUrl = data.media_url;
-                                uploadedFileName = data.file_name || 'Uploaded file';
-                                currentMediaFile = null; // No local file, just URL
-                                currentMediaType = typeValue;
-                                
-                                // Show preview for existing media
-                                let previewContainer;
-                                let previewHTML = '';
-                                
-                                switch(typeValue) {
-                                    case 'image':
-                                        previewContainer = elements.imagePreview;
-                                        previewHTML = `
-                                            <img src="${data.media_url}" alt="Preview" class="preview-image">
-                                            <div class="preview-filename">${data.file_name || 'Image file'}</div>
-                                            <button type="button" class="remove-media-btn" onclick="appFunctions.removeMedia('image')">
-                                                <i class="fas fa-times"></i> Remove Image
-                                            </button>
-                                        `;
-                                        break;
-                                    case 'video':
-                                        previewContainer = elements.videoPreview;
-                                        previewHTML = `
-                                            <video controls class="preview-video">
-                                                <source src="${data.media_url}" type="video/mp4">
-                                                Your browser does not support the video tag.
-                                            </video>
-                                            <div class="preview-filename">${data.file_name || 'Video file'}</div>
-                                            <button type="button" class="remove-media-btn" onclick="appFunctions.removeMedia('video')">
-                                                <i class="fas fa-times"></i> Remove Video
-                                            </button>
-                                        `;
-                                        break;
-                                    case 'audio':
-                                        previewContainer = elements.audioPreview;
-                                        previewHTML = `
-                                            <audio controls class="preview-audio">
-                                                <source src="${data.media_url}" type="audio/mpeg">
-                                                Your browser does not support the audio tag.
-                                            </audio>
-                                            <div class="preview-filename">${data.file_name || 'Audio file'}</div>
-                                            <button type="button" class="remove-media-btn" onclick="appFunctions.removeMedia('audio')">
-                                                <i class="fas fa-times"></i> Remove Audio
-                                            </button>
-                                        `;
-                                        break;
-                                }
-                                
-                                if (previewContainer) {
-                                    previewContainer.innerHTML = previewHTML;
-                                    previewContainer.classList.add('active');
-                                }
-                            }
-                            
-                            // Update media upload visibility
-                            updateMediaUploadVisibility();
-                            
-                            // Generate preview
-                            generatePreview();
-                            
-                            showNotification(`Loaded card: ${cardId}`, 'success');
+                        const typeRadio = document.getElementById(`type${typeValue.charAt(0).toUpperCase() + typeValue.slice(1)}`);
+                        if (typeRadio) {
+                            typeRadio.checked = true;
+                            typeRadio.parentElement.classList.add('active');
                         }
+                        
+                        // Set message
+                        if (elements.messageInput) {
+                            elements.messageInput.value = data.message_text || '';
+                        }
+                        
+                        // Set media file info if exists
+                        if (data.media_url) {
+                            uploadedMediaUrl = data.media_url;
+                            uploadedFileName = data.file_name || 'Uploaded file';
+                            currentMediaFile = null; // No local file, just URL
+                            currentMediaType = typeValue;
+                            localPreviewUrl = null;
+                            
+                            // Show preview for existing media
+                            let previewContainer;
+                            let previewHTML = '';
+                            
+                            switch(typeValue) {
+                                case 'image':
+                                    previewContainer = elements.imagePreview;
+                                    previewHTML = `
+                                        <img src="${data.media_url}" alt="Preview" class="preview-image">
+                                        <div class="preview-filename">${data.file_name || 'Image file'}</div>
+                                        <button type="button" class="remove-media-btn" onclick="app.removeMedia('image')">
+                                            <i class="fas fa-times"></i> Remove Image
+                                        </button>
+                                    `;
+                                    break;
+                                case 'video':
+                                    previewContainer = elements.videoPreview;
+                                    previewHTML = `
+                                        <video controls class="preview-video">
+                                            <source src="${data.media_url}" type="video/mp4">
+                                            Your browser does not support the video tag.
+                                        </video>
+                                        <div class="preview-filename">${data.file_name || 'Video file'}</div>
+                                        <button type="button" class="remove-media-btn" onclick="app.removeMedia('video')">
+                                            <i class="fas fa-times"></i> Remove Video
+                                        </button>
+                                    `;
+                                    break;
+                                case 'audio':
+                                    previewContainer = elements.audioPreview;
+                                    previewHTML = `
+                                        <audio controls class="preview-audio">
+                                            <source src="${data.media_url}" type="audio/mpeg">
+                                            Your browser does not support the audio tag.
+                                        </audio>
+                                        <div class="preview-filename">${data.file_name || 'Audio file'}</div>
+                                        <button type="button" class="remove-media-btn" onclick="app.removeMedia('audio')">
+                                            <i class="fas fa-times"></i> Remove Audio
+                                        </button>
+                                    `;
+                                    break;
+                            }
+                            
+                            if (previewContainer) {
+                                previewContainer.innerHTML = previewHTML;
+                                previewContainer.classList.add('active');
+                            }
+                        }
+                        
+                        // Update media upload visibility
+                        updateMediaUploadVisibility();
+                        
+                        // Generate preview
+                        generatePreview();
+                        
+                        showNotification(`Loaded card: ${cardId}`, 'success');
                     }
                 } catch (error) {
                     showNotification(`Error loading card: ${error.message}`, 'error');
@@ -1667,8 +1671,8 @@
                 // Update media upload visibility based on content type
                 updateMediaUploadVisibility();
                 
-                // Create app functions object for global access
-                window.appFunctions = {
+                // Create app object for global access
+                window.app = {
                     removeMedia: removeMedia,
                     viewCard: viewCard,
                     deleteCard: deleteCard
@@ -1679,7 +1683,7 @@
                     elements.generateBtn.addEventListener('click', function() {
                         const cardData = generatePreview();
                         if (cardData) {
-                            showNotification(`Card ${cardData.card_id} generated successfully!`, 'success');
+                            showNotification(`Card ${cardData.card_id} preview generated!`, 'success');
                         }
                     });
                 }
@@ -1706,11 +1710,6 @@
                                 if (supabaseInitialized) {
                                     await loadCardsFromSupabase();
                                 }
-                                
-                                // Clear media file after successful upload
-                                if (currentMediaFile && uploadedMediaUrl) {
-                                    currentMediaFile = null;
-                                }
                             } else {
                                 showNotification(`Failed to save to cloud: ${result.error}`, 'error');
                             }
@@ -1722,11 +1721,11 @@
                     elements.testBtn.addEventListener('click', function() {
                         const cardData = generatePreview();
                         if (cardData) {
-                            showNotification(`Testing card ${cardData.card_id} in AR mode...`, 'success');
+                            showNotification(`Testing card ${cardData.card_id}...`, 'info');
                             
-                            setTimeout(() => {
-                                alert(`AR Mode Activated!\n\nCard: ${cardData.card_id}\nContent: ${cardData.message_text}\n\nPoint your device's camera at the card to see the AR experience.`);
-                            }, 500);
+                            // Open viewer.html with the card ID
+                            const viewerUrl = `viewer.html?card=${encodeURIComponent(cardData.card_id)}`;
+                            window.open(viewerUrl, '_blank');
                         }
                     });
                 }
