@@ -525,186 +525,47 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVsbWhraHZyeWp6bGp4c2tiZnBzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0NDc3NjMsImV4cCI6MjA4NDAyMzc2M30.Orrh2Pejnt3KPJMTUTmRRkhCwtZVfjUreKvX546bOcw';
         // ==============================
         
-        // Self-contained QR Code Generator
+        // Simple QR Code Generator
         class QRCodeGenerator {
             constructor() {
                 this.canvas = document.getElementById('qrCanvas');
                 this.ctx = this.canvas.getContext('2d');
                 this.size = 250;
-                this.qrSize = 21; // QR code version 1 (21x21)
-                this.margin = 4;
             }
             
             generate(text) {
                 // Clear canvas
                 this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
                 
-                // Generate QR code data
-                const qrData = this.encodeText(text);
-                const modules = this.createModules(qrData);
-                
-                // Draw QR code
-                this.drawQRCode(modules);
-                
-                return true;
-            }
-            
-            encodeText(text) {
-                // Simple text encoding for QR code
-                let data = [];
-                
-                // Add mode indicator (8-bit byte mode)
-                data.push(0, 1, 0, 0); // 0100 for 8-bit byte mode
-                
-                // Add character count (max 8 bits for version 1)
-                const length = text.length;
-                data.push(...this.dec2bin(length, 8));
-                
-                // Add each character
-                for (let i = 0; i < length; i++) {
-                    const charCode = text.charCodeAt(i);
-                    data.push(...this.dec2bin(charCode, 8));
-                }
-                
-                // Add terminator
-                data.push(0, 0, 0, 0);
-                
-                // Pad to multiple of 8
-                while (data.length % 8 !== 0) {
-                    data.push(0);
-                }
-                
-                // Pad with pad bytes
-                const padBytes = [
-                    [1, 1, 1, 0, 1, 1, 0, 0],
-                    [0, 0, 0, 1, 0, 0, 0, 1]
-                ];
-                let padIndex = 0;
-                
-                while (data.length < 152) { // 152 bits for version 1, error correction L
-                    data.push(...padBytes[padIndex]);
-                    padIndex = (padIndex + 1) % 2;
-                }
-                
-                return data;
-            }
-            
-            dec2bin(dec, bits) {
-                let bin = dec.toString(2);
-                while (bin.length < bits) {
-                    bin = '0' + bin;
-                }
-                return bin.split('').map(bit => parseInt(bit));
-            }
-            
-            createModules(data) {
-                // Create 21x21 grid
-                const size = this.qrSize;
-                const modules = Array(size).fill().map(() => Array(size).fill(0));
-                
-                // Add finder patterns
-                this.addFinderPattern(modules, 0, 0);
-                this.addFinderPattern(modules, 0, size - 7);
-                this.addFinderPattern(modules, size - 7, 0);
-                
-                // Add timing patterns
-                for (let i = 8; i < size - 8; i++) {
-                    modules[6][i] = i % 2 === 0 ? 1 : 0;
-                    modules[i][6] = i % 2 === 0 ? 1 : 0;
-                }
-                
-                // Add dark module
-                modules[size - 8][8] = 1;
-                
-                // Simple data placement (real QR would be more complex)
-                let dataIndex = 0;
-                for (let row = size - 1; row >= 0; row -= 2) {
-                    for (let col = size - 1; col >= 0; col--) {
-                        // Skip reserved areas
-                        if (this.isReserved(modules, row, col)) continue;
-                        if (dataIndex < data.length) {
-                            modules[row][col] = data[dataIndex];
-                            dataIndex++;
-                        }
-                    }
-                    
-                    // Next row up
-                    const nextRow = row - 1;
-                    if (nextRow < 0) break;
-                    
-                    for (let col = 0; col < size; col++) {
-                        // Skip reserved areas
-                        if (this.isReserved(modules, nextRow, col)) continue;
-                        if (dataIndex < data.length) {
-                            modules[nextRow][col] = data[dataIndex];
-                            dataIndex++;
-                        }
-                    }
-                }
-                
-                return modules;
-            }
-            
-            addFinderPattern(modules, row, col) {
-                const pattern = [
-                    [1, 1, 1, 1, 1, 1, 1],
-                    [1, 0, 0, 0, 0, 0, 1],
-                    [1, 0, 1, 1, 1, 0, 1],
-                    [1, 0, 1, 1, 1, 0, 1],
-                    [1, 0, 1, 1, 1, 0, 1],
-                    [1, 0, 0, 0, 0, 0, 1],
-                    [1, 1, 1, 1, 1, 1, 1]
-                ];
-                
-                for (let i = 0; i < 7; i++) {
-                    for (let j = 0; j < 7; j++) {
-                        modules[row + i][col + j] = pattern[i][j];
-                    }
-                }
-            }
-            
-            isReserved(modules, row, col) {
-                // Check if position is in finder patterns
-                if ((row < 7 && col < 7) || 
-                    (row < 7 && col > modules.length - 8) || 
-                    (row > modules.length - 8 && col < 7)) {
-                    return true;
-                }
-                
-                // Check timing patterns
-                if (row === 6 || col === 6) {
-                    return true;
-                }
-                
-                return false;
-            }
-            
-            drawQRCode(modules) {
-                const cellSize = (this.size - this.margin * 2) / this.qrSize;
-                const offset = this.margin;
-                
-                // Draw white background
+                // Set white background
                 this.ctx.fillStyle = '#ffffff';
-                this.ctx.fillRect(0, 0, this.size, this.size);
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
                 
-                // Draw QR code cells
-                this.ctx.fillStyle = '#000000';
-                
-                for (let row = 0; row < this.qrSize; row++) {
-                    for (let col = 0; col < this.qrSize; col++) {
-                        if (modules[row][col] === 1) {
-                            this.ctx.fillRect(
-                                offset + col * cellSize,
-                                offset + row * cellSize,
-                                cellSize,
-                                cellSize
-                            );
+                try {
+                    // Generate QR code using the QRCode library
+                    QRCode.toCanvas(this.canvas, text, {
+                        width: this.size,
+                        margin: 2,
+                        color: {
+                            dark: '#000000',
+                            light: '#FFFFFF'
                         }
-                    }
+                    }, function(error) {
+                        if (error) {
+                            console.error('QR Code generation error:', error);
+                            throw error;
+                        }
+                    });
+                    return true;
+                } catch (error) {
+                    console.error('QR generation error:', error);
+                    return false;
                 }
             }
             
             changeColor(color) {
+                if (!this.canvas || this.canvas.style.display !== 'block') return;
+                
                 // Save current QR code image data
                 const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
                 const data = imageData.data;
@@ -1032,7 +893,7 @@
                 dynamicOptions.innerHTML = optionsHTML;
             }
             
-            // Get QR data based on type
+            // Get QR data based on type - FIXED TO POINT TO view.html
             function getQrData() {
                 const qrType = document.querySelector('input[name="qrType"]:checked').value;
                 let data = '';
@@ -1052,13 +913,14 @@
                             cardId = 'CARD' + cardId;
                         }
                         
-                        // Create URL for AR viewer
+                        // Create URL for view.html page
                         const baseUrl = window.location.origin;
-                        const viewerPath = window.location.pathname.includes('qr.html') 
-                            ? window.location.pathname.replace('qr.html', 'viewer.html')
-                            : '/viewer.html';
+                        // Get the current directory path
+                        const currentPath = window.location.pathname;
+                        const currentDir = currentPath.substring(0, currentPath.lastIndexOf('/') + 1);
                         
-                        data = `${baseUrl}${viewerPath}?card=${encodeURIComponent(cardId)}`;
+                        // Create the view.html URL with card parameter
+                        data = `${baseUrl}${currentDir}view.html?card=${encodeURIComponent(cardId)}`;
                         label = cardId;
                         
                         // Get card details for description
@@ -1066,7 +928,7 @@
                         if (cardDetails) {
                             description = `${cardDetails.type}: ${cardDetails.message.substring(0, 50)}${cardDetails.message.length > 50 ? '...' : ''}`;
                         } else {
-                            description = 'Scan this QR code with the AR Magic Card Scanner to view the card.';
+                            description = 'Scan this QR code to view the message.';
                         }
                         break;
                         
@@ -1503,4 +1365,3 @@
     </script>
 </body>
 </html>
-
