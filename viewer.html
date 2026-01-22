@@ -665,10 +665,12 @@
                     return true;
                 } else {
                     console.error('Supabase library not loaded');
+                    showNotification('Database library not loaded. Please refresh the page.', 'error');
                     return false;
                 }
             } catch (error) {
                 console.error('Error initializing Supabase:', error);
+                showNotification('Error connecting to database: ' + error.message, 'error');
                 return false;
             }
         }
@@ -690,11 +692,14 @@
             
             try {
                 if (!supabase) {
+                    console.log('Supabase not initialized, initializing now...');
                     const initialized = initializeSupabase();
                     if (!initialized) {
                         throw new Error('Failed to connect to database');
                     }
                 }
+                
+                console.log('Fetching card from Supabase:', cardId);
                 
                 // Fetch from cards table using Supabase JS client
                 const { data: cards, error } = await supabase
@@ -717,6 +722,8 @@
                     return null;
                 }
                 
+                console.log('Supabase response:', cards);
+                
                 if (!cards || cards.length === 0) {
                     showNotification(`Card ${cardId} not found`, 'error');
                     hideLoading();
@@ -724,7 +731,7 @@
                 }
                 
                 const card = cards[0];
-                console.log('Card loaded:', card);
+                console.log('Card loaded successfully:', card);
                 
                 hideLoading();
                 return card;
@@ -944,16 +951,24 @@
         
         // Handle card loading
         async function handleCardLoad(cardId) {
+            console.log('handleCardLoad called with cardId:', cardId);
+            
             // Clean up card ID
             cardId = cardId.toUpperCase();
             if (!cardId.startsWith('CARD')) {
                 cardId = 'CARD' + cardId;
             }
             
+            console.log('Looking for card:', cardId);
+            console.log('Supabase initialized:', supabase !== null);
+            
             const card = await loadCard(cardId);
             if (card) {
+                console.log('Card loaded successfully:', card);
                 displayCard(card);
             } else {
+                console.log('Card not found or error loading');
+                showNotification(`Card ${cardId} not found or couldn't be loaded`, 'error');
                 // Restart scanner if card not found
                 setTimeout(startScanner, 2000);
             }
@@ -1024,6 +1039,14 @@
             
             if (cardId) {
                 console.log('Found card ID in URL:', cardId);
+                
+                // Initialize Supabase first if not already done
+                if (!supabase) {
+                    initializeSupabase();
+                    // Give Supabase a moment to initialize
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+                
                 await handleCardLoad(cardId);
                 return true;
             }
@@ -1032,8 +1055,12 @@
         
         // Initialize
         async function initialize() {
-            // Initialize Supabase
-            initializeSupabase();
+            // Initialize Supabase FIRST
+            const supabaseInitialized = initializeSupabase();
+            
+            if (!supabaseInitialized) {
+                showNotification('Failed to connect to database. Please check your connection.', 'error');
+            }
             
             // Event Listeners
             startBtn.addEventListener('click', startScanner);
@@ -1059,14 +1086,16 @@
             qrBtn.addEventListener('click', generateQr);
             backBtn.addEventListener('click', resetToScanner);
             
-            // Check URL for direct card access
-            const hasCardInUrl = await checkUrlForCard();
-            
-            // Auto-start scanner if no card loaded
-            if (!hasCardInUrl) {
-                // Start scanner after a brief delay
-                setTimeout(startScanner, 1000);
-            }
+            // Check URL for direct card access - wait for Supabase
+            setTimeout(async () => {
+                const hasCardInUrl = await checkUrlForCard();
+                
+                // Auto-start scanner if no card loaded
+                if (!hasCardInUrl) {
+                    // Start scanner after a brief delay
+                    setTimeout(startScanner, 1000);
+                }
+            }, 200);
         }
         
         // Start when page loads
