@@ -182,6 +182,139 @@
             outline: none;
         }
         
+        /* Media Upload Styles */
+        .media-upload-container {
+            display: none;
+            margin-top: 15px;
+        }
+        
+        .media-upload-container.active {
+            display: block;
+        }
+        
+        .upload-area {
+            border: 2px dashed #6a11cb;
+            border-radius: 8px;
+            padding: 30px 20px;
+            text-align: center;
+            background-color: #f9f5ff;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .upload-area:hover {
+            background-color: #f0e6ff;
+            border-color: #2575fc;
+        }
+        
+        .upload-area i {
+            font-size: 3rem;
+            color: #6a11cb;
+            margin-bottom: 15px;
+        }
+        
+        .upload-text {
+            color: #555;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+        
+        .upload-subtext {
+            color: #777;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .file-preview {
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .file-preview.active {
+            display: block;
+        }
+        
+        .preview-image {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .preview-audio {
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        .preview-video {
+            width: 100%;
+            max-height: 200px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        
+        .preview-filename {
+            font-size: 0.9rem;
+            color: #555;
+            margin-top: 10px;
+            word-break: break-all;
+        }
+        
+        .remove-media-btn {
+            background-color: #ff416c;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin-top: 10px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.3s;
+        }
+        
+        .remove-media-btn:hover {
+            background-color: #ff2b5e;
+        }
+        
+        .upload-progress {
+            margin-top: 15px;
+            display: none;
+        }
+        
+        .upload-progress.active {
+            display: block;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 5px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(to right, #6a11cb, #2575fc);
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        .progress-text {
+            font-size: 0.85rem;
+            color: #666;
+            text-align: center;
+        }
+        
         .button-container {
             display: flex;
             gap: 15px;
@@ -545,10 +678,71 @@
                     </div>
                 </div>
                 
-                <div class="form-group">
+                <!-- Text Message Input -->
+                <div class="form-group" id="textMessageContainer">
                     <label for="message">Your Message:</label>
                     <div class="message-input">
                         <textarea id="message" placeholder="Enter your message here...">Happy Birthday 😊</textarea>
+                    </div>
+                </div>
+                
+                <!-- Media Upload Containers -->
+                <div class="form-group">
+                    <div id="imageUploadContainer" class="media-upload-container">
+                        <label>Upload Image:</label>
+                        <div class="upload-area" id="imageUploadArea">
+                            <i class="fas fa-image"></i>
+                            <div class="upload-text">Click to upload image</div>
+                            <div class="upload-subtext">Supports JPG, PNG, GIF, WebP (Max 5MB)</div>
+                            <input type="file" id="imageFile" class="file-input" accept="image/*">
+                        </div>
+                        <div id="imagePreview" class="file-preview">
+                            <!-- Image preview will be inserted here -->
+                        </div>
+                        <div id="imageUploadProgress" class="upload-progress">
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="imageProgressFill"></div>
+                            </div>
+                            <div class="progress-text" id="imageProgressText">0%</div>
+                        </div>
+                    </div>
+                    
+                    <div id="videoUploadContainer" class="media-upload-container">
+                        <label>Upload Video:</label>
+                        <div class="upload-area" id="videoUploadArea">
+                            <i class="fas fa-video"></i>
+                            <div class="upload-text">Click to upload video</div>
+                            <div class="upload-subtext">Supports MP4, WebM, MOV (Max 50MB)</div>
+                            <input type="file" id="videoFile" class="file-input" accept="video/*">
+                        </div>
+                        <div id="videoPreview" class="file-preview">
+                            <!-- Video preview will be inserted here -->
+                        </div>
+                        <div id="videoUploadProgress" class="upload-progress">
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="videoProgressFill"></div>
+                            </div>
+                            <div class="progress-text" id="videoProgressText">0%</div>
+                        </div>
+                    </div>
+                    
+                    <div id="audioUploadContainer" class="media-upload-container">
+                        <label>Upload Audio:</label>
+                        <div class="upload-area" id="audioUploadArea">
+                            <i class="fas fa-music"></i>
+                            <div class="upload-text">Click to upload audio</div>
+                            <div class="upload-subtext">Supports MP3, WAV, OGG (Max 10MB)</div>
+                            <input type="file" id="audioFile" class="file-input" accept="audio/*">
+                        </div>
+                        <div id="audioPreview" class="file-preview">
+                            <!-- Audio preview will be inserted here -->
+                        </div>
+                        <div id="audioUploadProgress" class="upload-progress">
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="audioProgressFill"></div>
+                            </div>
+                            <div class="progress-text" id="audioProgressText">0%</div>
+                        </div>
                     </div>
                 </div>
                 
@@ -597,7 +791,7 @@
                     <tr>
                         <th>Card ID</th>
                         <th>Content Type</th>
-                        <th>Message</th>
+                        <th>Message/Media</th>
                         <th>Created</th>
                         <th>Actions</th>
                     </tr>
@@ -617,7 +811,6 @@
     <!-- Notification Element -->
     <div class="notification" id="notification"></div>
     
-    <!-- FIXED: Complete JavaScript with all corrections -->
     <script>
         // Wait for DOM to be fully loaded
         document.addEventListener('DOMContentLoaded', function() {
@@ -628,6 +821,10 @@
             
             // Global variables
             let supabase = null;
+            let currentMediaFile = null;
+            let currentMediaType = null;
+            let uploadedMediaUrl = null;
+            let uploadedFileName = null;
             
             // Get DOM elements safely
             function getElements() {
@@ -641,7 +838,36 @@
                     cardPreview: document.getElementById('cardPreview'),
                     cardsTableBody: document.getElementById('cardsTableBody'),
                     notification: document.getElementById('notification'),
-                    syncStatus: document.getElementById('syncStatus')
+                    syncStatus: document.getElementById('syncStatus'),
+                    
+                    // Media upload elements
+                    imageUploadContainer: document.getElementById('imageUploadContainer'),
+                    videoUploadContainer: document.getElementById('videoUploadContainer'),
+                    audioUploadContainer: document.getElementById('audioUploadContainer'),
+                    
+                    imageUploadArea: document.getElementById('imageUploadArea'),
+                    videoUploadArea: document.getElementById('videoUploadArea'),
+                    audioUploadArea: document.getElementById('audioUploadArea'),
+                    
+                    imageFile: document.getElementById('imageFile'),
+                    videoFile: document.getElementById('videoFile'),
+                    audioFile: document.getElementById('audioFile'),
+                    
+                    imagePreview: document.getElementById('imagePreview'),
+                    videoPreview: document.getElementById('videoPreview'),
+                    audioPreview: document.getElementById('audioPreview'),
+                    
+                    imageUploadProgress: document.getElementById('imageUploadProgress'),
+                    videoUploadProgress: document.getElementById('videoUploadProgress'),
+                    audioUploadProgress: document.getElementById('audioUploadProgress'),
+                    
+                    imageProgressFill: document.getElementById('imageProgressFill'),
+                    videoProgressFill: document.getElementById('videoProgressFill'),
+                    audioProgressFill: document.getElementById('audioProgressFill'),
+                    
+                    imageProgressText: document.getElementById('imageProgressText'),
+                    videoProgressText: document.getElementById('videoProgressText'),
+                    audioProgressText: document.getElementById('audioProgressText')
                 };
             }
             
@@ -672,6 +898,247 @@
                 } else {
                     elements.syncStatus.className = 'sync-status offline';
                     elements.syncStatus.innerHTML = '<i class="fas fa-cloud-slash"></i><span>Offline Mode</span>';
+                }
+            }
+            
+            // Show/hide media upload sections based on content type
+            function updateMediaUploadVisibility() {
+                const contentType = document.querySelector('input[name="contentType"]:checked')?.value || 'text';
+                
+                // Hide all media containers
+                if (elements.imageUploadContainer) elements.imageUploadContainer.classList.remove('active');
+                if (elements.videoUploadContainer) elements.videoUploadContainer.classList.remove('active');
+                if (elements.audioUploadContainer) elements.audioUploadContainer.classList.remove('active');
+                
+                // Show text message container for text type
+                const textContainer = document.getElementById('textMessageContainer');
+                if (textContainer) {
+                    textContainer.style.display = contentType === 'text' ? 'block' : 'none';
+                }
+                
+                // Show the appropriate media container
+                switch(contentType) {
+                    case 'image':
+                        if (elements.imageUploadContainer) elements.imageUploadContainer.classList.add('active');
+                        break;
+                    case 'video':
+                        if (elements.videoUploadContainer) elements.videoUploadContainer.classList.add('active');
+                        break;
+                    case 'audio':
+                        if (elements.audioUploadContainer) elements.audioUploadContainer.classList.add('active');
+                        break;
+                }
+            }
+            
+            // Handle file selection
+            function setupFileUploads() {
+                // Image upload
+                if (elements.imageUploadArea && elements.imageFile) {
+                    elements.imageUploadArea.addEventListener('click', () => elements.imageFile.click());
+                    elements.imageFile.addEventListener('change', (e) => handleFileSelect(e, 'image'));
+                }
+                
+                // Video upload
+                if (elements.videoUploadArea && elements.videoFile) {
+                    elements.videoUploadArea.addEventListener('click', () => elements.videoFile.click());
+                    elements.videoFile.addEventListener('change', (e) => handleFileSelect(e, 'video'));
+                }
+                
+                // Audio upload
+                if (elements.audioUploadArea && elements.audioFile) {
+                    elements.audioUploadArea.addEventListener('click', () => elements.audioFile.click());
+                    elements.audioFile.addEventListener('change', (e) => handleFileSelect(e, 'audio'));
+                }
+            }
+            
+            // Handle file selection
+            function handleFileSelect(event, type) {
+                const file = event.target.files[0];
+                if (!file) return;
+                
+                // Check file size
+                const maxSize = type === 'image' ? 5 * 1024 * 1024 : 
+                               type === 'video' ? 50 * 1024 * 1024 : 
+                               10 * 1024 * 1024;
+                
+                if (file.size > maxSize) {
+                    showNotification(`File too large. Max size: ${maxSize/(1024*1024)}MB`, 'error');
+                    return;
+                }
+                
+                currentMediaFile = file;
+                currentMediaType = type;
+                uploadedMediaUrl = null;
+                uploadedFileName = file.name;
+                
+                // Show preview
+                showFilePreview(file, type);
+                
+                // Show notification
+                showNotification(`${type.charAt(0).toUpperCase() + type.slice(1)} selected: ${file.name}`, 'info');
+            }
+            
+            // Show file preview
+            function showFilePreview(file, type) {
+                let previewContainer;
+                let previewHTML = '';
+                
+                switch(type) {
+                    case 'image':
+                        previewContainer = elements.imagePreview;
+                        const imageUrl = URL.createObjectURL(file);
+                        previewHTML = `
+                            <img src="${imageUrl}" alt="Preview" class="preview-image">
+                            <div class="preview-filename">${file.name}</div>
+                            <button type="button" class="remove-media-btn" onclick="removeMedia('image')">
+                                <i class="fas fa-times"></i> Remove Image
+                            </button>
+                        `;
+                        break;
+                        
+                    case 'video':
+                        previewContainer = elements.videoPreview;
+                        const videoUrl = URL.createObjectURL(file);
+                        previewHTML = `
+                            <video controls class="preview-video">
+                                <source src="${videoUrl}" type="${file.type}">
+                                Your browser does not support the video tag.
+                            </video>
+                            <div class="preview-filename">${file.name}</div>
+                            <button type="button" class="remove-media-btn" onclick="removeMedia('video')">
+                                <i class="fas fa-times"></i> Remove Video
+                            </button>
+                        `;
+                        break;
+                        
+                    case 'audio':
+                        previewContainer = elements.audioPreview;
+                        const audioUrl = URL.createObjectURL(file);
+                        previewHTML = `
+                            <audio controls class="preview-audio">
+                                <source src="${audioUrl}" type="${file.type}">
+                                Your browser does not support the audio tag.
+                            </audio>
+                            <div class="preview-filename">${file.name}</div>
+                            <button type="button" class="remove-media-btn" onclick="removeMedia('audio')">
+                                <i class="fas fa-times"></i> Remove Audio
+                            </button>
+                        `;
+                        break;
+                }
+                
+                if (previewContainer) {
+                    previewContainer.innerHTML = previewHTML;
+                    previewContainer.classList.add('active');
+                }
+                
+                // Add global removeMedia function
+                window.removeMedia = function(mediaType) {
+                    removeMedia(mediaType);
+                };
+            }
+            
+            // Remove media file
+            function removeMedia(mediaType) {
+                currentMediaFile = null;
+                currentMediaType = null;
+                uploadedMediaUrl = null;
+                uploadedFileName = null;
+                
+                // Clear file input
+                switch(mediaType) {
+                    case 'image':
+                        if (elements.imageFile) elements.imageFile.value = '';
+                        if (elements.imagePreview) {
+                            elements.imagePreview.innerHTML = '';
+                            elements.imagePreview.classList.remove('active');
+                        }
+                        break;
+                    case 'video':
+                        if (elements.videoFile) elements.videoFile.value = '';
+                        if (elements.videoPreview) {
+                            elements.videoPreview.innerHTML = '';
+                            elements.videoPreview.classList.remove('active');
+                        }
+                        break;
+                    case 'audio':
+                        if (elements.audioFile) elements.audioFile.value = '';
+                        if (elements.audioPreview) {
+                            elements.audioPreview.innerHTML = '';
+                            elements.audioPreview.classList.remove('active');
+                        }
+                        break;
+                }
+                
+                showNotification('Media removed', 'info');
+            }
+            
+            // Upload file to Supabase Storage
+            async function uploadFileToStorage() {
+                if (!currentMediaFile || !supabase) {
+                    return null;
+                }
+                
+                try {
+                    // Show upload progress
+                    const progressContainer = elements[`${currentMediaType}UploadProgress`];
+                    const progressFill = elements[`${currentMediaType}ProgressFill`];
+                    const progressText = elements[`${currentMediaType}ProgressText`];
+                    
+                    if (progressContainer) progressContainer.classList.add('active');
+                    
+                    // Generate unique filename
+                    const fileExt = currentMediaFile.name.split('.').pop();
+                    const fileName = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+                    const filePath = `media/${fileName}`;
+                    
+                    // Upload to Supabase Storage
+                    const { data, error } = await supabase.storage
+                        .from('cards-media')
+                        .upload(filePath, currentMediaFile, {
+                            cacheControl: '3600',
+                            upsert: false,
+                            onUploadProgress: (progressEvent) => {
+                                if (progressEvent.loaded && progressEvent.total) {
+                                    const percent = Math.round((progressEvent.loaded / progressEvent.total) * 100);
+                                    if (progressFill) progressFill.style.width = `${percent}%`;
+                                    if (progressText) progressText.textContent = `${percent}%`;
+                                }
+                            }
+                        });
+                    
+                    if (error) {
+                        throw error;
+                    }
+                    
+                    // Get public URL
+                    const { data: urlData } = supabase.storage
+                        .from('cards-media')
+                        .getPublicUrl(filePath);
+                    
+                    uploadedMediaUrl = urlData.publicUrl;
+                    uploadedFileName = currentMediaFile.name;
+                    
+                    // Hide progress
+                    if (progressContainer) {
+                        setTimeout(() => {
+                            progressContainer.classList.remove('active');
+                            if (progressFill) progressFill.style.width = '0%';
+                            if (progressText) progressText.textContent = '0%';
+                        }, 1000);
+                    }
+                    
+                    return urlData.publicUrl;
+                    
+                } catch (error) {
+                    console.error('Upload error:', error);
+                    
+                    // Hide progress
+                    const progressContainer = elements[`${currentMediaType}UploadProgress`];
+                    if (progressContainer) progressContainer.classList.remove('active');
+                    
+                    showNotification(`Upload failed: ${error.message}`, 'error');
+                    return null;
                 }
             }
             
@@ -746,6 +1213,28 @@
                         break;
                 }
                 
+                // Show uploaded media in preview if available
+                if (uploadedMediaUrl && contentType !== 'text') {
+                    let mediaElement = '';
+                    switch(contentType) {
+                        case 'image':
+                            mediaElement = `<img src="${uploadedMediaUrl}" alt="Preview" style="max-width: 100%; max-height: 150px; border-radius: 8px; margin: 10px 0;">`;
+                            break;
+                        case 'video':
+                            mediaElement = `<video controls style="max-width: 100%; max-height: 150px; border-radius: 8px; margin: 10px 0;">
+                                <source src="${uploadedMediaUrl}" type="video/mp4">
+                            </video>`;
+                            break;
+                        case 'audio':
+                            mediaElement = `<audio controls style="width: 100%; margin: 10px 0;">
+                                <source src="${uploadedMediaUrl}" type="audio/mpeg">
+                            </audio>`;
+                            break;
+                    }
+                    previewHTML = previewHTML.replace(`<div style="font-size: 3rem; margin: 20px 0;">`, 
+                        mediaElement + `<div style="font-size: 3rem; margin: 20px 0;">`);
+                }
+                
                 previewHTML += `<div class="content-type-display">${typeDisplay}</div>`;
                 
                 // Update the preview
@@ -758,6 +1247,8 @@
                     card_id: fullCardId,
                     message_type: contentType,
                     message_text: message,
+                    media_url: uploadedMediaUrl || null,
+                    file_name: uploadedFileName || null,
                     status: 'active'
                 };
             }
@@ -799,11 +1290,21 @@
                 }
             }
             
-            // FIXED: Save card to Supabase WITHOUT preview column
+            // Save card to Supabase
             async function saveCardToSupabase(cardData) {
                 try {
                     if (!supabase || typeof supabase.from !== 'function') {
                         throw new Error('Supabase client not properly initialized');
+                    }
+                    
+                    // Upload media file if exists
+                    if (currentMediaFile && !uploadedMediaUrl) {
+                        showNotification('Uploading media file...', 'info');
+                        const mediaUrl = await uploadFileToStorage();
+                        if (mediaUrl) {
+                            cardData.media_url = mediaUrl;
+                            cardData.file_name = uploadedFileName;
+                        }
                     }
                     
                     // Convert message_type to display format
@@ -814,27 +1315,34 @@
                         case 'audio': messageTypeDisplay = 'Audio'; break;
                     }
                     
-                    // Try to insert the card WITHOUT preview column
+                    // Prepare card data for Supabase
+                    const supabaseCardData = {
+                        card_id: cardData.card_id,
+                        message_type: messageTypeDisplay,
+                        message_text: cardData.message_text,
+                        media_url: cardData.media_url || null,
+                        file_name: cardData.file_name || null,
+                        status: 'active',
+                        created_at: new Date().toISOString()
+                    };
+                    
+                    // Try to insert the card
                     const { data, error } = await supabase
                         .from('cards')
-                        .insert([{
-                            card_id: cardData.card_id,
-                            message_type: messageTypeDisplay,
-                            message_text: cardData.message_text,
-                            status: 'active',
-                            created_at: new Date().toISOString()
-                        }])
+                        .insert([supabaseCardData])
                         .select();
                     
                     if (error) {
                         console.log('Insert error, trying update:', error);
                         
-                        // If card exists, update it WITHOUT preview column
+                        // If card exists, update it
                         const { error: updateError } = await supabase
                             .from('cards')
                             .update({
                                 message_type: messageTypeDisplay,
                                 message_text: cardData.message_text,
+                                media_url: cardData.media_url || null,
+                                file_name: cardData.file_name || null,
                                 updated_at: new Date().toISOString()
                             })
                             .eq('card_id', cardData.card_id);
@@ -900,11 +1408,17 @@
                     savedCards.forEach((card, index) => {
                         const createdDate = new Date(card.created_at).toLocaleDateString();
                         
+                        // Shorten long messages/media URLs for display
+                        let contentDisplay = card.message_text || 'No message';
+                        if (card.media_url) {
+                            contentDisplay = `<i class="fas fa-link"></i> ${card.file_name || 'Media file'}`;
+                        }
+                        
                         tableHTML += `
                         <tr>
                             <td>${card.card_id}</td>
                             <td>${card.message_type}</td>
-                            <td>${card.message_text || 'No message'}</td>
+                            <td>${contentDisplay}</td>
                             <td>${createdDate}</td>
                             <td>
                                 <div class="action-buttons">
@@ -958,6 +1472,64 @@
                                 if (elements.messageInput) {
                                     elements.messageInput.value = card.message_text || '';
                                 }
+                                
+                                // Set media file info if exists
+                                if (card.media_url) {
+                                    uploadedMediaUrl = card.media_url;
+                                    uploadedFileName = card.file_name || 'Uploaded file';
+                                    
+                                    // Show preview for existing media
+                                    const contentType = typeValue;
+                                    let previewContainer;
+                                    let previewHTML = '';
+                                    
+                                    switch(contentType) {
+                                        case 'image':
+                                            previewContainer = elements.imagePreview;
+                                            previewHTML = `
+                                                <img src="${card.media_url}" alt="Preview" class="preview-image">
+                                                <div class="preview-filename">${card.file_name || 'Image file'}</div>
+                                                <button type="button" class="remove-media-btn" onclick="removeMedia('image')">
+                                                    <i class="fas fa-times"></i> Remove Image
+                                                </button>
+                                            `;
+                                            break;
+                                        case 'video':
+                                            previewContainer = elements.videoPreview;
+                                            previewHTML = `
+                                                <video controls class="preview-video">
+                                                    <source src="${card.media_url}" type="video/mp4">
+                                                    Your browser does not support the video tag.
+                                                </video>
+                                                <div class="preview-filename">${card.file_name || 'Video file'}</div>
+                                                <button type="button" class="remove-media-btn" onclick="removeMedia('video')">
+                                                    <i class="fas fa-times"></i> Remove Video
+                                                </button>
+                                            `;
+                                            break;
+                                        case 'audio':
+                                            previewContainer = elements.audioPreview;
+                                            previewHTML = `
+                                                <audio controls class="preview-audio">
+                                                    <source src="${card.media_url}" type="audio/mpeg">
+                                                    Your browser does not support the audio tag.
+                                                </audio>
+                                                <div class="preview-filename">${card.file_name || 'Audio file'}</div>
+                                                <button type="button" class="remove-media-btn" onclick="removeMedia('audio')">
+                                                    <i class="fas fa-times"></i> Remove Audio
+                                                </button>
+                                            `;
+                                            break;
+                                    }
+                                    
+                                    if (previewContainer) {
+                                        previewContainer.innerHTML = previewHTML;
+                                        previewContainer.classList.add('active');
+                                    }
+                                }
+                                
+                                // Update media upload visibility
+                                updateMediaUploadVisibility();
                                 
                                 // Generate preview
                                 generatePreview();
@@ -1037,8 +1609,14 @@
                     console.warn('Supabase not available, using offline mode');
                 }
                 
+                // Set up media upload functionality
+                setupFileUploads();
+                
                 // Generate initial preview
                 generatePreview();
+                
+                // Update media upload visibility based on content type
+                updateMediaUploadVisibility();
                 
                 // Set up event listeners
                 if (elements.generateBtn) {
@@ -1101,6 +1679,15 @@
                             });
                             this.parentElement.classList.add('active');
                             
+                            // Update media upload visibility
+                            updateMediaUploadVisibility();
+                            
+                            // Clear media if switching away from media type
+                            const newType = this.value;
+                            if (newType === 'text' && currentMediaFile) {
+                                removeMedia(currentMediaType);
+                            }
+                            
                             // Update preview when type changes
                             generatePreview();
                         });
@@ -1128,6 +1715,15 @@
                                 opt.classList.remove('active');
                             });
                             this.classList.add('active');
+                            
+                            // Update media upload visibility
+                            updateMediaUploadVisibility();
+                            
+                            // Clear media if switching away from media type
+                            const newType = radio.value;
+                            if (newType === 'text' && currentMediaFile) {
+                                removeMedia(currentMediaType);
+                            }
                             
                             generatePreview();
                         }
