@@ -6,10 +6,9 @@
     <title>Magic Card Viewer - Scan QR Codes</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-    <!-- Add Supabase JS - ONLY ONCE -->
+    <!-- Add Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <style>
-        /* ... KEEP ALL THE SAME STYLES ... */
         * {
             margin: 0;
             padding: 0;
@@ -761,7 +760,7 @@
             }
         }
         
-        // Display card
+        // Display card - UPDATED FOR MEDIA SUPPORT
         function displayCard(card) {
             console.log('Displaying card:', card);
             currentCard = card;
@@ -784,26 +783,91 @@
                 displayDate.textContent = 'Recently';
             }
             
-            // Display media if available
+            // Display media if available - UPDATED FOR BETTER MEDIA HANDLING
             mediaContainer.innerHTML = '';
-            if (card.media_url) {
+            
+            // Check if media_url exists and is not empty
+            if (card.media_url && card.media_url.trim() !== '' && card.media_url !== 'null') {
                 const fileExtension = card.media_url.split('.').pop().toLowerCase();
-                const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension);
-                const isVideo = ['mp4', 'webm', 'ogg'].includes(fileExtension);
+                const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].includes(fileExtension);
+                const isVideo = ['mp4', 'webm', 'ogg', 'mov', 'avi', 'wmv'].includes(fileExtension);
+                const isAudio = ['mp3', 'wav', 'ogg', 'm4a', 'flac', 'aac'].includes(fileExtension);
+                
+                console.log('Media detected:', {
+                    url: card.media_url,
+                    extension: fileExtension,
+                    isImage: isImage,
+                    isVideo: isVideo,
+                    isAudio: isAudio,
+                    fileName: card.file_name
+                });
                 
                 if (isImage) {
                     const img = document.createElement('img');
                     img.src = card.media_url;
                     img.alt = card.file_name || 'Card Media';
-                    img.onload = () => showNotification('Media loaded successfully', 'success');
-                    img.onerror = () => showNotification('Could not load media', 'error');
+                    img.style.maxWidth = '100%';
+                    img.style.maxHeight = '300px';
+                    img.style.borderRadius = '8px';
+                    img.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
+                    img.onload = () => {
+                        console.log('Image loaded successfully');
+                        showNotification('Media loaded successfully', 'success');
+                    };
+                    img.onerror = () => {
+                        console.error('Failed to load image:', card.media_url);
+                        showNotification('Could not load media. The file might not exist or the URL is incorrect.', 'error');
+                        // Show a fallback message
+                        const fallback = document.createElement('div');
+                        fallback.innerHTML = `<p style="color: #666;"><i class="fas fa-image"></i> Image: ${card.file_name || 'Media file'}</p>
+                                             <a href="${card.media_url}" target="_blank" style="color: #11998e; text-decoration: none;">
+                                                 <i class="fas fa-external-link-alt"></i> Open Media
+                                             </a>`;
+                        mediaContainer.appendChild(fallback);
+                    };
                     mediaContainer.appendChild(img);
                 } else if (isVideo) {
                     const video = document.createElement('video');
                     video.src = card.media_url;
                     video.controls = true;
                     video.style.width = '100%';
+                    video.style.maxHeight = '300px';
+                    video.style.borderRadius = '8px';
+                    video.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
+                    
+                    // Add error handling
+                    video.addEventListener('error', () => {
+                        console.error('Failed to load video:', card.media_url);
+                        showNotification('Could not load video. The file might not exist or the format is not supported.', 'error');
+                        const fallback = document.createElement('div');
+                        fallback.innerHTML = `<p style="color: #666;"><i class="fas fa-video"></i> Video: ${card.file_name || 'Media file'}</p>
+                                             <a href="${card.media_url}" target="_blank" style="color: #11998e; text-decoration: none;">
+                                                 <i class="fas fa-external-link-alt"></i> Download Video
+                                             </a>`;
+                        mediaContainer.appendChild(fallback);
+                    });
+                    
                     mediaContainer.appendChild(video);
+                } else if (isAudio) {
+                    const audio = document.createElement('audio');
+                    audio.src = card.media_url;
+                    audio.controls = true;
+                    audio.style.width = '100%';
+                    audio.style.marginTop = '15px';
+                    
+                    // Add error handling
+                    audio.addEventListener('error', () => {
+                        console.error('Failed to load audio:', card.media_url);
+                        showNotification('Could not load audio. The file might not exist or the format is not supported.', 'error');
+                        const fallback = document.createElement('div');
+                        fallback.innerHTML = `<p style="color: #666;"><i class="fas fa-music"></i> Audio: ${card.file_name || 'Media file'}</p>
+                                             <a href="${card.media_url}" target="_blank" style="color: #11998e; text-decoration: none;">
+                                                 <i class="fas fa-external-link-alt"></i> Download Audio
+                                             </a>`;
+                        mediaContainer.appendChild(fallback);
+                    });
+                    
+                    mediaContainer.appendChild(audio);
                 } else {
                     // For other file types, show a link
                     const link = document.createElement('a');
@@ -812,8 +876,24 @@
                     link.target = '_blank';
                     link.className = 'btn btn-secondary';
                     link.style.textDecoration = 'none';
+                    link.style.marginTop = '15px';
                     mediaContainer.appendChild(link);
                 }
+                
+                // Add a media info line
+                const mediaInfo = document.createElement('p');
+                mediaInfo.style.fontSize = '0.9rem';
+                mediaInfo.style.color = '#666';
+                mediaInfo.style.marginTop = '10px';
+                mediaInfo.innerHTML = `<i class="fas fa-paperclip"></i> Media attached: ${card.file_name || 'File'}`;
+                mediaContainer.appendChild(mediaInfo);
+            } else {
+                // No media - show a simple message
+                const noMediaMsg = document.createElement('p');
+                noMediaMsg.style.color = '#999';
+                noMediaMsg.style.fontStyle = 'italic';
+                noMediaMsg.textContent = 'No media attached to this card';
+                mediaContainer.appendChild(noMediaMsg);
             }
             
             // Show card, hide scanner
@@ -824,7 +904,12 @@
             // Stop camera if scanning
             stopScanner();
             
-            showNotification(`Card ${card.card_id} loaded!`, 'success');
+            // Show appropriate notification based on media
+            if (card.media_url && card.media_url.trim() !== '' && card.media_url !== 'null') {
+                showNotification(`Card ${card.card_id} loaded with media!`, 'success');
+            } else {
+                showNotification(`Card ${card.card_id} loaded!`, 'success');
+            }
         }
         
         // Start scanner
