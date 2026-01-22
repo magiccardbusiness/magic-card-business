@@ -118,6 +118,7 @@
             justify-content: center;
             padding: 20px;
             position: relative;
+            min-height: 80vh;
         }
         
         /* Loading Screen */
@@ -150,6 +151,8 @@
             color: white;
             font-size: 1.2rem;
             text-align: center;
+            max-width: 300px;
+            line-height: 1.5;
         }
         
         /* Scan Mode */
@@ -158,16 +161,20 @@
             max-width: 800px;
             text-align: center;
             color: white;
-            display: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
         }
         
         .scan-instructions {
             background: rgba(0, 0, 0, 0.5);
             border-radius: 15px;
             padding: 30px;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
             backdrop-filter: blur(10px);
             border: 2px solid rgba(255, 255, 255, 0.1);
+            width: 100%;
         }
         
         .scan-instructions h2 {
@@ -221,7 +228,7 @@
             display: flex;
             align-items: center;
             gap: 15px;
-            margin: 30px auto;
+            margin: 20px auto;
             transition: all 0.3s;
         }
         
@@ -230,137 +237,80 @@
             box-shadow: 0 10px 25px rgba(56, 239, 125, 0.4);
         }
         
-        /* AR Scene Container */
-        .ar-scene-container {
-            width: 100%;
-            height: 100%;
-            position: relative;
+        /* Card Display (Visible when card is loaded) */
+        .card-display-container {
             display: none;
-        }
-        
-        #arScene {
             width: 100%;
-            height: 100vh;
-        }
-        
-        /* AR Overlay */
-        .ar-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            padding: 20px;
-            color: white;
-            z-index: 50;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .scanning-info {
+            max-width: 800px;
             background: rgba(0, 0, 0, 0.7);
-            padding: 15px 25px;
-            border-radius: 50px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
+            border-radius: 15px;
+            padding: 30px;
+            color: white;
+            margin-top: 20px;
             backdrop-filter: blur(10px);
             border: 2px solid rgba(56, 239, 125, 0.3);
         }
         
-        .scanning-icon {
-            width: 40px;
-            height: 40px;
-            background: rgba(56, 239, 125, 0.2);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            animation: pulse 1.5s infinite;
+        .card-display-container.show {
+            display: block;
+            animation: fadeIn 0.5s ease;
         }
         
-        .scanning-icon i {
-            color: #38ef7d;
-            font-size: 1.2rem;
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         
-        /* Card Display */
-        .card-display {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            border-radius: 20px 20px 0 0;
-            padding: 30px;
-            transform: translateY(100%);
-            transition: transform 0.5s ease;
-            z-index: 100;
-            backdrop-filter: blur(20px);
-            max-height: 70vh;
-            overflow-y: auto;
-        }
-        
-        .card-display.show {
-            transform: translateY(0);
-        }
-        
-        .card-header {
+        .card-display-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
             padding-bottom: 15px;
             border-bottom: 2px solid rgba(56, 239, 125, 0.3);
         }
         
-        .card-title {
-            color: #38ef7d;
-            font-size: 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .close-card-btn {
-            background: none;
-            border: none;
-            color: white;
+        .card-display-title {
             font-size: 1.8rem;
-            cursor: pointer;
-            width: 40px;
-            height: 40px;
+            color: #38ef7d;
             display: flex;
             align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            transition: all 0.3s;
+            gap: 12px;
         }
         
-        .close-card-btn:hover {
-            background: rgba(255, 255, 255, 0.1);
+        .card-display-title i {
+            font-size: 1.5rem;
         }
         
-        .card-content {
-            color: white;
+        .card-id {
+            background: rgba(56, 239, 125, 0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #38ef7d;
+        }
+        
+        .card-content-box {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-left: 4px solid #38ef7d;
         }
         
         .card-message {
-            font-size: 1.2rem;
+            font-size: 1.3rem;
             line-height: 1.6;
-            margin-bottom: 25px;
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-            border-left: 4px solid #38ef7d;
+            margin-bottom: 10px;
+            min-height: 60px;
         }
         
         .card-meta {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 15px;
-            margin-bottom: 25px;
+            margin-bottom: 30px;
         }
         
         .meta-item {
@@ -369,16 +319,21 @@
             border-radius: 10px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
         }
         
         .meta-item i {
             color: #38ef7d;
-            font-size: 1.2rem;
+            font-size: 1.3rem;
+            width: 30px;
+        }
+        
+        .meta-content {
+            flex: 1;
         }
         
         .meta-label {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             color: #aaa;
             margin-bottom: 5px;
         }
@@ -386,28 +341,29 @@
         .meta-value {
             font-size: 1rem;
             color: white;
+            font-weight: 500;
         }
         
         .card-actions {
             display: flex;
-            gap: 10px;
+            gap: 15px;
             flex-wrap: wrap;
         }
         
         .card-action-btn {
             flex: 1;
-            padding: 12px 20px;
+            padding: 14px 25px;
             border: none;
-            border-radius: 8px;
-            font-size: 0.9rem;
+            border-radius: 10px;
+            font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 10px;
             transition: all 0.3s;
-            min-width: 120px;
+            min-width: 160px;
         }
         
         .card-action-btn.primary {
@@ -422,6 +378,27 @@
         
         .card-action-btn:hover {
             transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .new-scan-btn {
+            margin-top: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s;
+        }
+        
+        .new-scan-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
         }
         
         /* Manual Input */
@@ -429,7 +406,7 @@
             background: rgba(0, 0, 0, 0.7);
             border-radius: 15px;
             padding: 25px;
-            margin-top: 30px;
+            margin-top: 20px;
             width: 100%;
             max-width: 500px;
             backdrop-filter: blur(10px);
@@ -439,6 +416,9 @@
             color: #38ef7d;
             margin-bottom: 15px;
             font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         
         .input-group {
@@ -462,19 +442,106 @@
             border-color: #38ef7d;
         }
         
+        .input-group input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
         .input-group button {
             background: linear-gradient(to right, #38ef7d, #11998e);
             color: white;
             border: none;
-            padding: 15px 25px;
+            padding: 15px 30px;
             border-radius: 8px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
+            min-width: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
         
         .input-group button:hover {
             transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(56, 239, 125, 0.3);
+        }
+        
+        /* QR Scanner Mode */
+        .qr-scanner {
+            width: 100%;
+            max-width: 500px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 15px;
+            padding: 25px;
+            color: white;
+            text-align: center;
+            margin-top: 20px;
+            backdrop-filter: blur(10px);
+            display: none;
+        }
+        
+        .qr-scanner.show {
+            display: block;
+        }
+        
+        .qr-scanner h3 {
+            color: #38ef7d;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+        
+        .qr-preview {
+            width: 300px;
+            height: 300px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px dashed #38ef7d;
+            border-radius: 10px;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .qr-preview video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .qr-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.5);
+        }
+        
+        .scanner-instructions {
+            color: #38ef7d;
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        
+        .stop-scan-btn {
+            background: #ff416c;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
         }
         
         /* Notification */
@@ -526,6 +593,7 @@
             .nav-buttons {
                 width: 100%;
                 justify-content: center;
+                flex-wrap: wrap;
             }
             
             .scan-instructions {
@@ -537,19 +605,24 @@
             }
             
             .feature-list {
-                grid-template-columns: 1fr;
-            }
-            
-            .card-display {
-                padding: 20px;
+                grid-template-columns: repeat(2, 1fr);
             }
             
             .card-actions {
                 flex-direction: column;
             }
             
+            .card-action-btn {
+                min-width: 100%;
+            }
+            
             .input-group {
                 flex-direction: column;
+            }
+            
+            .qr-preview {
+                width: 250px;
+                height: 250px;
             }
         }
         
@@ -584,6 +657,9 @@
                 <button class="nav-button" id="toggleManualInput">
                     <i class="fas fa-keyboard"></i> Manual Input
                 </button>
+                <button class="nav-button" id="toggleQrScanner">
+                    <i class="fas fa-qrcode"></i> Scan QR
+                </button>
             </div>
             <div class="status-indicator">
                 <div class="status-dot" id="statusDot"></div>
@@ -602,8 +678,8 @@
             <!-- Scan Mode -->
             <div class="scan-mode" id="scanMode">
                 <div class="scan-instructions">
-                    <h2><i class="fas fa-camera floating"></i> Ready to Scan</h2>
-                    <p>Point your camera at a QR code from your AR Magic Cards to reveal the hidden message in augmented reality!</p>
+                    <h2><i class="fas fa-camera floating"></i> Discover AR Magic Cards</h2>
+                    <p>Scan QR codes from your AR Magic Cards to reveal hidden messages or enter a Card ID manually to view the content.</p>
                     
                     <div class="feature-list">
                         <div class="feature-item">
@@ -611,8 +687,8 @@
                             <span>Scan QR Codes</span>
                         </div>
                         <div class="feature-item">
-                            <i class="fas fa-vr-cardboard"></i>
-                            <span>AR Experience</span>
+                            <i class="fas fa-keyboard"></i>
+                            <span>Manual Entry</span>
                         </div>
                         <div class="feature-item">
                             <i class="fas fa-cloud"></i>
@@ -623,16 +699,12 @@
                             <span>Share Messages</span>
                         </div>
                     </div>
-                    
-                    <button class="start-scan-btn" id="startScanBtn">
-                        <i class="fas fa-play"></i> Start AR Scanner
-                    </button>
                 </div>
                 
                 <!-- Manual Input -->
                 <div class="manual-input" id="manualInput" style="display: none;">
                     <h3><i class="fas fa-keyboard"></i> Enter Card ID Manually</h3>
-                    <p>If you don't have a QR code, you can enter the Card ID directly:</p>
+                    <p>If you have a Card ID, enter it below to view the message:</p>
                     <div class="input-group">
                         <input type="text" id="manualCardId" placeholder="Enter Card ID (e.g., CARD1234)">
                         <button id="manualLoadBtn">
@@ -640,181 +712,95 @@
                         </button>
                     </div>
                 </div>
-            </div>
-            
-            <!-- AR Scene Container -->
-            <div class="ar-scene-container" id="arSceneContainer">
-                <!-- AR.js Scene -->
-                <a-scene 
-                    id="arScene"
-                    embedded 
-                    arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
-                    vr-mode-ui="enabled: false"
-                    renderer="logarithmicDepthBuffer: true;"
-                    gesture-detector
-                >
-                    <!-- Hiro Marker (Standard AR.js marker) -->
-                    <a-marker 
-                        id="hiroMarker"
-                        type="pattern" 
-                        preset="hiro"
-                        emitevents="true"
-                        smooth="true"
-                        smoothCount="10"
-                        smoothTolerance="0.01"
-                        smoothThreshold="5"
-                    >
-                        <!-- 3D Card that appears when marker is detected -->
-                        <a-entity 
-                            id="arCard"
-                            position="0 0.1 0"
-                            scale="0.5 0.5 0.5"
-                            visible="false"
-                            animation="property: rotation; to: 0 360 0; loop: true; dur: 10000; easing: linear"
-                        >
-                            <!-- Card Base -->
-                            <a-box 
-                                position="0 0 0" 
-                                width="1.2" 
-                                height="0.8" 
-                                depth="0.05"
-                                color="#1a2980"
-                                roughness="0.3"
-                                metalness="0.7"
-                                opacity="0.9"
-                            ></a-box>
-                            
-                            <!-- Card Face -->
-                            <a-plane 
-                                position="0 0 0.026"
-                                width="1.15"
-                                height="0.75"
-                                color="#ffffff"
-                                shader="flat"
-                                opacity="0.95"
-                            ></a-plane>
-                            
-                            <!-- Message Text -->
-                            <a-text 
-                                id="arMessageText"
-                                value="Scan a QR Code"
-                                position="0 0.2 0.03"
-                                width="1"
-                                align="center"
-                                color="#1a2980"
-                                font="https://cdn.aframe.io/fonts/Exo2SemiBold.fnt"
-                                wrap-count="20"
-                            ></a-text>
-                            
-                            <!-- Card ID -->
-                            <a-text 
-                                id="arCardId"
-                                value="CARD ID: ---"
-                                position="0 -0.2 0.03"
-                                width="1"
-                                align="center"
-                                color="#26d0ce"
-                                font="https://cdn.aframe.io/fonts/Exo2SemiBold.fnt"
-                            ></a-text>
-                            
-                            <!-- Tap Indicator -->
-                            <a-ring 
-                                position="0 -0.35 0"
-                                radius-inner="0.1"
-                                radius-outer="0.15"
-                                color="#38ef7d"
-                                opacity="0.7"
-                                animation="property: opacity; from: 0.3; to: 0.8; dir: alternate; dur: 1000; loop: true"
-                            >
-                                <a-text 
-                                    value="Tap card"
-                                    position="0 0 0.001"
-                                    width="0.4"
-                                    align="center"
-                                    color="white"
-                                    scale="0.5 0.5 0.5"
-                                ></a-text>
-                            </a-ring>
-                        </a-entity>
-                    </a-marker>
-                    
-                    <!-- Camera -->
-                    <a-entity camera></a-entity>
-                </a-scene>
                 
-                <!-- AR Overlay -->
-                <div class="ar-overlay">
-                    <div class="scanning-info">
-                        <div class="scanning-icon">
-                            <i class="fas fa-search"></i>
-                        </div>
-                        <div>
-                            <div style="font-weight: bold; font-size: 1.1rem;">Scanning for QR Codes</div>
-                            <div style="font-size: 0.9rem; opacity: 0.8;">Point camera at a QR code or Hiro marker</div>
+                <!-- QR Scanner -->
+                <div class="qr-scanner" id="qrScanner">
+                    <h3><i class="fas fa-qrcode"></i> Scan QR Code</h3>
+                    <div class="scanner-instructions">
+                        Point your camera at a QR code from an AR Magic Card
+                    </div>
+                    <div class="qr-preview" id="qrPreview">
+                        <div class="qr-overlay">
+                            <i class="fas fa-camera" style="font-size: 3rem; color: #38ef7d;"></i>
                         </div>
                     </div>
-                </div>
-            </div>
-            
-            <!-- Card Display Panel -->
-            <div class="card-display" id="cardDisplay">
-                <div class="card-header">
-                    <div class="card-title">
-                        <i class="fas fa-gem"></i>
-                        <span id="displayCardId">CARD1234</span>
-                    </div>
-                    <button class="close-card-btn" id="closeCardBtn">
-                        <i class="fas fa-times"></i>
+                    <button class="stop-scan-btn" id="stopScanBtn">
+                        <i class="fas fa-stop"></i> Stop Scanner
                     </button>
                 </div>
+            </div>
+            
+            <!-- Card Display Container -->
+            <div class="card-display-container" id="cardDisplayContainer">
+                <div class="card-display-header">
+                    <div class="card-display-title">
+                        <i class="fas fa-gem"></i>
+                        <span id="displayCardTitle">Magic Card</span>
+                        <span class="card-id" id="displayCardId">CARD1234</span>
+                    </div>
+                </div>
                 
-                <div class="card-content">
+                <div class="card-content-box">
                     <div class="card-message" id="displayMessage">
                         Loading message...
                     </div>
-                    
-                    <div class="card-meta">
-                        <div class="meta-item">
-                            <i class="fas fa-tag"></i>
-                            <div>
-                                <div class="meta-label">Type</div>
-                                <div class="meta-value" id="displayType">Text</div>
-                            </div>
-                        </div>
-                        <div class="meta-item">
-                            <i class="fas fa-calendar"></i>
-                            <div>
-                                <div class="meta-label">Created</div>
-                                <div class="meta-value" id="displayDate">Just now</div>
-                            </div>
-                        </div>
-                        <div class="meta-item">
-                            <i class="fas fa-database"></i>
-                            <div>
-                                <div class="meta-label">Source</div>
-                                <div class="meta-value" id="displaySource">Supabase</div>
-                            </div>
+                </div>
+                
+                <div class="card-meta">
+                    <div class="meta-item">
+                        <i class="fas fa-tag"></i>
+                        <div class="meta-content">
+                            <div class="meta-label">Card Type</div>
+                            <div class="meta-value" id="displayType">Text Message</div>
                         </div>
                     </div>
-                    
-                    <div class="card-actions">
-                        <button class="card-action-btn primary" id="shareCardBtn">
-                            <i class="fas fa-share-alt"></i> Share Card
-                        </button>
-                        <button class="card-action-btn secondary" id="newScanBtn">
-                            <i class="fas fa-redo"></i> New Scan
-                        </button>
-                        <button class="card-action-btn secondary" id="generateQrBtn">
-                            <i class="fas fa-qrcode"></i> Generate QR
-                        </button>
+                    <div class="meta-item">
+                        <i class="fas fa-calendar"></i>
+                        <div class="meta-content">
+                            <div class="meta-label">Created On</div>
+                            <div class="meta-value" id="displayDate">Just now</div>
+                        </div>
+                    </div>
+                    <div class="meta-item">
+                        <i class="fas fa-database"></i>
+                        <div class="meta-content">
+                            <div class="meta-label">Source</div>
+                            <div class="meta-value" id="displaySource">Supabase Database</div>
+                        </div>
+                    </div>
+                    <div class="meta-item" id="mediaItem" style="display: none;">
+                        <i class="fas fa-file"></i>
+                        <div class="meta-content">
+                            <div class="meta-label">Media File</div>
+                            <div class="meta-value" id="displayMedia">No media</div>
+                        </div>
                     </div>
                 </div>
+                
+                <div class="card-actions">
+                    <button class="card-action-btn primary" id="shareCardBtn">
+                        <i class="fas fa-share-alt"></i> Share This Card
+                    </button>
+                    <button class="card-action-btn secondary" id="generateQrBtn">
+                        <i class="fas fa-qrcode"></i> Generate QR Code
+                    </button>
+                    <button class="card-action-btn secondary" id="viewArBtn" style="display: none;">
+                        <i class="fas fa-vr-cardboard"></i> View in AR
+                    </button>
+                </div>
+                
+                <button class="new-scan-btn" id="newScanBtn">
+                    <i class="fas fa-redo"></i> View Another Card
+                </button>
             </div>
         </div>
     </div>
     
     <!-- Notification -->
     <div class="notification" id="notification"></div>
+    
+    <!-- Include QR Scanner Library -->
+    <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@latest/dist/html5-qrcode.min.js"></script>
     
     <script>
         // === SUPABASE CREDENTIALS ===
@@ -829,36 +815,37 @@
             const loadingScreen = document.getElementById('loadingScreen');
             const loadingText = document.getElementById('loadingText');
             const scanMode = document.getElementById('scanMode');
-            const arSceneContainer = document.getElementById('arSceneContainer');
-            const startScanBtn = document.getElementById('startScanBtn');
+            const cardDisplayContainer = document.getElementById('cardDisplayContainer');
             const toggleManualInputBtn = document.getElementById('toggleManualInput');
+            const toggleQrScannerBtn = document.getElementById('toggleQrScanner');
             const manualInput = document.getElementById('manualInput');
+            const qrScanner = document.getElementById('qrScanner');
             const manualCardId = document.getElementById('manualCardId');
             const manualLoadBtn = document.getElementById('manualLoadBtn');
-            const cardDisplay = document.getElementById('cardDisplay');
-            const closeCardBtn = document.getElementById('closeCardBtn');
+            const qrPreview = document.getElementById('qrPreview');
+            const stopScanBtn = document.getElementById('stopScanBtn');
+            const displayCardTitle = document.getElementById('displayCardTitle');
             const displayCardId = document.getElementById('displayCardId');
             const displayMessage = document.getElementById('displayMessage');
             const displayType = document.getElementById('displayType');
             const displayDate = document.getElementById('displayDate');
             const displaySource = document.getElementById('displaySource');
+            const mediaItem = document.getElementById('mediaItem');
+            const displayMedia = document.getElementById('displayMedia');
             const shareCardBtn = document.getElementById('shareCardBtn');
-            const newScanBtn = document.getElementById('newScanBtn');
             const generateQrBtn = document.getElementById('generateQrBtn');
+            const viewArBtn = document.getElementById('viewArBtn');
+            const newScanBtn = document.getElementById('newScanBtn');
             const statusDot = document.getElementById('statusDot');
             const statusText = document.getElementById('statusText');
             const notification = document.getElementById('notification');
-            const arMessageText = document.getElementById('arMessageText');
-            const arCardId = document.getElementById('arCardId');
-            const arCard = document.getElementById('arCard');
-            const hiroMarker = document.getElementById('hiroMarker');
             
             // State
             let supabase = null;
             let isSupabaseConnected = false;
             let currentCard = null;
+            let qrScannerInstance = null;
             let isScanning = false;
-            let arScene = null;
             
             // Show notification
             function showNotification(message, type = 'info') {
@@ -893,7 +880,7 @@
                         // Test connection
                         const { data, error } = await supabase
                             .from('cards')
-                            .select('count')
+                            .select('count', { count: 'exact', head: true })
                             .limit(1);
                         
                         if (error) {
@@ -942,7 +929,7 @@
                 
                 try {
                     // Try to load from Supabase
-                    const { data: cards, error } = await supabase
+                    const { data: card, error } = await supabase
                         .from('cards')
                         .select('*')
                         .eq('card_id', cardId)
@@ -953,30 +940,21 @@
                         
                         if (error.message.includes('does not exist')) {
                             showNotification(`Card ${cardId} not found in database`, 'error');
+                        } else if (error.message.includes('JSON')) {
+                            showNotification(`Card ${cardId} not found`, 'error');
                         } else {
                             showNotification(`Error loading card: ${error.message}`, 'error');
                         }
                         return null;
                     }
                     
-                    if (!cards) {
+                    if (!card) {
                         showNotification(`Card ${cardId} not found`, 'error');
                         return null;
                     }
                     
-                    // Update AR display
-                    if (arMessageText && arCardId && arCard) {
-                        const messagePreview = cards.message_text 
-                            ? cards.message_text.substring(0, 50) + (cards.message_text.length > 50 ? '...' : '')
-                            : 'No message';
-                        
-                        arMessageText.setAttribute('value', messagePreview);
-                        arCardId.setAttribute('value', `ID: ${cards.card_id}`);
-                        arCard.setAttribute('visible', 'true');
-                    }
-                    
-                    showNotification(`Card ${cardId} loaded successfully!`, 'success');
-                    return cards;
+                    console.log('Card loaded successfully:', card);
+                    return card;
                     
                 } catch (error) {
                     console.error('Error loading card:', error);
@@ -989,86 +967,51 @@
             function displayCardDetails(card) {
                 currentCard = card;
                 
+                // Hide scan mode and show card display
+                scanMode.style.display = 'none';
+                cardDisplayContainer.classList.add('show');
+                
                 // Update display elements
+                displayCardTitle.textContent = 'Magic Card';
                 displayCardId.textContent = card.card_id;
                 displayMessage.textContent = card.message_text || 'No message available';
-                displayType.textContent = card.message_type || 'Unknown type';
+                displayType.textContent = card.message_type || 'Text Message';
                 
                 // Format date
                 if (card.created_at) {
                     const date = new Date(card.created_at);
-                    displayDate.textContent = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    displayDate.textContent = date.toLocaleDateString('en-US', { 
+                        weekday: 'long',
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
                 } else {
                     displayDate.textContent = 'Unknown';
                 }
                 
                 displaySource.textContent = 'Supabase Database';
                 
-                // Show card display
-                cardDisplay.classList.add('show');
+                // Show media info if available
+                if (card.media_url || card.file_name) {
+                    mediaItem.style.display = 'flex';
+                    displayMedia.textContent = card.file_name || 'Media attached';
+                } else {
+                    mediaItem.style.display = 'none';
+                }
+                
+                // Show AR button if message type is AR
+                if (card.message_type && card.message_type.toLowerCase().includes('ar')) {
+                    viewArBtn.style.display = 'flex';
+                } else {
+                    viewArBtn.style.display = 'none';
+                }
                 
                 // Log for debugging
                 console.log('Displaying card:', card);
-            }
-            
-            // Start AR scanner
-            function startARScanner() {
-                loadingScreen.style.display = 'flex';
-                loadingText.textContent = 'Starting camera...';
-                
-                // Request camera permissions
-                navigator.mediaDevices.getUserMedia({ video: true })
-                    .then(function(stream) {
-                        console.log('Camera access granted');
-                        
-                        // Hide loading and show AR scene
-                        setTimeout(() => {
-                            loadingScreen.style.display = 'none';
-                            scanMode.style.display = 'none';
-                            arSceneContainer.style.display = 'block';
-                            isScanning = true;
-                            
-                            // Check for URL parameter
-                            const urlCardId = getCardFromURL();
-                            if (urlCardId) {
-                                handleCardScan(urlCardId);
-                            }
-                        }, 1000);
-                    })
-                    .catch(function(error) {
-                        console.error('Camera access denied:', error);
-                        loadingText.textContent = 'Camera access denied';
-                        showNotification('Camera access is required for AR scanning', 'error');
-                        
-                        setTimeout(() => {
-                            loadingScreen.style.display = 'none';
-                            showNotification('Please allow camera access and try again', 'error');
-                        }, 2000);
-                    });
-            }
-            
-            // Handle card scan (from QR code or manual input)
-            async function handleCardScan(cardId) {
-                if (!cardId) return;
-                
-                // Show loading
-                loadingScreen.style.display = 'flex';
-                loadingText.textContent = `Loading card ${cardId}...`;
-                
-                // Load card data
-                const card = await loadCardData(cardId);
-                
-                if (card) {
-                    // Display card details
-                    displayCardDetails(card);
-                    
-                    // Update URL without reloading
-                    const newUrl = `${window.location.pathname}?card=${encodeURIComponent(cardId)}`;
-                    window.history.pushState({}, '', newUrl);
-                }
-                
-                // Hide loading
-                loadingScreen.style.display = 'none';
+                showNotification(`Card ${card.card_id} loaded successfully!`, 'success');
             }
             
             // Share card
@@ -1079,7 +1022,7 @@
                 }
                 
                 const cardUrl = `${window.location.origin}${window.location.pathname}?card=${encodeURIComponent(currentCard.card_id)}`;
-                const shareText = `Check out this AR Magic Card: ${currentCard.card_id}\n\n${currentCard.message_text || 'Secret message'}\n\nView it here: ${cardUrl}`;
+                const shareText = `✨ AR Magic Card: ${currentCard.card_id}\n\n📝 Message: ${currentCard.message_text || 'Secret message'}\n\n🔗 View it here: ${cardUrl}`;
                 
                 if (navigator.share) {
                     // Use Web Share API if available
@@ -1120,6 +1063,127 @@
                 window.open(`qr.html?card=${encodeURIComponent(currentCard.card_id)}`, '_blank');
             }
             
+            // Start QR scanner
+            function startQRScanner() {
+                if (!window.Html5Qrcode) {
+                    showNotification('QR scanner library not loaded', 'error');
+                    return;
+                }
+                
+                if (isScanning) return;
+                
+                qrScanner.classList.add('show');
+                manualInput.style.display = 'none';
+                
+                const html5QrCode = new Html5Qrcode("qrPreview");
+                
+                const qrCodeSuccessCallback = (decodedText, decodedResult) => {
+                    console.log(`QR Code matched: ${decodedText}`);
+                    
+                    // Stop scanner
+                    html5QrCode.stop().then(() => {
+                        qrScannerInstance = null;
+                        isScanning = false;
+                        qrScanner.classList.remove('show');
+                    }).catch(err => {
+                        console.error('Error stopping scanner:', err);
+                    });
+                    
+                    // Handle the decoded QR code
+                    // QR codes from qr.html should contain a URL with card parameter
+                    try {
+                        const url = new URL(decodedText);
+                        const cardId = url.searchParams.get('card');
+                        if (cardId) {
+                            handleCardLoad(cardId);
+                        } else {
+                            // Maybe the QR code contains just the card ID
+                            handleCardLoad(decodedText);
+                        }
+                    } catch (e) {
+                        // If it's not a URL, assume it's a card ID
+                        handleCardLoad(decodedText);
+                    }
+                };
+                
+                const config = {
+                    fps: 10,
+                    qrbox: { width: 250, height: 250 },
+                    supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA],
+                    showTorchButtonIfSupported: true
+                };
+                
+                html5QrCode.start(
+                    { facingMode: "environment" },
+                    config,
+                    qrCodeSuccessCallback,
+                    (errorMessage) => {
+                        // Ignore most errors
+                    }
+                ).then(() => {
+                    qrScannerInstance = html5QrCode;
+                    isScanning = true;
+                    showNotification('QR scanner started', 'info');
+                }).catch(err => {
+                    console.error('Error starting scanner:', err);
+                    showNotification('Could not start camera. Please check permissions.', 'error');
+                    qrScanner.classList.remove('show');
+                });
+            }
+            
+            // Stop QR scanner
+            function stopQRScanner() {
+                if (qrScannerInstance && isScanning) {
+                    qrScannerInstance.stop().then(() => {
+                        qrScannerInstance = null;
+                        isScanning = false;
+                        qrScanner.classList.remove('show');
+                        showNotification('Scanner stopped', 'info');
+                    }).catch(err => {
+                        console.error('Error stopping scanner:', err);
+                    });
+                }
+            }
+            
+            // Handle card loading
+            async function handleCardLoad(cardId) {
+                if (!cardId.trim()) {
+                    showNotification('Please enter a Card ID', 'error');
+                    return;
+                }
+                
+                loadingScreen.style.display = 'flex';
+                loadingText.textContent = `Loading card ${cardId}...`;
+                
+                const card = await loadCardData(cardId);
+                
+                if (card) {
+                    displayCardDetails(card);
+                    
+                    // Update URL without reloading
+                    const newUrl = `${window.location.pathname}?card=${encodeURIComponent(cardId)}`;
+                    window.history.pushState({}, '', newUrl);
+                }
+                
+                loadingScreen.style.display = 'none';
+            }
+            
+            // Reset to scan mode
+            function resetToScanMode() {
+                cardDisplayContainer.classList.remove('show');
+                scanMode.style.display = 'flex';
+                manualInput.style.display = 'none';
+                qrScanner.classList.remove('show');
+                toggleManualInputBtn.innerHTML = '<i class="fas fa-keyboard"></i> Manual Input';
+                toggleQrScannerBtn.innerHTML = '<i class="fas fa-qrcode"></i> Scan QR';
+                
+                // Clear URL parameter
+                window.history.pushState({}, '', window.location.pathname);
+                
+                // Stop scanner if running
+                stopQRScanner();
+            }
+            
             // Initialize the application
             async function initializeApp() {
                 console.log('Initializing AR Viewer application...');
@@ -1137,7 +1201,6 @@
                 const urlCardId = getCardFromURL();
                 if (urlCardId) {
                     // Direct card view mode (from QR code)
-                    scanMode.style.display = 'none';
                     loadingScreen.style.display = 'flex';
                     loadingText.textContent = `Loading card ${urlCardId}...`;
                     
@@ -1149,9 +1212,6 @@
                     }
                     
                     loadingScreen.style.display = 'none';
-                } else {
-                    // Normal scan mode
-                    scanMode.style.display = 'block';
                 }
                 
                 // Hide loading screen
@@ -1166,20 +1226,34 @@
             }
             
             // Event Listeners
-            startScanBtn.addEventListener('click', startARScanner);
-            
             toggleManualInputBtn.addEventListener('click', function() {
                 const isVisible = manualInput.style.display === 'block';
                 manualInput.style.display = isVisible ? 'none' : 'block';
+                qrScanner.classList.remove('show');
                 this.innerHTML = isVisible 
                     ? '<i class="fas fa-keyboard"></i> Manual Input'
                     : '<i class="fas fa-times"></i> Close';
+                toggleQrScannerBtn.innerHTML = '<i class="fas fa-qrcode"></i> Scan QR';
+                stopQRScanner();
+            });
+            
+            toggleQrScannerBtn.addEventListener('click', function() {
+                const isVisible = qrScanner.classList.contains('show');
+                if (isVisible) {
+                    stopQRScanner();
+                    this.innerHTML = '<i class="fas fa-qrcode"></i> Scan QR';
+                } else {
+                    startQRScanner();
+                    this.innerHTML = '<i class="fas fa-times"></i> Close';
+                    manualInput.style.display = 'none';
+                    toggleManualInputBtn.innerHTML = '<i class="fas fa-keyboard"></i> Manual Input';
+                }
             });
             
             manualLoadBtn.addEventListener('click', function() {
                 const cardId = manualCardId.value.trim();
                 if (cardId) {
-                    handleCardScan(cardId);
+                    handleCardLoad(cardId);
                 }
             });
             
@@ -1187,71 +1261,30 @@
                 if (e.key === 'Enter') {
                     const cardId = this.value.trim();
                     if (cardId) {
-                        handleCardScan(cardId);
+                        handleCardLoad(cardId);
                     }
                 }
             });
             
-            closeCardBtn.addEventListener('click', function() {
-                cardDisplay.classList.remove('show');
-            });
+            stopScanBtn.addEventListener('click', stopQRScanner);
             
             shareCardBtn.addEventListener('click', shareCard);
             
-            newScanBtn.addEventListener('click', function() {
-                cardDisplay.classList.remove('show');
-                
-                if (isScanning) {
-                    // Already in AR mode, just hide card display
-                    return;
-                }
-                
-                // Return to scan mode
-                scanMode.style.display = 'block';
-                arSceneContainer.style.display = 'none';
-                manualInput.style.display = 'none';
-                toggleManualInputBtn.innerHTML = '<i class="fas fa-keyboard"></i> Manual Input';
-                
-                // Clear URL parameter
-                window.history.pushState({}, '', window.location.pathname);
-            });
-            
             generateQrBtn.addEventListener('click', generateQRForCard);
             
-            // AR Marker Events
-            if (hiroMarker) {
-                hiroMarker.addEventListener('markerFound', function() {
-                    console.log('Marker found!');
-                    showNotification('AR marker detected!', 'success');
-                    
-                    // If we have a card loaded, show it in AR
-                    if (currentCard && arCard) {
-                        arCard.setAttribute('visible', 'true');
-                    }
-                });
-                
-                hiroMarker.addEventListener('markerLost', function() {
-                    console.log('Marker lost');
-                    if (arCard) {
-                        arCard.setAttribute('visible', 'false');
-                    }
-                });
-                
-                // Tap on AR card to show details
-                hiroMarker.addEventListener('click', function() {
-                    if (currentCard && !cardDisplay.classList.contains('show')) {
-                        displayCardDetails(currentCard);
-                    }
-                });
-            }
+            viewArBtn.addEventListener('click', function() {
+                showNotification('AR view coming soon!', 'info');
+            });
+            
+            newScanBtn.addEventListener('click', resetToScanMode);
             
             // Handle back/forward navigation
             window.addEventListener('popstate', function() {
                 const urlCardId = getCardFromURL();
                 if (urlCardId) {
-                    handleCardScan(urlCardId);
+                    handleCardLoad(urlCardId);
                 } else {
-                    cardDisplay.classList.remove('show');
+                    resetToScanMode();
                 }
             });
             
