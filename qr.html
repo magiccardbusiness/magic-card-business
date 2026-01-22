@@ -12,7 +12,6 @@
     <!-- Add QRCode generator as fallback -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
     <style>
-        /* ALL YOUR CSS STAYS EXACTLY THE SAME - KEEP IT ALL */
         * {
             margin: 0;
             padding: 0;
@@ -919,6 +918,19 @@
                                     label += ` - ${card.message_type}`;
                                 }
                                 
+                                // Add media indicator
+                                if (card.media_url && card.media_url.trim() !== '' && card.media_url !== 'null') {
+                                    if (card.message_type.includes('Image')) {
+                                        label += ' 📷';
+                                    } else if (card.message_type.includes('Video')) {
+                                        label += ' 🎥';
+                                    } else if (card.message_type.includes('Audio')) {
+                                        label += ' 🎵';
+                                    } else {
+                                        label += ' 📎';
+                                    }
+                                }
+                                
                                 option.textContent = label;
                                 option.title = card.message_text || card.message_type || 'No message';
                                 cardSelect.appendChild(option);
@@ -980,7 +992,7 @@
                 }
             }
             
-            // Get card details
+            // Get card details from loaded cards
             function getCardDetails(cardId) {
                 const card = loadedCards.find(c => c.card_id === cardId);
                 if (card) {
@@ -1058,7 +1070,7 @@
                 dynamicOptions.innerHTML = optionsHTML;
             }
             
-            // Get QR data
+            // Get QR data based on type - FIXED TO POINT TO viewer.html
             function getQrData() {
                 const qrType = document.querySelector('input[name="qrType"]:checked').value;
                 let data = '';
@@ -1086,9 +1098,14 @@
                         data = `${baseUrl}${currentDir}viewer.html?card=${encodeURIComponent(cardId)}`;
                         label = cardId;
                         
+                        // Get card details for description - UPDATED FOR MEDIA
                         const cardDetails = getCardDetails(cardId);
                         if (cardDetails) {
-                            description = `${cardDetails.type}: ${cardDetails.message.substring(0, 50)}...`;
+                            if (cardDetails.media && cardDetails.media.trim() !== '' && cardDetails.media !== 'null') {
+                                description = `${cardDetails.type}: ${cardDetails.message.substring(0, 50)}... [Media attached]`;
+                            } else {
+                                description = `${cardDetails.type}: ${cardDetails.message.substring(0, 50)}...`;
+                            }
                         } else {
                             description = 'Scan this QR code to view the AR Magic Card';
                         }
