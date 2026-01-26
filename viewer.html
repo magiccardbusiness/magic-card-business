@@ -6,7 +6,6 @@
     <title>Magic Card Viewer - Scan QR Codes</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-    <!-- REMOVED Supabase CDN - We use our own backend now! -->
     <style>
         * {
             margin: 0;
@@ -516,7 +515,7 @@
         <div class="manual-input" id="manualSection">
             <h3><i class="fas fa-keyboard"></i> Or Enter Card ID Manually</h3>
             <div class="input-group">
-                <input type="text" id="cardIdInput" placeholder="Enter Card ID (e.g., CARD1234)">
+                <input type="text" id="cardIdInput" placeholder="Enter Card ID (e.g., CARD6842)">
                 <button class="btn btn-primary" id="loadCardBtn">
                     <i class="fas fa-search"></i> Load Card
                 </button>
@@ -529,7 +528,7 @@
                 <div class="card-title">
                     <i class="fas fa-gem"></i>
                     <span>Magic Card</span>
-                    <span class="card-id" id="displayCardId">CARD1234</span>
+                    <span class="card-id" id="displayCardId">CARD6842</span>
                 </div>
             </div>
             
@@ -623,14 +622,6 @@
         const loadingText = document.getElementById('loadingText');
         const notification = document.getElementById('notification');
         
-        // State
-        let stream = null;
-        let isScanning = false;
-        let currentCard = null;
-        let canvas = null;
-        let context = null;
-        let animationFrame = null;
-        
         // Show notification
         function showNotification(message, type = 'info') {
             notification.textContent = message;
@@ -653,7 +644,7 @@
             loading.classList.remove('show');
         }
         
-        // Load card from backend API
+        // Load card from backend API - FIXED VERSION
         async function loadCard(cardId) {
             console.log('Loading card:', cardId);
             
@@ -671,25 +662,31 @@
             showLoading(`Loading card ${cardId}...`);
             
             try {
-                // Fetch from our backend API
-                const response = await fetch(`${BACKEND_URL}/api/cards/${cardId}`);
+                // Fetch from our backend API - THE FIX IS HERE!
+                const response = await fetch(`${BACKEND_URL}/api/cards/${encodeURIComponent(cardId)}`);
                 
                 if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Server error:', response.status, errorText);
+                    
                     if (response.status === 404) {
-                        throw new Error(`Card ${cardId} not found`);
+                        throw new Error(`Card ${cardId} not found in database`);
                     } else {
-                        throw new Error(`Server error: ${response.status}`);
+                        throw new Error(`Server error: ${response.status} - ${errorText}`);
                     }
                 }
                 
                 const result = await response.json();
+                console.log('API Response:', result);
                 
                 if (result.success && result.card) {
                     console.log('Card loaded successfully:', result.card);
                     hideLoading();
                     return result.card;
+                } else if (result.error) {
+                    throw new Error(result.error);
                 } else {
-                    throw new Error(result.error || 'Unknown error');
+                    throw new Error('Invalid response from server');
                 }
                 
             } catch (error) {
@@ -700,14 +697,18 @@
             }
         }
         
-        // Display card
+        // Display card - FIXED VERSION
         function displayCard(card) {
             console.log('Displaying card:', card);
-            currentCard = card;
             
-            // Update display
-            displayCardId.textContent = card.card_id;
-            displayMessage.textContent = card.message_text || 'No message available';
+            if (!card) {
+                showNotification('No card data received', 'error');
+                return;
+            }
+            
+            // Update display with PROPER field names from your backend
+            displayCardId.textContent = card.card_id || 'Unknown Card';
+            displayMessage.textContent = card.message_text || card.message || 'No message available';
             displayType.textContent = card.message_type || 'Text Message';
             
             if (card.created_at) {
@@ -726,8 +727,6 @@
             // Display media if available
             mediaContainer.innerHTML = '';
             
-            // Note: Media URLs are not currently supported in the simple backend
-            // We'll add this feature in a future update
             if (card.media_url) {
                 const info = document.createElement('p');
                 info.style.color = '#666';
@@ -744,7 +743,7 @@
             // Stop camera if scanning
             stopScanner();
             
-            showNotification(`Card ${card.card_id} loaded!`, 'success');
+            showNotification(`Card ${card.card_id || 'Unknown'} loaded!`, 'success');
         }
         
         // Start scanner
@@ -901,7 +900,7 @@
             if (card) {
                 displayCard(card);
             } else {
-                showNotification(`Card ${cardId} not found`, 'error');
+                showNotification(`Card ${cardId} not found or couldn't be loaded`, 'error');
                 // Restart scanner if card not found
                 setTimeout(startScanner, 2000);
             }
@@ -930,7 +929,7 @@
             }
             
             const cardUrl = `${window.location.origin}${window.location.pathname}?card=${encodeURIComponent(currentCard.card_id)}`;
-            const shareText = `Magic Card: ${currentCard.card_id}\n\n${currentCard.message_text}\n\nView at: ${cardUrl}`;
+            const shareText = `Magic Card: ${currentCard.card_id}\n\n${currentCard.message_text || currentCard.message}\n\nView at: ${cardUrl}`;
             
             if (navigator.share) {
                 navigator.share({
@@ -1015,6 +1014,31 @@
                 }
             }, 300);
         }
+        
+        // Debug helper to test backend connection
+        async function testBackendConnection() {
+            try {
+                console.log('Testing backend connection...');
+                const response = await fetch(`${BACKEND_URL}/api/health`);
+                const data = await response.json();
+                console.log('Backend health check:', data);
+                
+                // Also test a known card
+                console.log('Testing known card CARD6842...');
+                const cardResponse = await fetch(`${BACKEND_URL}/api/cards/CARD6842`);
+                const cardData = await cardResponse.json();
+                console.log('Known card response:', cardData);
+                
+            } catch (error) {
+                console.error('Backend test failed:', error);
+            }
+        }
+        
+        // Run backend test on load
+        window.addEventListener('load', () => {
+            console.log('Page loaded, testing backend...');
+            testBackendConnection();
+        });
         
         // Start when page loads
         document.addEventListener('DOMContentLoaded', initialize);
