@@ -6,8 +6,7 @@
     <title>Magic Card Viewer - Scan QR Codes</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-    <!-- Add Supabase JS -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <!-- REMOVED Supabase CDN - We use our own backend now! -->
     <style>
         * {
             margin: 0;
@@ -478,7 +477,7 @@
     <div class="container">
         <header>
             <h1><i class="fas fa-camera"></i> Magic Card Viewer</h1>
-            <p>Scan QR codes from your Magic Cards to view messages</p>
+            <p>Scan QR codes or enter card IDs to view your magic cards</p>
         </header>
         
         <!-- Scanner Section -->
@@ -560,7 +559,7 @@
                     <i class="fas fa-database"></i>
                     <div>
                         <div class="meta-label">Source</div>
-                        <div class="meta-value">Supabase Database</div>
+                        <div class="meta-value">Backend Database</div>
                     </div>
                 </div>
             </div>
@@ -600,9 +599,8 @@
     </div>
     
     <script>
-        // Supabase Configuration - Use same credentials as qr.html
-        const SUPABASE_URL = 'https://elmhkhvryjzljxskbfps.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVsbWhraHZyeWp6bGp4c2tiZnBzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0NDc3NjMsImV4cCI6MjA4NDAyMzc2M30.Orrh2Pejnt3KPJMTUTmRRkhCwtZVfjUreKvX546bOcw';
+        // Backend API Configuration
+        const BACKEND_URL = 'http://localhost:3000'; // Your backend server
         
         // DOM Elements
         const video = document.getElementById('video');
@@ -625,14 +623,13 @@
         const loadingText = document.getElementById('loadingText');
         const notification = document.getElementById('notification');
         
-        // State - DO NOT DECLARE 'supabase' HERE, let it be global
+        // State
         let stream = null;
         let isScanning = false;
         let currentCard = null;
         let canvas = null;
         let context = null;
         let animationFrame = null;
-        // Remove: let supabase = null; - Let it be managed by the Supabase library
         
         // Show notification
         function showNotification(message, type = 'info') {
@@ -656,46 +653,10 @@
             loading.classList.remove('show');
         }
         
-        // Initialize Supabase client - FIXED: Check if it already exists
-        function initializeSupabase() {
-            console.log('Initializing Supabase...');
-            try {
-                // Check if supabase is already defined globally by the library
-                if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
-                    console.log('Supabase library is available');
-                    
-                    // Create client only if it doesn't exist
-                    if (!window.supabaseClient) {
-                        window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                        console.log('Supabase client created successfully');
-                    } else {
-                        console.log('Supabase client already exists');
-                    }
-                    
-                    return window.supabaseClient;
-                } else {
-                    console.error('Supabase library not loaded');
-                    showNotification('Database library not loaded. Please refresh the page.', 'error');
-                    return null;
-                }
-            } catch (error) {
-                console.error('Error initializing Supabase:', error);
-                showNotification('Error connecting to database: ' + error.message, 'error');
-                return null;
-            }
-        }
-        
-        // Get Supabase client
-        function getSupabaseClient() {
-            if (!window.supabaseClient) {
-                return initializeSupabase();
-            }
-            return window.supabaseClient;
-        }
-        
-        // Load card from Supabase using Supabase JS client
+        // Load card from backend API
         async function loadCard(cardId) {
-            console.log('loadCard called with:', cardId);
+            console.log('Loading card:', cardId);
+            
             if (!cardId || cardId.trim() === '') {
                 showNotification('Please enter a Card ID', 'error');
                 return null;
@@ -710,57 +671,36 @@
             showLoading(`Loading card ${cardId}...`);
             
             try {
-                const supabaseClient = getSupabaseClient();
-                if (!supabaseClient) {
-                    throw new Error('Failed to connect to database');
-                }
+                // Fetch from our backend API
+                const response = await fetch(`${BACKEND_URL}/api/cards/${cardId}`);
                 
-                console.log('Fetching card from Supabase:', cardId);
-                
-                // Fetch from cards table using Supabase JS client
-                const { data: cards, error } = await supabaseClient
-                    .from('cards')
-                    .select('card_id, message_type, message_text, media_url, file_name, created_at, status')
-                    .eq('card_id', cardId)
-                    .eq('status', 'active')
-                    .limit(1);
-                
-                if (error) {
-                    console.error('Supabase error:', error);
-                    
-                    // Check if it's a "table doesn't exist" error
-                    if (error.message.includes('does not exist')) {
-                        showNotification('Cards table not found. Create cards first in the Maker.', 'error');
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        throw new Error(`Card ${cardId} not found`);
                     } else {
-                        showNotification('Error loading card: ' + error.message, 'error');
+                        throw new Error(`Server error: ${response.status}`);
                     }
-                    hideLoading();
-                    return null;
                 }
                 
-                console.log('Supabase response:', cards);
+                const result = await response.json();
                 
-                if (!cards || cards.length === 0) {
-                    showNotification(`Card ${cardId} not found`, 'error');
+                if (result.success && result.card) {
+                    console.log('Card loaded successfully:', result.card);
                     hideLoading();
-                    return null;
+                    return result.card;
+                } else {
+                    throw new Error(result.error || 'Unknown error');
                 }
-                
-                const card = cards[0];
-                console.log('Card loaded successfully:', card);
-                
-                hideLoading();
-                return card;
                 
             } catch (error) {
                 console.error('Error loading card:', error);
-                showNotification('Failed to load card from database. Error: ' + error.message, 'error');
+                showNotification(`Failed to load card: ${error.message}`, 'error');
                 hideLoading();
                 return null;
             }
         }
         
-        // Display card - UPDATED FOR MEDIA SUPPORT
+        // Display card
         function displayCard(card) {
             console.log('Displaying card:', card);
             currentCard = card;
@@ -783,117 +723,17 @@
                 displayDate.textContent = 'Recently';
             }
             
-            // Display media if available - UPDATED FOR BETTER MEDIA HANDLING
+            // Display media if available
             mediaContainer.innerHTML = '';
             
-            // Check if media_url exists and is not empty
-            if (card.media_url && card.media_url.trim() !== '' && card.media_url !== 'null') {
-                const fileExtension = card.media_url.split('.').pop().toLowerCase();
-                const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].includes(fileExtension);
-                const isVideo = ['mp4', 'webm', 'ogg', 'mov', 'avi', 'wmv'].includes(fileExtension);
-                const isAudio = ['mp3', 'wav', 'ogg', 'm4a', 'flac', 'aac'].includes(fileExtension);
-                
-                console.log('Media detected:', {
-                    url: card.media_url,
-                    extension: fileExtension,
-                    isImage: isImage,
-                    isVideo: isVideo,
-                    isAudio: isAudio,
-                    fileName: card.file_name
-                });
-                
-                if (isImage) {
-                    const img = document.createElement('img');
-                    img.src = card.media_url;
-                    img.alt = card.file_name || 'Card Media';
-                    img.style.maxWidth = '100%';
-                    img.style.maxHeight = '300px';
-                    img.style.borderRadius = '8px';
-                    img.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
-                    img.onload = () => {
-                        console.log('Image loaded successfully');
-                        showNotification('Media loaded successfully', 'success');
-                    };
-                    img.onerror = () => {
-                        console.error('Failed to load image:', card.media_url);
-                        showNotification('Could not load media. The file might not exist or the URL is incorrect.', 'error');
-                        // Show a fallback message
-                        const fallback = document.createElement('div');
-                        fallback.innerHTML = `<p style="color: #666;"><i class="fas fa-image"></i> Image: ${card.file_name || 'Media file'}</p>
-                                             <a href="${card.media_url}" target="_blank" style="color: #11998e; text-decoration: none;">
-                                                 <i class="fas fa-external-link-alt"></i> Open Media
-                                             </a>`;
-                        mediaContainer.appendChild(fallback);
-                    };
-                    mediaContainer.appendChild(img);
-                } else if (isVideo) {
-                    const video = document.createElement('video');
-                    video.src = card.media_url;
-                    video.controls = true;
-                    video.style.width = '100%';
-                    video.style.maxHeight = '300px';
-                    video.style.borderRadius = '8px';
-                    video.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
-                    
-                    // Add error handling
-                    video.addEventListener('error', () => {
-                        console.error('Failed to load video:', card.media_url);
-                        showNotification('Could not load video. The file might not exist or the format is not supported.', 'error');
-                        const fallback = document.createElement('div');
-                        fallback.innerHTML = `<p style="color: #666;"><i class="fas fa-video"></i> Video: ${card.file_name || 'Media file'}</p>
-                                             <a href="${card.media_url}" target="_blank" style="color: #11998e; text-decoration: none;">
-                                                 <i class="fas fa-external-link-alt"></i> Download Video
-                                             </a>`;
-                        mediaContainer.appendChild(fallback);
-                    });
-                    
-                    mediaContainer.appendChild(video);
-                } else if (isAudio) {
-                    const audio = document.createElement('audio');
-                    audio.src = card.media_url;
-                    audio.controls = true;
-                    audio.style.width = '100%';
-                    audio.style.marginTop = '15px';
-                    
-                    // Add error handling
-                    audio.addEventListener('error', () => {
-                        console.error('Failed to load audio:', card.media_url);
-                        showNotification('Could not load audio. The file might not exist or the format is not supported.', 'error');
-                        const fallback = document.createElement('div');
-                        fallback.innerHTML = `<p style="color: #666;"><i class="fas fa-music"></i> Audio: ${card.file_name || 'Media file'}</p>
-                                             <a href="${card.media_url}" target="_blank" style="color: #11998e; text-decoration: none;">
-                                                 <i class="fas fa-external-link-alt"></i> Download Audio
-                                             </a>`;
-                        mediaContainer.appendChild(fallback);
-                    });
-                    
-                    mediaContainer.appendChild(audio);
-                } else {
-                    // For other file types, show a link
-                    const link = document.createElement('a');
-                    link.href = card.media_url;
-                    link.textContent = card.file_name || 'Download Media';
-                    link.target = '_blank';
-                    link.className = 'btn btn-secondary';
-                    link.style.textDecoration = 'none';
-                    link.style.marginTop = '15px';
-                    mediaContainer.appendChild(link);
-                }
-                
-                // Add a media info line
-                const mediaInfo = document.createElement('p');
-                mediaInfo.style.fontSize = '0.9rem';
-                mediaInfo.style.color = '#666';
-                mediaInfo.style.marginTop = '10px';
-                mediaInfo.innerHTML = `<i class="fas fa-paperclip"></i> Media attached: ${card.file_name || 'File'}`;
-                mediaContainer.appendChild(mediaInfo);
-            } else {
-                // No media - show a simple message
-                const noMediaMsg = document.createElement('p');
-                noMediaMsg.style.color = '#999';
-                noMediaMsg.style.fontStyle = 'italic';
-                noMediaMsg.textContent = 'No media attached to this card';
-                mediaContainer.appendChild(noMediaMsg);
+            // Note: Media URLs are not currently supported in the simple backend
+            // We'll add this feature in a future update
+            if (card.media_url) {
+                const info = document.createElement('p');
+                info.style.color = '#666';
+                info.style.fontStyle = 'italic';
+                info.innerHTML = `<i class="fas fa-info-circle"></i> Media support coming soon!`;
+                mediaContainer.appendChild(info);
             }
             
             // Show card, hide scanner
@@ -904,12 +744,7 @@
             // Stop camera if scanning
             stopScanner();
             
-            // Show appropriate notification based on media
-            if (card.media_url && card.media_url.trim() !== '' && card.media_url !== 'null') {
-                showNotification(`Card ${card.card_id} loaded with media!`, 'success');
-            } else {
-                showNotification(`Card ${card.card_id} loaded!`, 'success');
-            }
+            showNotification(`Card ${card.card_id} loaded!`, 'success');
         }
         
         // Start scanner
@@ -1026,7 +861,7 @@
                     
                     // Clean up card ID
                     if (cardId) {
-                        cardId = decodeURIComponent(cardId); // Decode URL encoded characters
+                        cardId = decodeURIComponent(cardId);
                         cardId = cardId.toUpperCase();
                         if (!cardId.startsWith('CARD')) {
                             cardId = 'CARD' + cardId.replace(/[^0-9]/g, '');
@@ -1054,7 +889,7 @@
         
         // Handle card loading
         async function handleCardLoad(cardId) {
-            console.log('handleCardLoad called with cardId:', cardId);
+            console.log('Loading card:', cardId);
             
             // Clean up card ID
             cardId = cardId.toUpperCase();
@@ -1062,15 +897,11 @@
                 cardId = 'CARD' + cardId;
             }
             
-            console.log('Looking for card:', cardId);
-            
             const card = await loadCard(cardId);
             if (card) {
-                console.log('Card loaded successfully:', card);
                 displayCard(card);
             } else {
-                console.log('Card not found or error loading');
-                showNotification(`Card ${cardId} not found or couldn't be loaded`, 'error');
+                showNotification(`Card ${cardId} not found`, 'error');
                 // Restart scanner if card not found
                 setTimeout(startScanner, 2000);
             }
@@ -1136,12 +967,10 @@
         
         // Load from URL parameter
         async function loadFromUrl() {
-            console.log('loadFromUrl called');
             const urlParams = new URLSearchParams(window.location.search);
             const cardId = urlParams.get('card');
             
             if (cardId) {
-                console.log('Loading card from URL parameter:', cardId);
                 await handleCardLoad(cardId);
                 return true;
             }
@@ -1152,12 +981,7 @@
         async function initialize() {
             console.log('Initializing viewer...');
             
-            // Initialize Supabase FIRST
-            console.log('Step 1: Initializing Supabase');
-            initializeSupabase();
-            
             // Event Listeners
-            console.log('Step 2: Setting up event listeners');
             startBtn.addEventListener('click', startScanner);
             stopBtn.addEventListener('click', stopScanner);
             
@@ -1182,14 +1006,11 @@
             backBtn.addEventListener('click', resetToScanner);
             
             // Check URL for direct card access
-            console.log('Step 3: Checking URL for card parameter');
             setTimeout(async () => {
                 const hasCardInUrl = await loadFromUrl();
                 
                 // Auto-start scanner if no card loaded
                 if (!hasCardInUrl) {
-                    console.log('No card in URL, starting scanner...');
-                    // Start scanner after a brief delay
                     setTimeout(startScanner, 1000);
                 }
             }, 300);
@@ -1197,13 +1018,6 @@
         
         // Start when page loads
         document.addEventListener('DOMContentLoaded', initialize);
-        
-        // Debug: Log when page is fully loaded
-        window.addEventListener('load', () => {
-            console.log('Page fully loaded');
-            console.log('URL:', window.location.href);
-            console.log('Query params:', new URLSearchParams(window.location.search).toString());
-        });
     </script>
 </body>
 </html>
