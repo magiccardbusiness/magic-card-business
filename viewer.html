@@ -6,7 +6,6 @@
     <title>Magic Card Viewer - Scan QR Codes</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-    <!-- NO Supabase CDN! We use our own backend -->
     <style>
         * {
             margin: 0;
@@ -531,10 +530,8 @@
     </div>
     
     <script>
-        // IMPORTANT: For Vercel deployment, we need to detect the backend URL
-        // On Vercel, your backend might be at a different URL
-        const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-        const BACKEND_URL = isLocalhost ? 'http://localhost:3000' : 'https://your-backend-url.vercel.app';
+        // === FIX: Always use local backend ===
+        const BACKEND_URL = 'http://localhost:3000';
         
         // DOM Elements
         const video = document.getElementById('video');
@@ -563,7 +560,7 @@
             }, 3000);
         }
         
-        // Load card from YOUR backend API
+        // Load card from backend API
         async function loadCard(cardId) {
             console.log('Loading card from backend:', cardId);
             
@@ -581,7 +578,6 @@
             showNotification(`Loading card ${cardId}...`, 'info');
             
             try {
-                // IMPORTANT: Call YOUR backend, not Supabase directly!
                 const response = await fetch(`${BACKEND_URL}/api/cards/${encodeURIComponent(cardId)}`);
                 
                 if (!response.ok) {
@@ -633,8 +629,8 @@
             manualSection.style.display = 'none';
             
             // Stop scanner if running
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
+            if (video.srcObject) {
+                video.srcObject.getTracks().forEach(track => track.stop());
                 video.srcObject = null;
                 startBtn.style.display = 'flex';
                 stopBtn.style.display = 'none';
@@ -643,9 +639,12 @@
             showNotification(`Card ${card.card_id} loaded!`, 'success');
         }
         
-        // Start scanner
+        // Start scanner with FIX for video loading
         async function startScanner() {
             try {
+                // FIX: Add delay to ensure video is ready
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: {
                         facingMode: 'environment',
@@ -655,7 +654,7 @@
                 });
                 
                 video.srcObject = stream;
-                video.play();
+                await video.play();
                 
                 startBtn.style.display = 'none';
                 stopBtn.style.display = 'flex';
@@ -664,7 +663,11 @@
                 
                 // Simple scanner loop
                 const scanLoop = async () => {
-                    if (!video.srcObject) return;
+                    // FIX: Check if video is ready
+                    if (!video.srcObject || video.videoWidth === 0) {
+                        setTimeout(scanLoop, 100);
+                        return;
+                    }
                     
                     const canvas = document.createElement('canvas');
                     canvas.width = video.videoWidth;
