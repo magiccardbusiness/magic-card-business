@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code Generator | Magic Card Business</title>
+    <title>QR Code Generator | Papir AR</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -39,7 +39,7 @@
             font-size: 2.8rem;
             font-weight: bold;
             margin-bottom: 10px;
-            background: linear-gradient(45deg, #FF6B6B, #FF8E53, #FFD166, #06D6A0, #118AB2, #667eea);
+            background: linear-gradient(45deg, #667eea, #06D6A0, #FFD166);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -76,7 +76,7 @@
         }
         
         .sync-status.online {
-            background: rgba(0, 176, 155, 0.3);
+            background: rgba(6, 214, 160, 0.3);
         }
         
         .sync-status.offline {
@@ -347,7 +347,7 @@
         }
         
         .notification.success {
-            background: linear-gradient(to right, #00b09b, #96c93d);
+            background: linear-gradient(to right, #06D6A0, #118AB2);
         }
         
         .notification.error {
@@ -355,7 +355,7 @@
         }
         
         .notification.info {
-            background: linear-gradient(to right, #36D1DC, #5B86E5);
+            background: linear-gradient(to right, #667eea, #764ba2);
         }
         
         .loading {
@@ -439,13 +439,13 @@
     <div class="container">
         <div class="sync-status" id="syncStatus">
             <i class="fas fa-check-circle"></i>
-            <span>Checking Connection...</span>
+            <span>Connected to Papir Backend</span>
         </div>
         
         <div class="header">
-            <h1 class="logo"><i class="fas fa-qrcode"></i> QR Code Generator</h1>
-            <p class="tagline">Generate phone-scannable QR codes for your Magic Cards</p>
-            <div class="server-url" id="serverUrl">Detecting server URL...</div>
+            <h1 class="logo"><i class="fas fa-qrcode"></i> Papir QR Generator</h1>
+            <p class="tagline">Generate phone-scannable QR codes for your Papir Cards</p>
+            <div class="server-url" id="serverUrl">papir.ca - Mobile Ready!</div>
         </div>
         
         <div class="content">
@@ -454,8 +454,11 @@
                 <h2><i class="fas fa-cogs"></i> QR Code Settings</h2>
                 
                 <div class="form-group">
-                    <label for="cardId">Card ID:</label>
-                    <input type="text" id="cardId" placeholder="e.g., CARD1234, BDAY-JOHN-2024" value="CARD1234">
+                    <label for="cardId">Papir Card ID:</label>
+                    <input type="text" id="cardId" placeholder="e.g., 1234, 5678, 9999" value="1234">
+                    <div style="font-size: 0.85rem; color: #a0aec0; margin-top: 5px;">
+                        Will become: PAPIR[number] automatically
+                    </div>
                 </div>
                 
                 <div class="form-group">
@@ -463,7 +466,7 @@
                     <div class="qr-options">
                         <div class="qr-option active">
                             <input type="radio" id="typeCard" name="qrType" value="card" checked>
-                            <label for="typeCard">Magic Card</label>
+                            <label for="typeCard">Papir Card</label>
                         </div>
                         <div class="qr-option">
                             <input type="radio" id="typeUrl" name="qrType" value="url">
@@ -478,9 +481,9 @@
                 
                 <div id="dynamicOptions">
                     <div class="form-group">
-                        <label>Magic Card Options:</label>
+                        <label>Papir Card Options:</label>
                         <div style="background: rgba(6, 214, 160, 0.1); padding: 15px; border-radius: 8px;">
-                            <p style="margin-bottom: 10px; color: #a0aec0;">QR code will open the card directly in the viewer.</p>
+                            <p style="margin-bottom: 10px; color: #a0aec0;">QR code will open the card directly in the Papir viewer.</p>
                             <div style="display: flex; align-items: center; gap: 10px;">
                                 <input type="checkbox" id="autoScan" checked>
                                 <label for="autoScan" style="font-weight: normal;">Direct card view</label>
@@ -523,11 +526,11 @@
                 
                 <div id="qrInfo" style="display: none;">
                     <div class="qr-info">
-                        <div class="qr-label" id="qrLabel">CARD1234</div>
-                        <div class="qr-type" id="qrType">Magic Card</div>
+                        <div class="qr-label" id="qrLabel">PAPIR1234</div>
+                        <div class="qr-type" id="qrType">Papir Card</div>
                         <div class="qr-url" id="qrUrl"></div>
                         <p style="color: #a0aec0; margin-bottom: 15px;" id="qrDesc">
-                            Scan this QR code with your phone camera
+                            Scan this QR code with your phone camera - works on any smartphone!
                         </p>
                         
                         <div class="download-buttons">
@@ -545,7 +548,7 @@
         
         <!-- Recent QR Codes Section -->
         <div class="card" style="max-width: 100%; margin-top: 30px;">
-            <h2><i class="fas fa-history"></i> Recently Generated QR Codes</h2>
+            <h2><i class="fas fa-history"></i> Recent QR Codes</h2>
             <div class="recent-qr-grid" id="recentQrGrid">
                 <div style="text-align: center; padding: 40px; color: #a0aec0; grid-column: 1 / -1;">
                     <i class="fas fa-qrcode" style="font-size: 3rem; margin-bottom: 15px; opacity: 0.5;"></i>
@@ -559,11 +562,10 @@
     <div class="notification" id="notification"></div>
 
     <script>
-        // Configuration
-        const YOUR_NGROK_URL = 'https://sharyl-nontheosophical-religiously.ngrok-free.dev';
-        const BACKEND_URL = 'http://localhost:3000';
+        // Configuration - Use YOUR domain
+        const PAPIR_DOMAIN = 'https://papir.ca';
+        const BACKEND_URL = PAPIR_DOMAIN;
         
-        // Main application
         document.addEventListener('DOMContentLoaded', function() {
             // DOM elements
             const syncStatus = document.getElementById('syncStatus');
@@ -588,9 +590,7 @@
             
             // State
             let currentQRCodeData = null;
-            let recentQrCodes = JSON.parse(localStorage.getItem('magicCardRecentQrCodes')) || [];
-            let isUsingNgrok = false;
-            let baseUrl = '';
+            let recentQrCodes = JSON.parse(localStorage.getItem('papirRecentQrCodes')) || [];
             
             // Show notification
             function showNotification(message, type = 'info') {
@@ -607,42 +607,11 @@
             function updateSyncStatus(connected) {
                 if (connected) {
                     syncStatus.className = 'sync-status online';
-                    syncStatus.innerHTML = '<i class="fas fa-check-circle"></i><span>Connected to Backend</span>';
+                    syncStatus.innerHTML = '<i class="fas fa-check-circle"></i><span>Connected to Papir Backend</span>';
                 } else {
                     syncStatus.className = 'sync-status offline';
                     syncStatus.innerHTML = '<i class="fas fa-times-circle"></i><span>Backend Unavailable</span>';
                 }
-            }
-            
-            // Detect if we're using ngrok or localhost
-            function detectBaseUrl() {
-                const host = window.location.hostname;
-                const protocol = window.location.protocol;
-                
-                // Check if we're on ngrok
-                if (host.includes('ngrok-free.dev') || host.includes('ngrok-free.app') || host.includes('ngrok-free.com')) {
-                    isUsingNgrok = true;
-                    baseUrl = `${protocol}//${host}`;
-                    serverUrl.textContent = `Using: ${baseUrl} (Phone-ready!)`;
-                    serverUrl.style.color = '#06D6A0';
-                    return baseUrl;
-                }
-                
-                // Check if we're on your specific ngrok URL
-                if (window.location.href.includes('sharyl-nontheosophical-religiously.ngrok-free.dev')) {
-                    isUsingNgrok = true;
-                    baseUrl = YOUR_NGROK_URL;
-                    serverUrl.textContent = `Using: ${baseUrl} (Phone-ready!)`;
-                    serverUrl.style.color = '#06D6A0';
-                    return baseUrl;
-                }
-                
-                // Otherwise, we're on localhost
-                isUsingNgrok = false;
-                baseUrl = `${protocol}//${host}:${window.location.port || '3000'}`;
-                serverUrl.textContent = `Using: ${baseUrl} (Localhost - not phone-scannable)`;
-                serverUrl.style.color = '#FF6B6B';
-                return baseUrl;
             }
             
             // Update dynamic options
@@ -654,9 +623,9 @@
                     case 'card':
                         optionsHTML = `
                             <div class="form-group">
-                                <label>Magic Card Options:</label>
+                                <label>Papir Card Options:</label>
                                 <div style="background: rgba(6, 214, 160, 0.1); padding: 15px; border-radius: 8px;">
-                                    <p style="margin-bottom: 10px; color: #a0aec0;">QR code will open the card directly in the viewer.</p>
+                                    <p style="margin-bottom: 10px; color: #a0aec0;">QR code will open the card directly in the Papir viewer.</p>
                                     <div style="display: flex; align-items: center; gap: 10px;">
                                         <input type="checkbox" id="autoScan" checked>
                                         <label for="autoScan" style="font-weight: normal;">Direct card view</label>
@@ -670,7 +639,7 @@
                         optionsHTML = `
                             <div class="form-group">
                                 <label for="urlInput">Website URL:</label>
-                                <input type="url" id="urlInput" placeholder="https://example.com" value="https://example.com">
+                                <input type="url" id="urlInput" placeholder="https://example.com" value="https://papir.ca">
                             </div>
                         `;
                         break;
@@ -679,7 +648,7 @@
                         optionsHTML = `
                             <div class="form-group">
                                 <label for="textInput">Text Content:</label>
-                                <textarea id="textInput" placeholder="Enter text for QR code" rows="4" style="resize: vertical;">Hello World!</textarea>
+                                <textarea id="textInput" placeholder="Enter text for QR code" rows="4" style="resize: vertical;">Welcome to Papir AR!</textarea>
                             </div>
                         `;
                         break;
@@ -704,21 +673,18 @@
                             return null;
                         }
                         
-                        // Ensure CARD prefix
-                        if (!cardId.toUpperCase().startsWith('CARD')) {
-                            cardId = 'CARD' + cardId;
+                        // Ensure PAPIR prefix
+                        if (!cardId.toUpperCase().startsWith('PAPIR')) {
+                            cardId = 'PAPIR' + cardId;
                         }
                         
-                        // Generate viewer URL - ALWAYS use your ngrok URL for phone scanning
-                        const viewerUrl = `${YOUR_NGROK_URL}/viewer.html?card=${encodeURIComponent(cardId)}`;
-                        const localUrl = `${baseUrl}/viewer.html?card=${encodeURIComponent(cardId)}`;
+                        // Generate viewer URL using YOUR domain
+                        const viewerUrl = `${PAPIR_DOMAIN}/viewer.html?card=${encodeURIComponent(cardId)}`;
                         
-                        data = viewerUrl; // Always use ngrok URL for QR code
-                        displayUrl = isUsingNgrok ? viewerUrl : localUrl;
+                        data = viewerUrl;
+                        displayUrl = viewerUrl;
                         label = cardId;
-                        description = isUsingNgrok 
-                            ? 'Scan with phone camera - works anywhere!' 
-                            : 'Localhost URL - only works on this computer';
+                        description = 'Scan with phone camera - works anywhere!';
                         break;
                         
                     case 'url':
@@ -776,7 +742,7 @@
                         
                         // Update info
                         qrLabel.textContent = qrData.label;
-                        qrType.textContent = qrData.type === 'card' ? 'Magic Card' : qrData.type === 'url' ? 'Website URL' : 'Text';
+                        qrType.textContent = qrData.type === 'card' ? 'Papir Card' : qrData.type === 'url' ? 'Website URL' : 'Text';
                         qrUrl.textContent = qrData.displayUrl;
                         qrDesc.textContent = qrData.description;
                         
@@ -792,11 +758,7 @@
                         saveToRecentQrCodes(currentQRCodeData);
                         
                         // Show success
-                        const phoneMessage = isUsingNgrok 
-                            ? '✅ QR code generated! Scan with any phone camera.' 
-                            : '⚠️ QR code generated, but uses localhost. Use ngrok URL for phone scanning.';
-                        
-                        showNotification(phoneMessage, isUsingNgrok ? 'success' : 'info');
+                        showNotification('✅ QR code generated! Scan with any phone camera.', 'success');
                         
                         // Reset button
                         generateBtn.innerHTML = generateBtnText;
@@ -833,7 +795,7 @@
                     recentQrCodes.pop();
                 }
                 
-                localStorage.setItem('magicCardRecentQrCodes', JSON.stringify(recentQrCodes));
+                localStorage.setItem('papirRecentQrCodes', JSON.stringify(recentQrCodes));
                 updateRecentQrCodesDisplay();
             }
             
@@ -868,7 +830,7 @@
                                 ${qr.label.length > 15 ? qr.label.substring(0, 15) + '...' : qr.label}
                             </div>
                             <div style="font-size: 0.8rem; color: #a0aec0;">
-                                ${qr.type === 'card' ? 'Magic Card' : qr.type === 'url' ? 'Website' : 'Text'}
+                                ${qr.type === 'card' ? 'Papir Card' : qr.type === 'url' ? 'Website' : 'Text'}
                             </div>
                         </div>
                     `;
@@ -891,7 +853,9 @@
                 if (!qr) return;
                 
                 if (qr.type === 'card' && cardIdInput) {
-                    cardIdInput.value = qr.label;
+                    // Extract just the number part
+                    const cardNumber = qr.label.replace('PAPIR', '');
+                    cardIdInput.value = cardNumber;
                 }
                 
                 // Set QR type
@@ -913,133 +877,4 @@
                 qrInfo.style.display = 'block';
                 
                 qrLabel.textContent = qr.label;
-                qrType.textContent = qr.type === 'card' ? 'Magic Card' : qr.type === 'url' ? 'Website URL' : 'Text';
-                qrUrl.textContent = qr.displayUrl;
-                qrDesc.textContent = qr.type === 'card' 
-                    ? (isUsingNgrok ? 'Scan with phone camera - works anywhere!' : 'Localhost - only works on this computer')
-                    : 'Scan to view';
-                
-                currentQRCodeData = qr;
-                
-                showNotification('Loaded QR code: ' + qr.label, 'success');
-            }
-            
-            // Clear QR code
-            function clearQR() {
-                qrImage.style.display = 'none';
-                emptyQr.style.display = 'block';
-                qrInfo.style.display = 'none';
-                currentQRCodeData = null;
-                showNotification('QR code cleared', 'info');
-            }
-            
-            // Download QR code
-            async function downloadQR() {
-                if (!currentQRCodeData || !currentQRCodeData.qrCodeUrl) {
-                    showNotification('No QR code to download', 'error');
-                    return;
-                }
-                
-                try {
-                    const response = await fetch(currentQRCodeData.qrCodeUrl);
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.download = `qrcode_${currentQRCodeData.label.replace(/[^a-zA-Z0-9]/g, '_')}.png`;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    
-                    window.URL.revokeObjectURL(url);
-                    showNotification('QR code downloaded!', 'success');
-                } catch (error) {
-                    showNotification('Error downloading QR code: ' + error.message, 'error');
-                }
-            }
-            
-            // Copy URL to clipboard
-            async function copyURL() {
-                if (!currentQRCodeData || !currentQRCodeData.displayUrl) {
-                    showNotification('No URL to copy', 'error');
-                    return;
-                }
-                
-                try {
-                    await navigator.clipboard.writeText(currentQRCodeData.displayUrl);
-                    showNotification('URL copied to clipboard!', 'success');
-                } catch (error) {
-                    // Fallback for older browsers
-                    const textArea = document.createElement('textarea');
-                    textArea.value = currentQRCodeData.displayUrl;
-                    document.body.appendChild(textArea);
-                    textArea.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(textArea);
-                    showNotification('URL copied!', 'success');
-                }
-            }
-            
-            // Check backend connection
-            async function checkBackendConnection() {
-                try {
-                    const response = await fetch(`${BACKEND_URL}/api/health`);
-                    if (response.ok) {
-                        updateSyncStatus(true);
-                        return true;
-                    }
-                } catch (error) {
-                    console.log('Backend not available:', error.message);
-                }
-                
-                updateSyncStatus(false);
-                return false;
-            }
-            
-            // Initialize application
-            async function initializeApp() {
-                console.log('Initializing QR Code Generator...');
-                
-                // Detect base URL
-                detectBaseUrl();
-                
-                // Check backend connection
-                await checkBackendConnection();
-                
-                // Setup event listeners
-                qrTypeRadios.forEach(radio => {
-                    radio.addEventListener('change', function() {
-                        document.querySelectorAll('.qr-option').forEach(option => {
-                            option.classList.remove('active');
-                        });
-                        this.closest('.qr-option').classList.add('active');
-                        updateDynamicOptions();
-                    });
-                });
-                
-                generateBtn.addEventListener('click', generateQR);
-                clearBtn.addEventListener('click', clearQR);
-                downloadPngBtn.addEventListener('click', downloadQR);
-                shareBtn.addEventListener('click', copyURL);
-                
-                // Initial dynamic options
-                updateDynamicOptions();
-                
-                // Load recent QR codes
-                updateRecentQrCodesDisplay();
-                
-                console.log('QR Code Generator initialized successfully');
-                
-                // Auto-generate if there's a card ID
-                if (cardIdInput.value.trim()) {
-                    setTimeout(generateQR, 500);
-                }
-            }
-            
-            // Start the app
-            initializeApp();
-        });
-    </script>
-</body>
-</html>
+                qrType.textContent = qr.type === 'card'
