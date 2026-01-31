@@ -877,4 +877,134 @@
                 qrInfo.style.display = 'block';
                 
                 qrLabel.textContent = qr.label;
-                qrType.textContent = qr.type === 'card'
+                qrType.textContent = qr.type === 'card' ? 'Papir Card' : qr.type === 'url' ? 'Website URL' : 'Text';
+                qrUrl.textContent = qr.displayUrl;
+                qrDesc.textContent = qr.type === 'card' 
+                    ? 'Scan with phone camera - works anywhere!' 
+                    : 'Scan to view';
+                
+                currentQRCodeData = qr;
+                
+                showNotification('Loaded QR code: ' + qr.label, 'success');
+            }
+            
+            // Clear QR code
+            function clearQR() {
+                qrImage.style.display = 'none';
+                emptyQr.style.display = 'block';
+                qrInfo.style.display = 'none';
+                currentQRCodeData = null;
+                showNotification('QR code cleared', 'info');
+            }
+            
+            // Download QR code
+            async function downloadQR() {
+                if (!currentQRCodeData || !currentQRCodeData.qrCodeUrl) {
+                    showNotification('No QR code to download', 'error');
+                    return;
+                }
+                
+                try {
+                    const response = await fetch(currentQRCodeData.qrCodeUrl);
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `papir_qr_${currentQRCodeData.label.replace(/[^a-zA-Z0-9]/g, '_')}.png`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    window.URL.revokeObjectURL(url);
+                    showNotification('QR code downloaded!', 'success');
+                } catch (error) {
+                    showNotification('Error downloading QR code: ' + error.message, 'error');
+                }
+            }
+            
+            // Copy URL to clipboard
+            async function copyURL() {
+                if (!currentQRCodeData || !currentQRCodeData.displayUrl) {
+                    showNotification('No URL to copy', 'error');
+                    return;
+                }
+                
+                try {
+                    await navigator.clipboard.writeText(currentQRCodeData.displayUrl);
+                    showNotification('URL copied to clipboard!', 'success');
+                } catch (error) {
+                    // Fallback for older browsers
+                    const textArea = document.createElement('textarea');
+                    textArea.value = currentQRCodeData.displayUrl;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    showNotification('URL copied!', 'success');
+                }
+            }
+            
+            // Check backend connection
+            async function checkBackendConnection() {
+                try {
+                    const response = await fetch(`${BACKEND_URL}/api/health`);
+                    if (response.ok) {
+                        updateSyncStatus(true);
+                        return true;
+                    }
+                } catch (error) {
+                    console.log('Backend not available:', error.message);
+                }
+                
+                updateSyncStatus(false);
+                return false;
+            }
+            
+            // Initialize application
+            async function initializeApp() {
+                console.log('Initializing Papir QR Code Generator...');
+                
+                // Update server URL display
+                serverUrl.textContent = `${PAPIR_DOMAIN} - Mobile Ready!`;
+                serverUrl.style.color = '#06D6A0';
+                
+                // Check backend connection
+                await checkBackendConnection();
+                
+                // Setup event listeners
+                qrTypeRadios.forEach(radio => {
+                    radio.addEventListener('change', function() {
+                        document.querySelectorAll('.qr-option').forEach(option => {
+                            option.classList.remove('active');
+                        });
+                        this.closest('.qr-option').classList.add('active');
+                        updateDynamicOptions();
+                    });
+                });
+                
+                generateBtn.addEventListener('click', generateQR);
+                clearBtn.addEventListener('click', clearQR);
+                downloadPngBtn.addEventListener('click', downloadQR);
+                shareBtn.addEventListener('click', copyURL);
+                
+                // Initial dynamic options
+                updateDynamicOptions();
+                
+                // Load recent QR codes
+                updateRecentQrCodesDisplay();
+                
+                console.log('Papir QR Code Generator initialized successfully');
+                
+                // Auto-generate if there's a card ID
+                if (cardIdInput.value.trim()) {
+                    setTimeout(generateQR, 500);
+                }
+            }
+            
+            // Start the app
+            initializeApp();
+        });
+    </script>
+</body>
+</html>
