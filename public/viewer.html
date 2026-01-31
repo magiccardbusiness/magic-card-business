@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Magic Card Viewer - Scan QR Codes</title>
+    <title>Papir Card Viewer</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <style>
@@ -15,7 +15,7 @@
         }
         
         body {
-            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -79,7 +79,7 @@
             border-radius: 10px;
             overflow: hidden;
             position: relative;
-            border: 3px solid #11998e;
+            border: 3px solid #667eea;
             margin-bottom: 20px;
         }
         
@@ -105,7 +105,7 @@
         .scanner-frame {
             width: 250px;
             height: 250px;
-            border: 2px solid #11998e;
+            border: 2px solid #667eea;
             border-radius: 8px;
             position: relative;
         }
@@ -116,7 +116,7 @@
             position: absolute;
             width: 20px;
             height: 20px;
-            border: 2px solid #11998e;
+            border: 2px solid #667eea;
         }
         
         .scanner-frame::before {
@@ -162,13 +162,13 @@
         }
         
         .btn-primary {
-            background: linear-gradient(to right, #11998e, #38ef7d);
+            background: linear-gradient(to right, #667eea, #764ba2);
             color: white;
         }
         
         .btn-primary:hover {
             transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(17, 153, 142, 0.4);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
         }
         
         .btn-secondary {
@@ -211,7 +211,7 @@
         }
         
         .input-group input:focus {
-            border-color: #11998e;
+            border-color: #667eea;
             outline: none;
         }
         
@@ -257,7 +257,7 @@
             border-radius: 20px;
             font-size: 0.9rem;
             font-weight: 600;
-            color: #11998e;
+            color: #06D6A0;
         }
         
         .card-content {
@@ -293,7 +293,7 @@
         }
         
         .meta-item i {
-            color: #11998e;
+            color: #667eea;
             font-size: 1.2rem;
         }
         
@@ -357,7 +357,7 @@
         }
         
         .notification.success {
-            background: linear-gradient(to right, #11998e, #38ef7d);
+            background: linear-gradient(to right, #06D6A0, #118AB2);
         }
         
         .notification.error {
@@ -365,7 +365,7 @@
         }
         
         .notification.info {
-            background: linear-gradient(to right, #36D1DC, #5B86E5);
+            background: linear-gradient(to right, #667eea, #764ba2);
         }
         
         .nav-buttons {
@@ -379,8 +379,8 @@
         .nav-btn {
             padding: 12px 25px;
             background: white;
-            color: #11998e;
-            border: 2px solid #11998e;
+            color: #667eea;
+            border: 2px solid #667eea;
             border-radius: 8px;
             text-decoration: none;
             font-weight: 600;
@@ -391,7 +391,7 @@
         }
         
         .nav-btn:hover {
-            background: #11998e;
+            background: #667eea;
             color: white;
         }
         
@@ -430,8 +430,8 @@
 <body>
     <div class="container">
         <header>
-            <h1><i class="fas fa-camera"></i> Magic Card Viewer</h1>
-            <p>Scan QR codes or enter card IDs to view your magic cards</p>
+            <h1><i class="fas fa-scroll"></i> Papir Card Viewer</h1>
+            <p>Scan QR codes or enter card IDs to view your Papir AR cards</p>
         </header>
         
         <!-- Scanner Section -->
@@ -444,8 +444,8 @@
                 <video id="video" autoplay playsinline></video>
                 <div class="scanner-overlay">
                     <div class="scanner-frame"></div>
-                    <div style="margin-top: 20px; color: #11998e; font-weight: 600; text-align: center;">
-                        Point camera at QR code<br>
+                    <div style="margin-top: 20px; color: #667eea; font-weight: 600; text-align: center;">
+                        Point camera at Papir QR code<br>
                         <span style="font-size: 0.9rem; color: #666;">QR codes from qr.html work automatically</span>
                     </div>
                 </div>
@@ -461,7 +461,7 @@
             </div>
             
             <div class="scanner-instructions">
-                <p><i class="fas fa-lightbulb"></i> The scanner will automatically detect QR codes from your Magic Cards</p>
+                <p><i class="fas fa-lightbulb"></i> The scanner will automatically detect QR codes from your Papir Cards</p>
                 <p>Make sure the QR code is inside the frame</p>
             </div>
         </div>
@@ -470,7 +470,7 @@
         <div class="manual-input" id="manualSection">
             <h3><i class="fas fa-keyboard"></i> Or Enter Card ID Manually</h3>
             <div class="input-group">
-                <input type="text" id="cardIdInput" placeholder="Enter Card ID (e.g., CARD6842)">
+                <input type="text" id="cardIdInput" placeholder="Enter Card ID (e.g., PAPIR1234)">
                 <button class="btn btn-primary" id="loadCardBtn">
                     <i class="fas fa-search"></i> Load Card
                 </button>
@@ -481,9 +481,9 @@
         <div class="card-display" id="cardDisplay">
             <div class="card-header">
                 <div class="card-title">
-                    <i class="fas fa-gem"></i>
-                    <span>Magic Card</span>
-                    <span class="card-id" id="displayCardId">CARD6842</span>
+                    <i class="fas fa-scroll"></i>
+                    <span>Papir Card</span>
+                    <span class="card-id" id="displayCardId">PAPIR1234</span>
                 </div>
             </div>
             
@@ -504,8 +504,8 @@
                 <div class="meta-item">
                     <i class="fas fa-calendar"></i>
                     <div>
-                        <div class="meta-label">Created</div>
-                        <div class="meta-value" id="displayDate">Just now</div>
+                        <div class="meta-label">Loaded From</div>
+                        <div class="meta-value" id="displayDate">Railway + Supabase</div>
                     </div>
                 </div>
             </div>
@@ -522,7 +522,7 @@
     <!-- Navigation -->
     <div class="nav-buttons">
         <a href="maker.html" class="nav-btn">
-            <i class="fas fa-magic"></i> Create Cards
+            <i class="fas fa-scroll"></i> Create Cards
         </a>
         <a href="qr.html" class="nav-btn">
             <i class="fas fa-qrcode"></i> Generate QR Codes
@@ -530,7 +530,7 @@
     </div>
     
     <script>
-        // === FIX: Always use local backend ===
+        // Use YOUR domain
         const BACKEND_URL = 'https://papir.ca';
         
         // DOM Elements
@@ -562,7 +562,7 @@
         
         // Load card from backend API
         async function loadCard(cardId) {
-            console.log('Loading card from backend:', cardId);
+            console.log('Loading card from Papir backend:', cardId);
             
             if (!cardId || cardId.trim() === '') {
                 showNotification('Please enter a Card ID', 'error');
@@ -571,8 +571,8 @@
             
             // Ensure proper format
             cardId = cardId.toUpperCase();
-            if (!cardId.startsWith('CARD')) {
-                cardId = 'CARD' + cardId;
+            if (!cardId.startsWith('PAPIR')) {
+                cardId = 'PAPIR' + cardId;
             }
             
             showNotification(`Loading card ${cardId}...`, 'info');
@@ -582,15 +582,15 @@
                 
                 if (!response.ok) {
                     if (response.status === 404) {
-                        throw new Error(`Card ${cardId} not found`);
+                        throw new Error(`Card ${cardId} not found in Supabase`);
                     }
-                    throw new Error(`Server error: ${response.status}`);
+                    throw new Error(`Railway backend error: ${response.status}`);
                 }
                 
                 const result = await response.json();
                 
                 if (result.success && result.card) {
-                    console.log('Card loaded successfully:', result.card);
+                    console.log('Card loaded successfully from Supabase:', result.card);
                     return result.card;
                 } else {
                     throw new Error(result.error || 'Unknown error');
@@ -605,7 +605,7 @@
         
         // Display card
         function displayCard(card) {
-            console.log('Displaying card:', card);
+            console.log('Displaying Papir card:', card);
             
             // Update display
             displayCardId.textContent = card.card_id;
@@ -618,9 +618,9 @@
                     month: 'short',
                     day: 'numeric',
                     year: 'numeric'
-                });
+                }) + ' • Supabase';
             } else {
-                displayDate.textContent = 'Recently';
+                displayDate.textContent = 'Loaded from Railway + Supabase';
             }
             
             // Show card, hide scanner
@@ -636,13 +636,12 @@
                 stopBtn.style.display = 'none';
             }
             
-            showNotification(`Card ${card.card_id} loaded!`, 'success');
+            showNotification(`Papir Card ${card.card_id} loaded!`, 'success');
         }
         
-        // Start scanner with FIX for video loading
+        // Start scanner
         async function startScanner() {
             try {
-                // FIX: Add delay to ensure video is ready
                 await new Promise(resolve => setTimeout(resolve, 1000));
                 
                 const stream = await navigator.mediaDevices.getUserMedia({
@@ -659,11 +658,10 @@
                 startBtn.style.display = 'none';
                 stopBtn.style.display = 'flex';
                 
-                showNotification('Scanner started. Point at QR code.', 'info');
+                showNotification('Papir scanner started. Point at QR code.', 'info');
                 
                 // Simple scanner loop
                 const scanLoop = async () => {
-                    // FIX: Check if video is ready
                     if (!video.srcObject || video.videoWidth === 0) {
                         setTimeout(scanLoop, 100);
                         return;
@@ -691,8 +689,8 @@
                         
                         cardId = decodeURIComponent(cardId);
                         cardId = cardId.toUpperCase();
-                        if (!cardId.startsWith('CARD')) {
-                            cardId = 'CARD' + cardId.replace(/[^0-9]/g, '');
+                        if (!cardId.startsWith('PAPIR')) {
+                            cardId = 'PAPIR' + cardId.replace(/[^0-9]/g, '');
                         }
                         
                         const card = await loadCard(cardId);
@@ -733,7 +731,7 @@
         
         // Initialize
         function initialize() {
-            console.log('Initializing viewer with backend:', BACKEND_URL);
+            console.log('Initializing Papir viewer with backend:', BACKEND_URL);
             
             // Event listeners
             startBtn.addEventListener('click', startScanner);
