@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Papir Card Viewer</title>
+    <title>Papir AR Card Viewer - Scan QR Codes</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <style>
@@ -15,7 +15,7 @@
         }
         
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -79,7 +79,7 @@
             border-radius: 10px;
             overflow: hidden;
             position: relative;
-            border: 3px solid #667eea;
+            border: 3px solid #11998e;
             margin-bottom: 20px;
         }
         
@@ -105,7 +105,7 @@
         .scanner-frame {
             width: 250px;
             height: 250px;
-            border: 2px solid #667eea;
+            border: 2px solid #11998e;
             border-radius: 8px;
             position: relative;
         }
@@ -116,7 +116,7 @@
             position: absolute;
             width: 20px;
             height: 20px;
-            border: 2px solid #667eea;
+            border: 2px solid #11998e;
         }
         
         .scanner-frame::before {
@@ -162,13 +162,13 @@
         }
         
         .btn-primary {
-            background: linear-gradient(to right, #667eea, #764ba2);
+            background: linear-gradient(to right, #11998e, #38ef7d);
             color: white;
         }
         
         .btn-primary:hover {
             transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 5px 15px rgba(17, 153, 142, 0.4);
         }
         
         .btn-secondary {
@@ -211,7 +211,7 @@
         }
         
         .input-group input:focus {
-            border-color: #667eea;
+            border-color: #11998e;
             outline: none;
         }
         
@@ -257,7 +257,7 @@
             border-radius: 20px;
             font-size: 0.9rem;
             font-weight: 600;
-            color: #06D6A0;
+            color: #11998e;
         }
         
         .card-content {
@@ -293,7 +293,7 @@
         }
         
         .meta-item i {
-            color: #667eea;
+            color: #11998e;
             font-size: 1.2rem;
         }
         
@@ -357,7 +357,7 @@
         }
         
         .notification.success {
-            background: linear-gradient(to right, #06D6A0, #118AB2);
+            background: linear-gradient(to right, #11998e, #38ef7d);
         }
         
         .notification.error {
@@ -365,7 +365,7 @@
         }
         
         .notification.info {
-            background: linear-gradient(to right, #667eea, #764ba2);
+            background: linear-gradient(to right, #36D1DC, #5B86E5);
         }
         
         .nav-buttons {
@@ -379,8 +379,8 @@
         .nav-btn {
             padding: 12px 25px;
             background: white;
-            color: #667eea;
-            border: 2px solid #667eea;
+            color: #11998e;
+            border: 2px solid #11998e;
             border-radius: 8px;
             text-decoration: none;
             font-weight: 600;
@@ -391,7 +391,7 @@
         }
         
         .nav-btn:hover {
-            background: #667eea;
+            background: #11998e;
             color: white;
         }
         
@@ -430,8 +430,8 @@
 <body>
     <div class="container">
         <header>
-            <h1><i class="fas fa-scroll"></i> Papir Card Viewer</h1>
-            <p>Scan QR codes or enter card IDs to view your Papir AR cards</p>
+            <h1><i class="fas fa-camera"></i> Papir AR Card Viewer</h1>
+            <p>Scan QR codes or enter card IDs to view your AR cards</p>
         </header>
         
         <!-- Scanner Section -->
@@ -444,7 +444,7 @@
                 <video id="video" autoplay playsinline></video>
                 <div class="scanner-overlay">
                     <div class="scanner-frame"></div>
-                    <div style="margin-top: 20px; color: #667eea; font-weight: 600; text-align: center;">
+                    <div style="margin-top: 20px; color: #11998e; font-weight: 600; text-align: center;">
                         Point camera at Papir QR code<br>
                         <span style="font-size: 0.9rem; color: #666;">QR codes from qr.html work automatically</span>
                     </div>
@@ -470,7 +470,7 @@
         <div class="manual-input" id="manualSection">
             <h3><i class="fas fa-keyboard"></i> Or Enter Card ID Manually</h3>
             <div class="input-group">
-                <input type="text" id="cardIdInput" placeholder="Enter Card ID (e.g., PAPIR1234)">
+                <input type="text" id="cardIdInput" placeholder="Enter Card ID (e.g., CARD6842)">
                 <button class="btn btn-primary" id="loadCardBtn">
                     <i class="fas fa-search"></i> Load Card
                 </button>
@@ -481,9 +481,9 @@
         <div class="card-display" id="cardDisplay">
             <div class="card-header">
                 <div class="card-title">
-                    <i class="fas fa-scroll"></i>
-                    <span>Papir Card</span>
-                    <span class="card-id" id="displayCardId">PAPIR1234</span>
+                    <i class="fas fa-gem"></i>
+                    <span>Papir AR Card</span>
+                    <span class="card-id" id="displayCardId">CARD6842</span>
                 </div>
             </div>
             
@@ -504,8 +504,8 @@
                 <div class="meta-item">
                     <i class="fas fa-calendar"></i>
                     <div>
-                        <div class="meta-label">Loaded From</div>
-                        <div class="meta-value" id="displayDate">Railway + Supabase</div>
+                        <div class="meta-label">Created</div>
+                        <div class="meta-value" id="displayDate">Just now</div>
                     </div>
                 </div>
             </div>
@@ -522,7 +522,7 @@
     <!-- Navigation -->
     <div class="nav-buttons">
         <a href="maker.html" class="nav-btn">
-            <i class="fas fa-scroll"></i> Create Cards
+            <i class="fas fa-magic"></i> Create Cards
         </a>
         <a href="qr.html" class="nav-btn">
             <i class="fas fa-qrcode"></i> Generate QR Codes
@@ -530,7 +530,7 @@
     </div>
     
     <script>
-        // Use YOUR domain
+        // === Use Papir domain ===
         const BACKEND_URL = 'https://papir.ca';
         
         // DOM Elements
@@ -571,18 +571,18 @@
             
             // Ensure proper format
             cardId = cardId.toUpperCase();
-            if (!cardId.startsWith('PAPIR')) {
-                cardId = 'PAPIR' + cardId;
+            if (!cardId.startsWith('CARD')) {
+                cardId = 'CARD' + cardId;
             }
             
-            showNotification(`Loading card ${cardId}...`, 'info');
+            showNotification(`Loading Papir card ${cardId}...`, 'info');
             
             try {
                 const response = await fetch(`${BACKEND_URL}/api/cards/${encodeURIComponent(cardId)}`);
                 
                 if (!response.ok) {
                     if (response.status === 404) {
-                        throw new Error(`Card ${cardId} not found in Supabase`);
+                        throw new Error(`Papir card ${cardId} not found`);
                     }
                     throw new Error(`Railway backend error: ${response.status}`);
                 }
@@ -590,7 +590,7 @@
                 const result = await response.json();
                 
                 if (result.success && result.card) {
-                    console.log('Card loaded successfully from Supabase:', result.card);
+                    console.log('Papir card loaded successfully:', result.card);
                     return result.card;
                 } else {
                     throw new Error(result.error || 'Unknown error');
@@ -618,9 +618,9 @@
                     month: 'short',
                     day: 'numeric',
                     year: 'numeric'
-                }) + ' • Supabase';
+                });
             } else {
-                displayDate.textContent = 'Loaded from Railway + Supabase';
+                displayDate.textContent = 'Recently';
             }
             
             // Show card, hide scanner
@@ -639,9 +639,10 @@
             showNotification(`Papir Card ${card.card_id} loaded!`, 'success');
         }
         
-        // Start scanner
+        // Start scanner with FIX for video loading
         async function startScanner() {
             try {
+                // FIX: Add delay to ensure video is ready
                 await new Promise(resolve => setTimeout(resolve, 1000));
                 
                 const stream = await navigator.mediaDevices.getUserMedia({
@@ -662,6 +663,7 @@
                 
                 // Simple scanner loop
                 const scanLoop = async () => {
+                    // FIX: Check if video is ready
                     if (!video.srcObject || video.videoWidth === 0) {
                         setTimeout(scanLoop, 100);
                         return;
@@ -689,8 +691,8 @@
                         
                         cardId = decodeURIComponent(cardId);
                         cardId = cardId.toUpperCase();
-                        if (!cardId.startsWith('PAPIR')) {
-                            cardId = 'PAPIR' + cardId.replace(/[^0-9]/g, '');
+                        if (!cardId.startsWith('CARD')) {
+                            cardId = 'CARD' + cardId.replace(/[^0-9]/g, '');
                         }
                         
                         const card = await loadCard(cardId);
