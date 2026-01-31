@@ -1,4 +1,4 @@
-// 🎪 Magic Card Business Server - NGrok READY
+// 🎪 Papir Business Server - PRODUCTION READY
 const express = require('express');
 const { createClient } = require('@supabase/supabase-js');
 const cors = require('cors');
@@ -9,29 +9,7 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// 🔧 YOUR NGrok Configuration
-const YOUR_NGROK_URL = 'https://papir.ca';
-
-// Function to get correct base URL
-function getBaseUrl(req) {
-  const host = req.get('host') || '';
-  const protocol = req.protocol;
-  
-  // Check if request is from your ngrok URL
-  if (host.includes('sharyl-nontheosophical-religiously.ngrok-free.dev')) {
-    return YOUR_NGROK_URL; // Always use your ngrok URL
-  }
-  
-  // Check if request is from any ngrok
-  if (host.includes('ngrok-free.dev') || host.includes('ngrok-free.app') || host.includes('ngrok-free.com')) {
-    return `${protocol}s://${host}`; // ngrok always uses https
-  }
-  
-  // Local development
-  return `${protocol}://${host}`;
-}
-
-// 🔒 CSP - Allow your specific ngrok domain
+// 🔒 PRODUCTION CSP - Updated for papir.ca domain
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -58,7 +36,11 @@ app.use(helmet({
       connectSrc: [
         "'self'",
         "http://localhost:3000",
-        "https://sharyl-nontheosophical-religiously.ngrok-free.dev", // YOUR ngrok
+        "https://papir.ca",           // ADDED - Your new domain
+        "https://papir.up.railway.app", // ADDED - Railway URL
+        "https://sharyl-nontheosophical-religiously.ngrok-free.app",
+        "https://sharyl-nontheosophical-religiously.ngrok-free.dev",
+        "https://sharyl-nontheosophical-religiously.ngrok-free.com",
         "https://*.ngrok-free.app",
         "https://*.ngrok-free.dev",
         "https://*.ngrok-free.com",
@@ -87,11 +69,12 @@ app.use(helmet({
   crossOriginOpenerPolicy: { policy: "unsafe-none" }
 }));
 
-// 🌐 CORS - Allow everything for testing
+// 🌐 CORS Configuration - Allow your domain
 app.use(cors({
-  origin: '*',
+  origin: ['https://papir.ca', 'https://papir.up.railway.app', 'http://localhost:3000'],
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.use(express.json({ limit: '10mb' }));
@@ -101,7 +84,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
-  message: 'Too many requests from this IP'
+  message: 'Too many requests from this IP, please try again after 15 minutes.'
 });
 app.use('/api/', limiter);
 
@@ -115,30 +98,27 @@ app.get('/', (req, res) => {
 
 // 🩺 Enhanced Health Check
 app.get('/api/health', (req, res) => {
-  const baseUrl = getBaseUrl(req);
+  const protocol = req.protocol;
+  const host = req.get('host');
+  const baseUrl = `${protocol}://${host}`;
   
   res.json({
     status: '✅ FULLY OPERATIONAL',
-    message: 'Magic Card Business Server',
+    message: 'Papir Business Server is running perfectly!',
     time: new Date().toISOString(),
-    version: '2.1.0',
+    version: '3.0.0',
     server: {
       url: baseUrl,
-      port: PORT,
-      environment: process.env.NODE_ENV || 'development',
-      ngrok: baseUrl.includes('ngrok') ? '✅ Connected' : '❌ Local only'
-    },
-    yourNgrok: YOUR_NGROK_URL,
-    features: {
-      supabase: supabaseAdmin ? '✅ Connected' : '❌ Disconnected',
-      qrCodes: '✅ Enabled',
-      phoneScanning: baseUrl.includes('ngrok') ? '✅ Ready' : '❌ Need ngrok'
+      domain: 'papir.ca',
+      environment: process.env.NODE_ENV || 'production'
     },
     endpoints: {
       maker: `${baseUrl}/maker.html`,
       viewer: `${baseUrl}/viewer.html`,
-      ngrokInfo: `${baseUrl}/api/ngrok-info`
-    }
+      saveCard: `POST ${baseUrl}/api/cards`,
+      getCard: `GET ${baseUrl}/api/cards/:id`
+    },
+    database: supabaseAdmin ? '✅ Connected' : '❌ Disconnected'
   });
 });
 
@@ -167,7 +147,7 @@ try {
   console.error('❌ Supabase connection error:', error.message);
 }
 
-// 🎨 Save a Magic Card - Uses YOUR ngrok URL
+// 🎨 Save a Magic Card - Updated for papir.ca domain
 app.post('/api/cards', async (req, res) => {
   try {
     const { card_id, message_type, message_text } = req.body;
@@ -224,9 +204,12 @@ app.post('/api/cards', async (req, res) => {
     
     console.log(`✅ Card saved: ${card_id}`);
     
-    // 🚀 ALWAYS use your ngrok URL for QR codes (phone scanning)
-    const baseUrl = getBaseUrl(req);
-    const viewerUrl = `${YOUR_NGROK_URL}/viewer.html?card=${card_id}`; // ALWAYS use your ngrok URL
+    // 🚀 SMART URL GENERATION - Uses current domain
+    const protocol = req.protocol;
+    const host = req.get('host');
+    const baseUrl = `${protocol}://${host}`;
+    
+    const viewerUrl = `${baseUrl}/viewer.html?card=${card_id}`;
     const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(viewerUrl)}&format=png&margin=10`;
     
     res.status(201).json({ 
@@ -235,17 +218,15 @@ app.post('/api/cards', async (req, res) => {
       card: data,
       urls: {
         share: `/viewer.html?card=${card_id}`,
-        viewer: viewerUrl, // Your ngrok URL
-        viewerLocal: `http://localhost:3000/viewer.html?card=${card_id}`, // For local testing
+        viewer: viewerUrl,
         qrCode: qrCodeUrl,
-        maker: `${YOUR_NGROK_URL}/maker.html`
+        domain: host
       },
       instructions: {
-        phone: 'Scan QR code with phone camera - will work anywhere!',
-        local: 'Use viewerLocal URL for testing on this computer',
-        share: 'Share the viewer URL with anyone'
-      },
-      note: 'QR codes always use your ngrok URL for phone scanning'
+        scan: 'Scan the QR code with your phone camera',
+        share: 'Share the viewer URL with anyone',
+        domain: `Your card is available at: ${viewerUrl}`
+      }
     });
     
   } catch (error) {
@@ -302,11 +283,15 @@ app.get('/api/cards/:card_id', async (req, res) => {
       });
     }
     
+    // Include current domain in response
+    const protocol = req.protocol;
+    const host = req.get('host');
+    const baseUrl = `${protocol}://${host}`;
+    
     res.json({ 
       success: true, 
       card: data,
-      // Always include your ngrok URL for client-side use
-      ngrokUrl: `${YOUR_NGROK_URL}/viewer.html?card=${card_id}`
+      viewerUrl: `${baseUrl}/viewer.html?card=${card_id}`
     });
     
   } catch (error) {
@@ -318,100 +303,122 @@ app.get('/api/cards/:card_id', async (req, res) => {
   }
 });
 
-// 📊 Supabase Test
+// 📊 Supabase Connection Test
 app.get('/api/test-supabase', async (req, res) => {
   try {
     if (!supabaseAdmin) {
-      return res.json({
+      return res.status(503).json({
         status: '❌ DISCONNECTED',
-        message: 'Supabase not connected'
+        message: 'Supabase client not initialized',
+        tip: 'Check Railway environment variables'
       });
     }
     
     const { data, error, count } = await supabaseAdmin
       .from('cards')
-      .select('card_id, message_type', { count: 'exact' });
+      .select('card_id, message_type, created_at', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .limit(5);
     
-    if (error) throw error;
+    if (error) {
+      console.error('❌ Supabase test failed:', error);
+      return res.status(500).json({
+        status: '❌ ERROR',
+        message: 'Supabase query failed',
+        error: error.message,
+        code: error.code
+      });
+    }
     
     res.json({
       status: '✅ CONNECTED',
-      message: 'Supabase is working!',
+      message: 'Supabase is fully operational!',
       stats: {
-        totalCards: count || 0
+        totalCards: count || 0,
+        sampleSize: data.length
       },
-      sampleCards: data.slice(0, 5)
+      recentCards: data,
+      domain: req.get('host')
     });
     
   } catch (error) {
     res.status(500).json({
-      status: '❌ ERROR',
-      message: 'Supabase test failed',
+      status: '❌ FATAL ERROR',
+      message: 'Supabase test failed unexpectedly',
       error: error.message
     });
   }
 });
 
-// 🛠️ NGrok Info Endpoint
-app.get('/api/ngrok-info', (req, res) => {
-  const baseUrl = getBaseUrl(req);
+// 🛠️ Domain Info Endpoint
+app.get('/api/domain-info', (req, res) => {
+  const protocol = req.protocol;
+  const host = req.get('host');
+  const baseUrl = `${protocol}://${host}`;
   
   res.json({
-    yourNgrokUrl: YOUR_NGROK_URL,
-    currentRequestUrl: baseUrl,
-    isUsingYourNgrok: baseUrl === YOUR_NGROK_URL,
-    phoneReady: true,
-    qrCodeExample: `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(`${YOUR_NGROK_URL}/viewer.html?card=SAMPLE123`)}`,
-    testLinks: {
-      maker: `${YOUR_NGROK_URL}/maker.html`,
-      viewer: `${YOUR_NGROK_URL}/viewer.html?card=DEMO123`,
-      health: `${YOUR_NGROK_URL}/api/health`
-    }
+    domain: host,
+    fullUrl: baseUrl,
+    isHttps: req.secure,
+    headers: {
+      host: req.get('host'),
+      'x-forwarded-host': req.get('x-forwarded-host'),
+      'x-forwarded-proto': req.get('x-forwarded-proto')
+    },
+    qrCodeExample: `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(`${baseUrl}/viewer.html?card=SAMPLE123`)}`
   });
 });
 
 // 🚫 404 Handler
 app.use((req, res) => {
+  const protocol = req.protocol;
+  const host = req.get('host');
+  const baseUrl = `${protocol}://${host}`;
+  
   res.status(404).json({ 
     success: false,
     error: 'Endpoint not found',
     path: req.path,
-    yourNgrokUrl: YOUR_NGROK_URL
+    availableEndpoints: [
+      `${baseUrl}/`,
+      `${baseUrl}/maker.html`,
+      `${baseUrl}/viewer.html`,
+      `${baseUrl}/api/health`,
+      `${baseUrl}/api/cards/:id`,
+      `${baseUrl}/api/test-supabase`
+    ]
   });
 });
 
 // 🚀 Launch Server
 app.listen(PORT, () => {
   console.log('\n' + '═'.repeat(70));
-  console.log('   🎪✨ MAGIC CARD BUSINESS - YOUR NGrok READY ✨🎪');
+  console.log('   🎪✨ P A P I R   B U S I N E S S   S E R V E R ✨🎪');
   console.log('═'.repeat(70) + '\n');
-  
-  console.log('📍 YOUR NGrok URL:');
-  console.log(`   ${YOUR_NGROK_URL}\n`);
   
   console.log('📊 SERVER INFO:');
   console.log(`   Port: ${PORT}`);
+  console.log(`   Environment: ${process.env.NODE_ENV || 'production'}`);
+  console.log(`   Supabase: ${supabaseAdmin ? '✅ Connected' : '❌ Disconnected'}`);
+  
+  console.log('\n🌐 DOMAINS:');
+  console.log(`   Primary: https://papir.ca`);
+  console.log(`   Railway: https://papir.up.railway.app`);
   console.log(`   Local: http://localhost:${PORT}`);
-  console.log(`   Health: http://localhost:${PORT}/api/health\n`);
   
-  console.log('🔗 PHONE TESTING URLs:');
-  console.log(`   Maker: ${YOUR_NGROK_URL}/maker.html`);
-  console.log(`   Viewer: ${YOUR_NGROK_URL}/viewer.html`);
-  console.log(`   Health: ${YOUR_NGROK_URL}/api/health\n`);
+  console.log('\n🔗 TEST URLS:');
+  console.log(`   Health: https://papir.ca/api/health`);
+  console.log(`   Maker: https://papir.ca/maker.html`);
+  console.log(`   Viewer: https://papir.ca/viewer.html`);
+  console.log(`   Supabase: https://papir.ca/api/test-supabase`);
   
-  console.log('📱 PHONE TESTING STEPS:');
-  console.log('   1. Open on phone: ' + YOUR_NGROK_URL + '/maker.html');
-  console.log('   2. Create a card');
-  console.log('   3. Scan the QR code with phone camera');
-  console.log('   4. It will open: ' + YOUR_NGROK_URL + '/viewer.html?card=YOUR_CARD_ID\n');
+  console.log('\n🎯 FEATURES:');
+  console.log('   ✅ Dynamic domain detection');
+  console.log('   ✅ Phone-scannable QR codes');
+  console.log('   ✅ 24/7 Railway hosting');
+  console.log('   ✅ Professional .ca domain');
   
-  console.log('🎯 KEY FEATURES:');
-  console.log('   ✓ QR codes ALWAYS use your ngrok URL: ' + YOUR_NGROK_URL);
-  console.log('   ✓ Phone scanning works anywhere');
-  console.log('   ✓ Cards saved to Supabase database');
-  console.log('   ✓ Automatic QR code generation\n');
-  
-  console.log('─'.repeat(70));
-  console.log('   📱 PHONE SCANNING READY! 🚀');
+  console.log('\n' + '─'.repeat(70));
+  console.log('   🚀 Papir Business is LIVE at https://papir.ca!');
   console.log('─'.repeat(70) + '\n');
 });
