@@ -6,8 +6,6 @@
     <title>Magic Card Viewer - Scan QR Codes</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-    <!-- Add Supabase JS -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -278,18 +276,6 @@
             word-wrap: break-word;
         }
         
-        .media-container {
-            margin-top: 20px;
-            text-align: center;
-        }
-        
-        .media-container img, .media-container video {
-            max-width: 100%;
-            max-height: 300px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-        
         .card-meta {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -382,39 +368,6 @@
             background: linear-gradient(to right, #36D1DC, #5B86E5);
         }
         
-        .loading {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(255, 255, 255, 0.95);
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 2000;
-            gap: 20px;
-        }
-        
-        .loading.show {
-            display: flex;
-        }
-        
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #11998e;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
         .nav-buttons {
             display: flex;
             gap: 15px;
@@ -478,7 +431,7 @@
     <div class="container">
         <header>
             <h1><i class="fas fa-camera"></i> Magic Card Viewer</h1>
-            <p>Scan QR codes from your Magic Cards to view messages</p>
+            <p>Scan QR codes or enter card IDs to view your magic cards</p>
         </header>
         
         <!-- Scanner Section -->
@@ -517,7 +470,7 @@
         <div class="manual-input" id="manualSection">
             <h3><i class="fas fa-keyboard"></i> Or Enter Card ID Manually</h3>
             <div class="input-group">
-                <input type="text" id="cardIdInput" placeholder="Enter Card ID (e.g., CARD1234)">
+                <input type="text" id="cardIdInput" placeholder="Enter Card ID (e.g., CARD6842)">
                 <button class="btn btn-primary" id="loadCardBtn">
                     <i class="fas fa-search"></i> Load Card
                 </button>
@@ -530,7 +483,7 @@
                 <div class="card-title">
                     <i class="fas fa-gem"></i>
                     <span>Magic Card</span>
-                    <span class="card-id" id="displayCardId">CARD1234</span>
+                    <span class="card-id" id="displayCardId">CARD6842</span>
                 </div>
             </div>
             
@@ -538,7 +491,6 @@
                 <div class="card-message" id="displayMessage">
                     Your card message will appear here...
                 </div>
-                <div class="media-container" id="mediaContainer"></div>
             </div>
             
             <div class="card-meta">
@@ -556,34 +508,12 @@
                         <div class="meta-value" id="displayDate">Just now</div>
                     </div>
                 </div>
-                <div class="meta-item">
-                    <i class="fas fa-database"></i>
-                    <div>
-                        <div class="meta-label">Source</div>
-                        <div class="meta-value">Supabase Database</div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="card-actions">
-                <button class="btn btn-primary" id="shareBtn">
-                    <i class="fas fa-share-alt"></i> Share Card
-                </button>
-                <button class="btn btn-secondary" id="qrBtn">
-                    <i class="fas fa-qrcode"></i> Generate QR
-                </button>
             </div>
             
             <button class="back-btn" id="backBtn">
                 <i class="fas fa-redo"></i> Scan Another Code
             </button>
         </div>
-    </div>
-    
-    <!-- Loading -->
-    <div class="loading" id="loading">
-        <div class="spinner"></div>
-        <div id="loadingText">Loading...</div>
     </div>
     
     <!-- Notification -->
@@ -600,9 +530,8 @@
     </div>
     
     <script>
-        // Supabase Configuration - Use same credentials as qr.html
-        const SUPABASE_URL = 'https://elmhkhvryjzljxskbfps.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVsbWhraHZyeWp6bGp4c2tiZnBzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0NDc3NjMsImV4cCI6MjA4NDAyMzc2M30.Orrh2Pejnt3KPJMTUTmRRkhCwtZVfjUreKvX546bOcw';
+        // === FIX: Always use local backend ===
+        const BACKEND_URL = 'http://localhost:3000';
         
         // DOM Elements
         const video = document.getElementById('video');
@@ -617,22 +546,8 @@
         const displayMessage = document.getElementById('displayMessage');
         const displayType = document.getElementById('displayType');
         const displayDate = document.getElementById('displayDate');
-        const mediaContainer = document.getElementById('mediaContainer');
-        const shareBtn = document.getElementById('shareBtn');
-        const qrBtn = document.getElementById('qrBtn');
         const backBtn = document.getElementById('backBtn');
-        const loading = document.getElementById('loading');
-        const loadingText = document.getElementById('loadingText');
         const notification = document.getElementById('notification');
-        
-        // State - DO NOT DECLARE 'supabase' HERE, let it be global
-        let stream = null;
-        let isScanning = false;
-        let currentCard = null;
-        let canvas = null;
-        let context = null;
-        let animationFrame = null;
-        // Remove: let supabase = null; - Let it be managed by the Supabase library
         
         // Show notification
         function showNotification(message, type = 'info') {
@@ -645,57 +560,10 @@
             }, 3000);
         }
         
-        // Show loading
-        function showLoading(message = 'Loading...') {
-            loadingText.textContent = message;
-            loading.classList.add('show');
-        }
-        
-        // Hide loading
-        function hideLoading() {
-            loading.classList.remove('show');
-        }
-        
-        // Initialize Supabase client - FIXED: Check if it already exists
-        function initializeSupabase() {
-            console.log('Initializing Supabase...');
-            try {
-                // Check if supabase is already defined globally by the library
-                if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
-                    console.log('Supabase library is available');
-                    
-                    // Create client only if it doesn't exist
-                    if (!window.supabaseClient) {
-                        window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                        console.log('Supabase client created successfully');
-                    } else {
-                        console.log('Supabase client already exists');
-                    }
-                    
-                    return window.supabaseClient;
-                } else {
-                    console.error('Supabase library not loaded');
-                    showNotification('Database library not loaded. Please refresh the page.', 'error');
-                    return null;
-                }
-            } catch (error) {
-                console.error('Error initializing Supabase:', error);
-                showNotification('Error connecting to database: ' + error.message, 'error');
-                return null;
-            }
-        }
-        
-        // Get Supabase client
-        function getSupabaseClient() {
-            if (!window.supabaseClient) {
-                return initializeSupabase();
-            }
-            return window.supabaseClient;
-        }
-        
-        // Load card from Supabase using Supabase JS client
+        // Load card from backend API
         async function loadCard(cardId) {
-            console.log('loadCard called with:', cardId);
+            console.log('Loading card from backend:', cardId);
+            
             if (!cardId || cardId.trim() === '') {
                 showNotification('Please enter a Card ID', 'error');
                 return null;
@@ -707,63 +575,37 @@
                 cardId = 'CARD' + cardId;
             }
             
-            showLoading(`Loading card ${cardId}...`);
+            showNotification(`Loading card ${cardId}...`, 'info');
             
             try {
-                const supabaseClient = getSupabaseClient();
-                if (!supabaseClient) {
-                    throw new Error('Failed to connect to database');
-                }
+                const response = await fetch(`${BACKEND_URL}/api/cards/${encodeURIComponent(cardId)}`);
                 
-                console.log('Fetching card from Supabase:', cardId);
-                
-                // Fetch from cards table using Supabase JS client
-                const { data: cards, error } = await supabaseClient
-                    .from('cards')
-                    .select('card_id, message_type, message_text, media_url, file_name, created_at, status')
-                    .eq('card_id', cardId)
-                    .eq('status', 'active')
-                    .limit(1);
-                
-                if (error) {
-                    console.error('Supabase error:', error);
-                    
-                    // Check if it's a "table doesn't exist" error
-                    if (error.message.includes('does not exist')) {
-                        showNotification('Cards table not found. Create cards first in the Maker.', 'error');
-                    } else {
-                        showNotification('Error loading card: ' + error.message, 'error');
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        throw new Error(`Card ${cardId} not found`);
                     }
-                    hideLoading();
-                    return null;
+                    throw new Error(`Server error: ${response.status}`);
                 }
                 
-                console.log('Supabase response:', cards);
+                const result = await response.json();
                 
-                if (!cards || cards.length === 0) {
-                    showNotification(`Card ${cardId} not found`, 'error');
-                    hideLoading();
-                    return null;
+                if (result.success && result.card) {
+                    console.log('Card loaded successfully:', result.card);
+                    return result.card;
+                } else {
+                    throw new Error(result.error || 'Unknown error');
                 }
-                
-                const card = cards[0];
-                console.log('Card loaded successfully:', card);
-                
-                hideLoading();
-                return card;
                 
             } catch (error) {
                 console.error('Error loading card:', error);
-                showNotification('Failed to load card from database. Error: ' + error.message, 'error');
-                hideLoading();
+                showNotification(`Error: ${error.message}`, 'error');
                 return null;
             }
         }
         
-        // Display card - UPDATED FOR MEDIA SUPPORT
+        // Display card
         function displayCard(card) {
             console.log('Displaying card:', card);
-            currentCard = card;
             
             // Update display
             displayCardId.textContent = card.card_id;
@@ -775,125 +617,10 @@
                 displayDate.textContent = date.toLocaleDateString('en-US', {
                     month: 'short',
                     day: 'numeric',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
+                    year: 'numeric'
                 });
             } else {
                 displayDate.textContent = 'Recently';
-            }
-            
-            // Display media if available - UPDATED FOR BETTER MEDIA HANDLING
-            mediaContainer.innerHTML = '';
-            
-            // Check if media_url exists and is not empty
-            if (card.media_url && card.media_url.trim() !== '' && card.media_url !== 'null') {
-                const fileExtension = card.media_url.split('.').pop().toLowerCase();
-                const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].includes(fileExtension);
-                const isVideo = ['mp4', 'webm', 'ogg', 'mov', 'avi', 'wmv'].includes(fileExtension);
-                const isAudio = ['mp3', 'wav', 'ogg', 'm4a', 'flac', 'aac'].includes(fileExtension);
-                
-                console.log('Media detected:', {
-                    url: card.media_url,
-                    extension: fileExtension,
-                    isImage: isImage,
-                    isVideo: isVideo,
-                    isAudio: isAudio,
-                    fileName: card.file_name
-                });
-                
-                if (isImage) {
-                    const img = document.createElement('img');
-                    img.src = card.media_url;
-                    img.alt = card.file_name || 'Card Media';
-                    img.style.maxWidth = '100%';
-                    img.style.maxHeight = '300px';
-                    img.style.borderRadius = '8px';
-                    img.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
-                    img.onload = () => {
-                        console.log('Image loaded successfully');
-                        showNotification('Media loaded successfully', 'success');
-                    };
-                    img.onerror = () => {
-                        console.error('Failed to load image:', card.media_url);
-                        showNotification('Could not load media. The file might not exist or the URL is incorrect.', 'error');
-                        // Show a fallback message
-                        const fallback = document.createElement('div');
-                        fallback.innerHTML = `<p style="color: #666;"><i class="fas fa-image"></i> Image: ${card.file_name || 'Media file'}</p>
-                                             <a href="${card.media_url}" target="_blank" style="color: #11998e; text-decoration: none;">
-                                                 <i class="fas fa-external-link-alt"></i> Open Media
-                                             </a>`;
-                        mediaContainer.appendChild(fallback);
-                    };
-                    mediaContainer.appendChild(img);
-                } else if (isVideo) {
-                    const video = document.createElement('video');
-                    video.src = card.media_url;
-                    video.controls = true;
-                    video.style.width = '100%';
-                    video.style.maxHeight = '300px';
-                    video.style.borderRadius = '8px';
-                    video.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
-                    
-                    // Add error handling
-                    video.addEventListener('error', () => {
-                        console.error('Failed to load video:', card.media_url);
-                        showNotification('Could not load video. The file might not exist or the format is not supported.', 'error');
-                        const fallback = document.createElement('div');
-                        fallback.innerHTML = `<p style="color: #666;"><i class="fas fa-video"></i> Video: ${card.file_name || 'Media file'}</p>
-                                             <a href="${card.media_url}" target="_blank" style="color: #11998e; text-decoration: none;">
-                                                 <i class="fas fa-external-link-alt"></i> Download Video
-                                             </a>`;
-                        mediaContainer.appendChild(fallback);
-                    });
-                    
-                    mediaContainer.appendChild(video);
-                } else if (isAudio) {
-                    const audio = document.createElement('audio');
-                    audio.src = card.media_url;
-                    audio.controls = true;
-                    audio.style.width = '100%';
-                    audio.style.marginTop = '15px';
-                    
-                    // Add error handling
-                    audio.addEventListener('error', () => {
-                        console.error('Failed to load audio:', card.media_url);
-                        showNotification('Could not load audio. The file might not exist or the format is not supported.', 'error');
-                        const fallback = document.createElement('div');
-                        fallback.innerHTML = `<p style="color: #666;"><i class="fas fa-music"></i> Audio: ${card.file_name || 'Media file'}</p>
-                                             <a href="${card.media_url}" target="_blank" style="color: #11998e; text-decoration: none;">
-                                                 <i class="fas fa-external-link-alt"></i> Download Audio
-                                             </a>`;
-                        mediaContainer.appendChild(fallback);
-                    });
-                    
-                    mediaContainer.appendChild(audio);
-                } else {
-                    // For other file types, show a link
-                    const link = document.createElement('a');
-                    link.href = card.media_url;
-                    link.textContent = card.file_name || 'Download Media';
-                    link.target = '_blank';
-                    link.className = 'btn btn-secondary';
-                    link.style.textDecoration = 'none';
-                    link.style.marginTop = '15px';
-                    mediaContainer.appendChild(link);
-                }
-                
-                // Add a media info line
-                const mediaInfo = document.createElement('p');
-                mediaInfo.style.fontSize = '0.9rem';
-                mediaInfo.style.color = '#666';
-                mediaInfo.style.marginTop = '10px';
-                mediaInfo.innerHTML = `<i class="fas fa-paperclip"></i> Media attached: ${card.file_name || 'File'}`;
-                mediaContainer.appendChild(mediaInfo);
-            } else {
-                // No media - show a simple message
-                const noMediaMsg = document.createElement('p');
-                noMediaMsg.style.color = '#999';
-                noMediaMsg.style.fontStyle = 'italic';
-                noMediaMsg.textContent = 'No media attached to this card';
-                mediaContainer.appendChild(noMediaMsg);
             }
             
             // Show card, hide scanner
@@ -901,22 +628,24 @@
             scannerSection.style.display = 'none';
             manualSection.style.display = 'none';
             
-            // Stop camera if scanning
-            stopScanner();
-            
-            // Show appropriate notification based on media
-            if (card.media_url && card.media_url.trim() !== '' && card.media_url !== 'null') {
-                showNotification(`Card ${card.card_id} loaded with media!`, 'success');
-            } else {
-                showNotification(`Card ${card.card_id} loaded!`, 'success');
+            // Stop scanner if running
+            if (video.srcObject) {
+                video.srcObject.getTracks().forEach(track => track.stop());
+                video.srcObject = null;
+                startBtn.style.display = 'flex';
+                stopBtn.style.display = 'none';
             }
+            
+            showNotification(`Card ${card.card_id} loaded!`, 'success');
         }
         
-        // Start scanner
+        // Start scanner with FIX for video loading
         async function startScanner() {
             try {
-                // Request camera access
-                stream = await navigator.mediaDevices.getUserMedia({
+                // FIX: Add delay to ensure video is ready
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                const stream = await navigator.mediaDevices.getUserMedia({
                     video: {
                         facingMode: 'environment',
                         width: { ideal: 1280 },
@@ -925,155 +654,73 @@
                 });
                 
                 video.srcObject = stream;
+                await video.play();
                 
-                // Wait for video to be ready
-                await new Promise(resolve => {
-                    video.onloadedmetadata = () => {
-                        video.play();
-                        resolve();
-                    };
-                });
-                
-                // Show stop button, hide start button
                 startBtn.style.display = 'none';
                 stopBtn.style.display = 'flex';
                 
-                // Setup canvas for scanning
-                canvas = document.createElement('canvas');
-                context = canvas.getContext('2d');
-                
-                // Start scanning
-                isScanning = true;
-                scanFrame();
-                
                 showNotification('Scanner started. Point at QR code.', 'info');
                 
-            } catch (error) {
-                console.error('Camera error:', error);
-                if (error.name === 'NotAllowedError') {
-                    showNotification('Camera access denied. Please allow camera access.', 'error');
-                } else if (error.name === 'NotFoundError') {
-                    showNotification('No camera found on this device.', 'error');
-                } else {
-                    showNotification(`Camera error: ${error.message}`, 'error');
-                }
-            }
-        }
-        
-        // Stop scanner
-        function stopScanner() {
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-                stream = null;
-            }
-            
-            if (animationFrame) {
-                cancelAnimationFrame(animationFrame);
-                animationFrame = null;
-            }
-            
-            video.srcObject = null;
-            startBtn.style.display = 'flex';
-            stopBtn.style.display = 'none';
-            
-            isScanning = false;
-        }
-        
-        // Scan frame for QR codes
-        function scanFrame() {
-            if (!isScanning) return;
-            
-            try {
-                // Set canvas dimensions to video dimensions
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                
-                // Draw video frame to canvas
-                context.drawImage(video, 0, 0, canvas.width, canvas.height);
-                
-                // Get image data
-                const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-                
-                // Try to decode QR code
-                const code = jsQR(imageData.data, imageData.width, imageData.height, {
-                    inversionAttempts: 'dontInvert',
-                });
-                
-                if (code) {
-                    console.log('QR Code detected:', code.data);
-                    
-                    // Stop scanning
-                    stopScanner();
-                    
-                    // Extract card ID from QR code data
-                    let cardId = code.data;
-                    
-                    // Check for URL format (from qr.html)
-                    if (code.data.includes('viewer.html?card=')) {
-                        // Extract card ID from URL
-                        try {
-                            const url = new URL(code.data);
-                            cardId = url.searchParams.get('card');
-                        } catch (e) {
-                            console.log('Not a valid URL, trying to extract manually');
-                            // Try to extract card parameter manually
-                            const match = code.data.match(/card=([^&]+)/);
-                            if (match) {
-                                cardId = match[1];
-                            }
-                        }
+                // Simple scanner loop
+                const scanLoop = async () => {
+                    // FIX: Check if video is ready
+                    if (!video.srcObject || video.videoWidth === 0) {
+                        setTimeout(scanLoop, 100);
+                        return;
                     }
                     
-                    // Clean up card ID
-                    if (cardId) {
-                        cardId = decodeURIComponent(cardId); // Decode URL encoded characters
+                    const canvas = document.createElement('canvas');
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const code = jsQR(imageData.data, imageData.width, imageData.height);
+                    
+                    if (code) {
+                        console.log('QR detected:', code.data);
+                        stopScanner();
+                        
+                        let cardId = code.data;
+                        // Extract from URL if needed
+                        if (code.data.includes('viewer.html?card=')) {
+                            const match = code.data.match(/card=([^&]+)/);
+                            if (match) cardId = match[1];
+                        }
+                        
+                        cardId = decodeURIComponent(cardId);
                         cardId = cardId.toUpperCase();
                         if (!cardId.startsWith('CARD')) {
                             cardId = 'CARD' + cardId.replace(/[^0-9]/g, '');
                         }
                         
-                        // Load the card
-                        handleCardLoad(cardId);
+                        const card = await loadCard(cardId);
+                        if (card) displayCard(card);
                         return;
                     }
-                }
+                    
+                    if (video.srcObject) {
+                        setTimeout(scanLoop, 100);
+                    }
+                };
                 
-                // Continue scanning
-                if (isScanning) {
-                    animationFrame = requestAnimationFrame(scanFrame);
-                }
+                scanLoop();
                 
             } catch (error) {
-                console.error('Scan error:', error);
-                // Continue scanning
-                if (isScanning) {
-                    animationFrame = requestAnimationFrame(scanFrame);
-                }
+                console.error('Camera error:', error);
+                showNotification('Camera access denied or not available', 'error');
             }
         }
         
-        // Handle card loading
-        async function handleCardLoad(cardId) {
-            console.log('handleCardLoad called with cardId:', cardId);
-            
-            // Clean up card ID
-            cardId = cardId.toUpperCase();
-            if (!cardId.startsWith('CARD')) {
-                cardId = 'CARD' + cardId;
+        // Stop scanner
+        function stopScanner() {
+            if (video.srcObject) {
+                video.srcObject.getTracks().forEach(track => track.stop());
+                video.srcObject = null;
             }
-            
-            console.log('Looking for card:', cardId);
-            
-            const card = await loadCard(cardId);
-            if (card) {
-                console.log('Card loaded successfully:', card);
-                displayCard(card);
-            } else {
-                console.log('Card not found or error loading');
-                showNotification(`Card ${cardId} not found or couldn't be loaded`, 'error');
-                // Restart scanner if card not found
-                setTimeout(startScanner, 2000);
-            }
+            startBtn.style.display = 'flex';
+            stopBtn.style.display = 'none';
         }
         
         // Reset to scanner
@@ -1081,90 +728,22 @@
             cardDisplay.classList.remove('show');
             scannerSection.style.display = 'block';
             manualSection.style.display = 'block';
-            
-            // Clear input
             cardIdInput.value = '';
-            
-            // Restart scanner
-            startScanner();
-            
-            currentCard = null;
-        }
-        
-        // Share card
-        function shareCard() {
-            if (!currentCard) {
-                showNotification('No card to share', 'error');
-                return;
-            }
-            
-            const cardUrl = `${window.location.origin}${window.location.pathname}?card=${encodeURIComponent(currentCard.card_id)}`;
-            const shareText = `Magic Card: ${currentCard.card_id}\n\n${currentCard.message_text}\n\nView at: ${cardUrl}`;
-            
-            if (navigator.share) {
-                navigator.share({
-                    title: `Magic Card: ${currentCard.card_id}`,
-                    text: shareText,
-                    url: cardUrl
-                });
-            } else {
-                navigator.clipboard.writeText(shareText)
-                    .then(() => showNotification('Card details copied!', 'success'))
-                    .catch(() => {
-                        // Fallback
-                        const textarea = document.createElement('textarea');
-                        textarea.value = shareText;
-                        document.body.appendChild(textarea);
-                        textarea.select();
-                        document.execCommand('copy');
-                        document.body.removeChild(textarea);
-                        showNotification('Card details copied!', 'success');
-                    });
-            }
-        }
-        
-        // Generate QR for current card
-        function generateQr() {
-            if (!currentCard) {
-                showNotification('No card to generate QR for', 'error');
-                return;
-            }
-            
-            // Open QR generator page
-            window.open(`qr.html?card=${encodeURIComponent(currentCard.card_id)}`, '_blank');
-        }
-        
-        // Load from URL parameter
-        async function loadFromUrl() {
-            console.log('loadFromUrl called');
-            const urlParams = new URLSearchParams(window.location.search);
-            const cardId = urlParams.get('card');
-            
-            if (cardId) {
-                console.log('Loading card from URL parameter:', cardId);
-                await handleCardLoad(cardId);
-                return true;
-            }
-            return false;
         }
         
         // Initialize
-        async function initialize() {
-            console.log('Initializing viewer...');
+        function initialize() {
+            console.log('Initializing viewer with backend:', BACKEND_URL);
             
-            // Initialize Supabase FIRST
-            console.log('Step 1: Initializing Supabase');
-            initializeSupabase();
-            
-            // Event Listeners
-            console.log('Step 2: Setting up event listeners');
+            // Event listeners
             startBtn.addEventListener('click', startScanner);
             stopBtn.addEventListener('click', stopScanner);
             
             loadCardBtn.addEventListener('click', async () => {
                 const cardId = cardIdInput.value.trim();
                 if (cardId) {
-                    await handleCardLoad(cardId);
+                    const card = await loadCard(cardId);
+                    if (card) displayCard(card);
                 }
             });
             
@@ -1172,38 +751,31 @@
                 if (e.key === 'Enter') {
                     const cardId = cardIdInput.value.trim();
                     if (cardId) {
-                        await handleCardLoad(cardId);
+                        const card = await loadCard(cardId);
+                        if (card) displayCard(card);
                     }
                 }
             });
             
-            shareBtn.addEventListener('click', shareCard);
-            qrBtn.addEventListener('click', generateQr);
             backBtn.addEventListener('click', resetToScanner);
             
-            // Check URL for direct card access
-            console.log('Step 3: Checking URL for card parameter');
-            setTimeout(async () => {
-                const hasCardInUrl = await loadFromUrl();
-                
-                // Auto-start scanner if no card loaded
-                if (!hasCardInUrl) {
-                    console.log('No card in URL, starting scanner...');
-                    // Start scanner after a brief delay
-                    setTimeout(startScanner, 1000);
-                }
-            }, 300);
+            // Check URL for card parameter
+            const urlParams = new URLSearchParams(window.location.search);
+            const cardId = urlParams.get('card');
+            if (cardId) {
+                cardIdInput.value = cardId;
+                setTimeout(async () => {
+                    const card = await loadCard(cardId);
+                    if (card) displayCard(card);
+                }, 500);
+            } else {
+                // Auto-start scanner
+                setTimeout(startScanner, 1000);
+            }
         }
         
         // Start when page loads
         document.addEventListener('DOMContentLoaded', initialize);
-        
-        // Debug: Log when page is fully loaded
-        window.addEventListener('load', () => {
-            console.log('Page fully loaded');
-            console.log('URL:', window.location.href);
-            console.log('Query params:', new URLSearchParams(window.location.search).toString());
-        });
     </script>
 </body>
 </html>
